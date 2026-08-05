@@ -100,8 +100,6 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
 !! where l is a standing for some set of indices in multiple dimensions.
 !! Note this function may set field object members active_omp_level and  num_threads.
 !! TODO: (MDM) revisit passing in and need of field_num_threads and field_active_omp_level
-!> @addtogroup fms_diag_fieldbuff_update_mod
-!> @{
    FUNCTION FMS_DIAG_FBU_PNAME_ (ofield_cfg, ofield_index_cfg, field_d, sample, &
     & ofb, ofc, bbounds, count_0d, num_elements, mask, weight1, missvalue,  &
     & field_num_threads, field_active_omp_level, issued_mask_ignore_warning, &
@@ -1366,4 +1364,3 @@ FUNCTION FMS_DIAG_FBCF_PNAME_ (ofield_cfg, ofield_index_cfg, field, sample, ofb,
             END IF
          end associate
       END SUBROUTINE  FMS_DIAG_FBCM_PNAME_
-      !> @}

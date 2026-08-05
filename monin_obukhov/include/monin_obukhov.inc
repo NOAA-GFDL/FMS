@@ -846,6 +846,3 @@ mix = mix_1d(1)
 
 end subroutine STABLE_MIX_0D_
 !=======================================================================
-
-!> @}
-! close documentation grouping

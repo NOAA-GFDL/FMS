@@ -16,18 +16,16 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mosaic2_mod mosaic2_mod
-!> @ingroup mosaic2
-!> @brief Implements some utility routines to read mosaic information.
+!! @ingroup mosaic2
+!! @{
+!! @brief Implements some utility routines to read mosaic information.
 !!
-!> @author Zhi Liang
+!! @author Zhi Liang
 !!
 !! Implements some utility routines to read mosaic information.
 !! The information includes number of tiles and contacts in the mosaic,
 !! mosaic grid resolution of each tile, mosaic contact information, mosaic exchange
 !! grid information. Each routine will call a C-version routine to get these information.
-
-!> @addtogroup mosaic2_mod
-!> @{
 module mosaic2_mod
 
 !use fms_mod,    only : write_version_number

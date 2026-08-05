@@ -17,16 +17,13 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_bbox_mod fms_diag_bbox_mod
-!> @ingroup diag_manager
-!> @brief fms_diag_bbox_mod defines classes encapsulating bounding boxes
+!! @ingroup diag_manager
+!! @{
+!! @brief fms_diag_bbox_mod defines classes encapsulating bounding boxes
 !!   and interval bounds.
 !!
-!> @author Miguel Zuniga
+!! @author Miguel Zuniga
 !!
-!> @file
-!> @brief File for @ref fms_diag_bbox_mod
-!> @addtogroup fms_diag_bbox_mod
-!> @{
 MODULE fms_diag_bbox_mod
 
    USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler, string
@@ -522,5 +519,5 @@ end function determine_if_block_is_in_region
  end subroutine
 
   END MODULE fms_diag_bbox_mod
-  !> @}
-  ! close documentation grouping
+!> @}
+! close documentation grouping

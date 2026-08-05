@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup sat_vapor_pres_k_mod sat_vapor_pres_k_mod
-!> @ingroup sat_vapor_pres
-!> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
+!! @ingroup sat_vapor_pres
+!! @{
+!! @brief Kernel module to be used by @ref sat_vapor_pres_mod for
 !! table lookups and calculations
 
  module sat_vapor_pres_k_mod
@@ -68,13 +69,11 @@
  public :: compute_qs_k
  public :: compute_mrs_k
 
- !> @ingroup sat_vapor_pres_k_mod
  interface sat_vapor_pres_init_k
     module procedure sat_vapor_pres_init_k_r4
     module procedure sat_vapor_pres_init_k_r8
  end interface sat_vapor_pres_init_k
 
- !> @ingroup sat_vapor_pres_k_mod
  interface compute_es_k
     module procedure compute_es_k_r4
     module procedure compute_es_k_r8
@@ -90,7 +89,6 @@
     module procedure compute_es_liq_ice_k_r8
  end interface compute_es_liq_ice_k
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es_k
    module procedure lookup_es_k_0d_r4
    module procedure lookup_es_k_0d_r8
@@ -102,7 +100,6 @@
    module procedure lookup_es_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des_k
    module procedure lookup_des_k_0d_r4
    module procedure lookup_des_k_0d_r8
@@ -114,7 +111,6 @@
    module procedure lookup_des_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es_des_k
    module procedure lookup_es_des_k_0d_r4
    module procedure lookup_es_des_k_0d_r8
@@ -126,7 +122,6 @@
    module procedure lookup_es_des_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es2_k
    module procedure lookup_es2_k_0d_r4
    module procedure lookup_es2_k_0d_r8
@@ -138,7 +133,6 @@
    module procedure lookup_es2_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des2_k
    module procedure lookup_des2_k_0d_r4
    module procedure lookup_des2_k_0d_r8
@@ -150,7 +144,6 @@
    module procedure lookup_des2_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es2_des2_k
    module procedure lookup_es2_des2_k_0d_r4
    module procedure lookup_es2_des2_k_0d_r8
@@ -162,7 +155,6 @@
    module procedure lookup_es2_des2_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es3_k
    module procedure lookup_es3_k_0d_r4
    module procedure lookup_es3_k_0d_r8
@@ -174,7 +166,6 @@
    module procedure lookup_es3_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_des3_k
    module procedure lookup_des3_k_0d_r4
    module procedure lookup_des3_k_0d_r8
@@ -186,7 +177,6 @@
    module procedure lookup_des3_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface lookup_es3_des3_k
    module procedure lookup_es3_des3_k_0d_r4
    module procedure lookup_es3_des3_k_0d_r8
@@ -198,7 +188,6 @@
    module procedure lookup_es3_des3_k_3d_r8
  end interface
 
- !> @ingroup sat_vapor_pres_k_mod
  interface compute_qs_k
    module procedure compute_qs_k_0d_r4
    module procedure compute_qs_k_0d_r8
@@ -209,7 +198,7 @@
    module procedure compute_qs_k_3d_r4
    module procedure compute_qs_k_3d_r8
  end interface
- !> @ingroup sat_vapor_pres_k_mod
+
  interface compute_mrs_k
    module procedure compute_mrs_k_0d_r4
    module procedure compute_mrs_k_0d_r8
@@ -221,8 +210,6 @@
    module procedure compute_mrs_k_3d_r8
  end interface compute_mrs_k
 
-!> @addtogroup sat_vapor_pres_k_mod
-!> @{
 
  real(kind=r8_kind) :: dtres, tepsl, tminl, dtinvl
  integer :: table_siz

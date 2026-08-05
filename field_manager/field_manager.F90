@@ -16,17 +16,18 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup field_manager_mod field_manager_mod
-!> @ingroup field_manager
-!> @brief Reads entries from a field table and stores this
+!! @ingroup field_manager
+!! @{
+!! @brief Reads entries from a field table and stores this
 !! information along with the type  of field it belongs to.
 !!
-!> This allows the component models to query the field manager to see if non-default
+!! This allows the component models to query the field manager to see if non-default
 !! methods of operation are desired. In essence the field table is a
 !! powerful type of namelist. Default values can be provided for all the
 !! fields through a namelist, individual fields can be modified  through
 !! the field table however.
 !!
-!> @author William Cooke
+!! @author William Cooke
 !!
 !! An example of field table entries could be
 !! <PRE>
@@ -151,8 +152,6 @@
 !! authors of code to allow modification of their routines.
 !!
 
-!> @addtogroup field_manager_mod
-!> @{
 module field_manager_mod
 !TODO this variable can be removed when the legacy table is no longer used
 #ifndef MAXFIELDS_
@@ -267,19 +266,16 @@ integer, parameter, public :: MODEL_COUPLER     = 5
 character(len=11), parameter, public, dimension(NUM_MODELS) :: &
    MODEL_NAMES=(/'atmospheric','oceanic    ','land       ','ice        ','coupler    '/)
 
-!> @}
-
 !> @brief This method_type is a way to allow a component module to alter the parameters it needs
 !! for various tracers.
 !!
-!> In essence this is a way to modify a namelist. A namelist can supply
+!! In essence this is a way to modify a namelist. A namelist can supply
 !! default parameters for all tracers. This  method will allow the user to modify these
 !! default parameters for an individual tracer. An example could be that  the user wishes to
 !! use second order advection on a tracer and also use fourth order advection on a second
 !! tracer  within the same model run. The default advection could be second order and the
 !! field table would then indicate  that the second tracer requires fourth order advection.
 !! This would be parsed by the advection routine.
-!> @ingroup field_manager_mod
 type, public :: method_type
 
   character(len=fm_string_len) :: method_type !< This string represents a tag that a module
@@ -297,7 +293,6 @@ end type
 !!   method_control string is not present. This is used when you wish to
 !!   change to a scheme within a module but do not need to pass
 !!   parameters. See @ref method_type for member information.
-!> @ingroup field_manager_mod
 type, public :: method_type_short
   character(len=fm_string_len) :: method_type
   character(len=fm_string_len) :: method_name
@@ -307,18 +302,15 @@ end type
 !!   method_control and method_name strings are not present. This is used
 !!   when you wish to change to a scheme within a module but do not need
 !!   to pass parameters.
-!> @ingroup field_manager_mod
 type, public :: method_type_very_short
   character(len=fm_string_len) :: method_type
 end type
 
 !> Iterator over the field manager list
-!> @ingroup field_manager_mod
 type, public :: fm_list_iter_type
    type(field_def), pointer    :: ptr => NULL()  !< pointer to the current field
 end type fm_list_iter_type
 
-!> @ingroup field_manager_mod
 type(method_type), public :: default_method
 
 !> @brief Returns an index corresponding to the given field name.
@@ -329,7 +321,6 @@ type(method_type), public :: default_method
 !! value=find_field_index( model, field_name )
 !! value=find_field_index( field_name )
 !! @endcode
-!> @ingroup field_manager_mod
 interface find_field_index
   module procedure  find_field_index_old
   module procedure  find_field_index_new
@@ -348,7 +339,6 @@ end interface
 !! @code{.F90}
 !! number = parse(text, label, value)
 !! @endcode
-!> @ingroup field_manager_mod
 interface parse
   module procedure  parse_real_r4
   module procedure  parse_real_r8
@@ -375,7 +365,6 @@ end interface
 !! @code{.F90}
 !! field_index= fm_new_value(name, value, [create], [index], [append])
 !! @endcode
-!> @ingroup field_manager_mod
 interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
@@ -394,7 +383,6 @@ end interface
 !! @code{.F90}
 !! success = fm_get_value(name, value, index)
 !! @endcode
-!> @ingroup field_manager_mod
 interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
@@ -411,7 +399,6 @@ end interface
 !! @code{.F90}
 !! success = fm_loop_over_list(list, name, field_type, index)
 !! @endcode
-!> @ingroup field_manager_mod
 interface fm_loop_over_list
   module procedure  fm_loop_over_list_new
   module procedure  fm_loop_over_list_old
@@ -443,7 +430,6 @@ integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
 !
 
 !> @brief Private type for internal use
-!> @ingroup field_manager_mod
 type, private :: field_mgr_type
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                        :: field_name
@@ -454,7 +440,6 @@ end type field_mgr_type
 !TODO These two types: field_names_type and field_names_type_short
 !! will no longer be needed when the legacy field table is not used
 !> @brief Private type for internal use
-!> @ingroup field_manager_mod
 type, private :: field_names_type
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
@@ -462,14 +447,12 @@ type, private :: field_names_type
 end  type field_names_type
 
 !> @brief Private type for internal use
-!> @ingroup field_manager_mod
 type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short
 
 !> @brief Private type for internal use
-!> @ingroup field_manager_mod
 type, private :: field_def
   character (len=fm_field_name_len)                   :: name
   integer                                             :: index
@@ -488,9 +471,6 @@ type, private :: field_def
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
 end type field_def
-
-!> @addtogroup field_manager_mod
-!> @{
 
 type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
 

@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-
 !> @brief initialize_diagnostic_columns returns the (i, j, lat, lon) coord-
 !!    inates of any diagnostic columns that are located on the current
 !!    processor.
@@ -393,4 +391,3 @@ integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagn
 !---------------------------------------------------------------------
 
 end subroutine COLUMN_DIAGNOSTICS_HEADER_
-!@}

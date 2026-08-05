@@ -15,10 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup tracer_manager_mod tracer_manager_mod
-!> @ingroup tracer_manager
-
-
 !> @brief Subroutine to set the tracer field to the wanted profile.
 !!
 !> If the profile type is 'fixed' then the tracer field values are set
@@ -142,5 +138,3 @@ endif ! end of query scheme
 end subroutine SET_TRACER_PROFILE_
 
 !#######################################################################
-!> @}
-! close documentation grouping

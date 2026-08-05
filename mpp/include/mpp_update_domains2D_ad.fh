@@ -16,8 +16,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
     !> Updates data domain of 2D ad field whose computational domains have been computed
     subroutine MPP_UPDATE_DOMAINS_AD_2D_( field, domain, flags, complete, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count)
@@ -465,4 +463,3 @@
       return
     end subroutine MPP_UPDATE_DOMAINS_AD_5D_V_
 #endif /* VECTOR_FIELD_ */
-!> @}

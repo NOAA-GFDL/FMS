@@ -17,11 +17,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @file
-!> @brief Various routines handling domains in @ref mpp_domains_mod
-
-!> @addtogroup mpp_domains_mod
-!> @{
   !> @brief Instantiates a layout with the given indices and divisions
   subroutine mpp_define_layout2D( global_indices, ndivs, layout )
     integer, intent(in) :: global_indices(:) !< (/ isg, ieg, jsg, jeg /); Defines the global domain.
@@ -8256,4 +8251,3 @@ subroutine set_domain_comm_inf(update)
 
 
 end subroutine set_domain_comm_inf
-!> @}

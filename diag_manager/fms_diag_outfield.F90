@@ -17,21 +17,18 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_outfield_mod fms_diag_outfield_mod
-!> @ingroup diag_manager
-!> @brief fms_diag_outfield_mod defines data types and utility or auxiliary routines
+!! @ingroup diag_manager
+!! @{
+!! @brief fms_diag_outfield_mod defines data types and utility or auxiliary routines
 !! useful in updating the output buffer.
 !!
-!> @author Miguel Zuniga
+!! @author Miguel Zuniga
 !!
 !! <TT>fms_diag_outfield_mod</TT> The output buffer updating routines are passed configuration
 !!  and control data with types defined in this module; and some utility functions called by the
 !! updating routines are
 !! defined here.
 !!
-!> @file
-!> @brief File for @ref fms_diag_outfield_mod
-!> @addtogroup fms_diag_outfield_mod
-!> @{
 MODULE fms_diag_outfield_mod
   USE platform_mod
   USE mpp_mod, only :FATAL, WARNING
@@ -59,7 +56,6 @@ MODULE fms_diag_outfield_mod
   !! For its development, consider the legacy diag_util::init_output_field already
   !! in place. Fields added so are used the field buffer math/dmUpdate functions.
   !! TODO (MDM) : Should the MDM have pow_value be type REAL?
-  !> @ingroup fms_diag_outfield_mod
   TYPE, public :: fmsDiagOutfield_type
      PRIVATE
      CHARACTER(len=:), ALLOCATABLE :: module_name !< Module name.
@@ -113,7 +109,6 @@ MODULE fms_diag_outfield_mod
   !! diag_manager send_data functions and in the "math" buffer update functions. The purpose
   !! of this class is also to allow for a smaller call function signature for the math/buffer
   !! update functions.
-  !> @ingroup fms_diag_outfield_mod
   TYPE, public :: fmsDiagOutfieldIndex_type
      PRIVATE
      INTEGER :: f1,f2 !< Indecies used specify 1st dim bounds of field, mask and rmask.
@@ -445,5 +440,3 @@ CONTAINS
 END MODULE fms_diag_outfield_mod
 !> @}
 ! close documentation grouping
-
-

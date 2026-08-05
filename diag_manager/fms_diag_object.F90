@@ -15,6 +15,10 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
+
+!> @defgroup fms_diag_object_mod fms_diag_object_mod
+!! @ingroup diag_manager
+!! @{
 module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
@@ -1567,3 +1571,4 @@ subroutine set_time_end(this, time_end_in)
 end subroutine
 
 end module fms_diag_object_mod
+!> @}

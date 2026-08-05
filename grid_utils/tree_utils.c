@@ -23,9 +23,10 @@
 #include "tree_utils.h"
 #include "constant.h"
 
-/** \file
- *  \ingroup tree_utils
- *  \brief utilities for create_xgrid_great_circle
+/** @defgroup tree_utils tree_utils
+ *  @ingroup grid_utils
+ *  @{
+ *  @brief utilities for create_xgrid_great_circle
  */
 
 struct Node *nodeList=NULL;
@@ -569,3 +570,4 @@ int insidePolygon( struct Node *node, struct Node *list)
   return is_inside;
 
 }
+/** @} */

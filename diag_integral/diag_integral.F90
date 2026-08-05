@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_integral_mod diag_integral_mod
-!> @ingroup diag_integral
+!! @ingroup diag_integral
+!! @{
 !!
 !! @author Fei Liu <Fei.Liu@noaa.gov>
 !!
@@ -97,17 +98,12 @@ public      &
 !!        when summing
 !! @param [in] <is, ie, js, je> starting/ending i,j indices over which summation
 !!        is to occur
-!!
-!! @ingroup diag_integral_mod
 interface sum_diag_integral_field
    module procedure sum_field_2d_r4,      sum_field_2d_r8
    module procedure sum_field_2d_hemi_r4, sum_field_2d_hemi_r8
    module procedure sum_field_3d_r4,      sum_field_3d_r8
    module procedure sum_field_wght_3d_r4, sum_field_wght_3d_r8
 end interface sum_diag_integral_field
-
-!> @addtogroup diag_integral_mod
-!> @{
 
 private         &
 

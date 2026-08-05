@@ -27,9 +27,10 @@
 #include <mpi.h>
 #endif
 
-/** \file
- *  \ingroup mosaic
- *  \brief Error handling and other general utilities for @ref mosaic_mod
+/** @defgroup grid_utils_c grid_utils_c
+ *  @ingroup grid_utils
+ *  @{
+ *  @brief Error handling and other general utilities for @ref grid_utils
  */
 
 /***********************************************************
@@ -1734,3 +1735,5 @@ int inside_edge(double x0, double y0, double x1, double y1, double x, double y)
   return (product<=SMALL) ? 1:0;
 
 } /* inside_edge */
+
+/** @} */

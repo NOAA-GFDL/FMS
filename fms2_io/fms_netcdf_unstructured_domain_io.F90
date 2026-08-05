@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
-!> @ingroup fms2_io
-!> @brief This module defines the derived type, FmsNetcdfUnstructuredDomainFile_t, and routines
+!! @ingroup fms2_io
+!! @{
+!! @brief This module defines the derived type, FmsNetcdfUnstructuredDomainFile_t, and routines
 !! to handle calls to the netcdf library for data on a domain decomposed unstructured grid.
 !! See mpp_domains_mod for more information on domain decomposition.
 !!
@@ -43,14 +44,11 @@ private
 !! then a io_layout of (2,2) would have 4 PEs performing I/O operations.
 !! When doing a read, each IO PE will receive a portion of data from 3 of the non-IO PEs and then write the aggregate.
 !! When doing a write, each IO PE will read the data and then send a data portion to 3 of the non-IO PEs.
-!> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
   character(len=FMS_PATH_LEN) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
-!> @addtogroup fms_netcdf_unstructured_domain_io_mod
-!> @{
 public :: open_unstructured_domain_file
 public :: close_unstructured_domain_file
 public :: register_unstructured_dimension
@@ -220,3 +218,4 @@ include "unstructured_domain_write.inc"
 
 
 end module fms_netcdf_unstructured_domain_io_mod
+!> @}

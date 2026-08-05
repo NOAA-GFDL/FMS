@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup blackboxio blackboxio
-!> @ingroup fms2_io
-!> @brief File utility functions for use within @ref fms2_io
+!! @ingroup fms2_io
+!! @{
+!! @brief File utility functions for use within @ref fms2_io
 
-!> @addtogroup blackboxio
-!> @{
 module blackboxio
 use netcdf
 use mpp_domains_mod

@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
 subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_storage_in, &
                                   & nchunks, chunk_shape_in, chunk_shape_out )
 
@@ -392,4 +390,3 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_storage
   call mpp_sync_self()
 
 end subroutine MPP_DO_REDISTRIBUTE_3D_
-!> @}

@@ -17,16 +17,11 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
-!> @ingroup diag_manager
+!! @ingroup diag_manager
+!! @{
 !! @brief fms_diag_yaml_mod is an integral part of
 !!   diag_manager_mod. Its function is to read the diag_table.yaml to fill in
 !!   the diag_yaml_object
-
-!> @file
-!> @brief File for @ref diag_yaml_mod
-
-!> @addtogroup fms_diag_yaml_mod
-!> @{
 module fms_diag_yaml_mod
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
@@ -61,7 +56,6 @@ public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
 public :: fms_diag_yaml_out
 public :: MAX_SUBAXES
-!> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
@@ -257,7 +251,6 @@ type diagYamlFilesVar_type
 end type diagYamlFilesVar_type
 
 !> @brief Object that holds the information of the diag_yaml
-!> @ingroup fms_diag_yaml_mod
 type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
   integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
@@ -286,8 +279,6 @@ type (fileList_type), save :: file_list !< List of all files in the diag_table.y
 logical, private :: diag_yaml_module_initialized = .false.
 
 
-!> @addtogroup fms_diag_yaml_mod
-!> @{
 contains
 
 !> @brief gets the diag_yaml module variable

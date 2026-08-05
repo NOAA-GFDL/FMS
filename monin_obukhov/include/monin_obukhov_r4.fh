@@ -17,15 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup monin_obukhov_mod monin_obukhov_mod
-!> @ingroup monin_obukhov
-!> @brief Routines for computing surface drag coefficients
-!! from data at the lowest model level
-!! and for computing the profile of fields
-!! between the lowest model level and the ground
-!! using Monin-Obukhov scaling
-
-!> @{
 
 #undef FMS_MO_KIND_
 #define FMS_MO_KIND_ r4_kind
@@ -102,6 +93,3 @@
 #define STABLE_MIX_0D_ stable_mix_0d_r4
 
 #include "monin_obukhov.inc"
-
-!> @}
-! close documentation grouping

@@ -16,16 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
-!> @ingroup fms2_io
-!> @brief This module defines the derived type, FmsNetcdfDomainFile_t, and routines
+!! @ingroup fms2_io
+!! @{
+!! @brief This module defines the derived type, FmsNetcdfDomainFile_t, and routines
 !! to handle calls to the netcdf library for data on a domain decomposed standard rectangular grid.
 !! See mpp_domains_mod for more information on domain decomposition.
 !!
 !! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
 !! for IO operations.
-!!
-!> @addtogroup fms_netcdf_domain_io_mod
-!> @{
 module fms_netcdf_domain_io_mod
 use netcdf
 use mpp_mod
@@ -47,10 +45,7 @@ character(len=16), parameter :: domain_axis_att_name = "domain_axis"
 character(len=16), parameter :: x = "x"
 character(len=16), parameter :: y = "y"
 
-!> @}
-
 !> @brief Domain variable.
-!> @ingroup fms_netcdf_domain_io_mod
 type, private :: DomainDimension_t
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
@@ -68,7 +63,6 @@ endtype DomainDimension_t
 !! When doing a read, each IO PE will receive a portion of data from 3 of the non-IO PEs and then write the aggregate.
 !! When doing a write, each IO PE will read the data and then send a data portion to 3 of the non-IO PEs.
 !!
-!> @ingroup fms_netcdf_domain_io_mod
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
   type(domain2d) :: domain !< Two-dimensional domain.
   type(DomainDimension_t), dimension(:), allocatable :: xdims !< Dimensions associated
@@ -114,15 +108,12 @@ public :: get_global_io_domain_indices
 public :: is_dimension_registered
 public :: get_mosaic_tile_grid
 
-!> @ingroup fms_netcdf_domain_io_mod
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
   module procedure compute_global_checksum_3d
   module procedure compute_global_checksum_4d
 end interface compute_global_checksum
 
-!> @addtogroup fms_netcdf_domain_io_mod
-!> @{
 
 contains
 

@@ -17,14 +17,10 @@
 !***********************************************************************
 
 !> @defgroup yaml_parser_mod yaml_parser_mod
-!> @ingroup parser
-!> @brief Routines to use for parsing yaml files
+!! @ingroup parser
+!! @{
+!! @brief Routines to use for parsing yaml files
 
-!> @file
-!> @brief File for @ref yaml_parser_mod
-
-!> @addtogroup yaml_parser_mod
-!> @{
 module yaml_parser_mod
 
 #ifdef use_yaml
@@ -50,12 +46,10 @@ public :: get_key_ids
 public :: get_key_name
 public :: get_key_value
 !public :: clean_up
-!> @}
 
 integer, parameter :: missing_file_error_code = 999
 
 !> @brief Dermine the value of a key from a keyname
-!> @ingroup yaml_parser_mod
 interface get_value_from_key
   module procedure get_value_from_key_0d
   module procedure get_value_from_key_1d
@@ -70,7 +64,6 @@ integer, parameter :: MAX_LEVELS_REACH = -5   !< Error code if the MAX_LEVELS is
 integer, parameter :: SUCCESSFUL = 1          !< "Error" code if the parsing was successful
 
 !> @brief c functions binding
-!> @ingroup yaml_parser_mod
 interface
 
 !> @brief Private c function that opens and parses a yaml file (see yaml_parser_binding.c)
@@ -240,8 +233,6 @@ subroutine get_unique_block_ids_bind(file_id, block_ids, parent_block_id) bind(c
 end subroutine get_unique_block_ids_bind
 end interface
 
-!> @addtogroup yaml_parser_mod
-!> @{
 contains
 
 !> @brief Opens and parses a yaml file

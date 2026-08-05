@@ -17,11 +17,12 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !> @defgroup mpp_domains_mod mpp_domains_mod
-!> @ingroup mpp
-!> @brief Domain decomposition and domain update for message-passing codes
-!> @author V. Balaji SGI/GFDL Princeton University
+!! @ingroup mpp
+!! @{
+!! @brief Domain decomposition and domain update for message-passing codes
+!! @author V. Balaji SGI/GFDL Princeton University
 !!
-!>  A set of simple calls for domain
+!!  A set of simple calls for domain
 !!  decomposition and domain updates on rectilinear grids. It requires the
 !!  module mpp.F90, upon which it is built.\n
 !!  Scalable implementations of finite-difference codes are generally
@@ -84,9 +85,6 @@
 !!
 !!      type(domain1D), public :: NULL_DOMAIN1D
 !!      type(domain2D), public :: NULL_DOMAIN2D
-
-!> @addtogroup mpp_domains_mod
-!> @{
 
 module mpp_domains_mod
 
@@ -223,12 +221,9 @@ module mpp_domains_mod
   integer, parameter :: FIELD_X = 1
   integer, parameter :: FIELD_Y = 2
 
-  !> @}
-
   ! data types used by mpp_domains_mod
 
   !> @brief Private type for axis specification data for an unstructured grid
-  !> @ingroup mpp_domains_mod
   type :: unstruct_axis_spec
      private
      integer :: begin, end, size, max_size
@@ -236,7 +231,6 @@ module mpp_domains_mod
   end type unstruct_axis_spec
 
   !> Private type for axis specification data for an unstructured domain
-  !> @ingroup mpp_domains_mod
   type :: unstruct_domain_spec
      private
      type(unstruct_axis_spec) :: compute
@@ -246,7 +240,6 @@ module mpp_domains_mod
   end type unstruct_domain_spec
 
   !> Private type
-  !> @ingroup mpp_domains_mod
   type :: unstruct_overlap_type
      private
      integer :: count = 0
@@ -256,7 +249,6 @@ module mpp_domains_mod
   end type unstruct_overlap_type
 
   !> Private type
-  !> @ingroup mpp_domains_mod
   type :: unstruct_pass_type
      private
      integer :: nsend, nrecv
@@ -265,7 +257,6 @@ module mpp_domains_mod
   end type unstruct_pass_type
 
   !> Domain information for managing data on unstructured grids
-  !> @ingroup mpp_domains_mod
   type :: domainUG
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
@@ -286,7 +277,6 @@ module mpp_domains_mod
   end type domainUG
 
   !> Used to specify index limits along an axis of a domain
-  !> @ingroup mpp_domains_mod
   type :: domain_axis_spec
      private
      integer :: begin !< start of domain axis
@@ -297,7 +287,6 @@ module mpp_domains_mod
   end type domain_axis_spec
 
   !> A private type used to specify index limits for a domain decomposition
-  !> @ingroup mpp_domains_mod
   type :: domain1D_spec
      private
      type(domain_axis_spec) :: compute
@@ -306,7 +295,6 @@ module mpp_domains_mod
   end type domain1D_spec
 
   !> @brief Private type to specify multiple index limits and pe information for a 2D domain
-  !> @ingroup mpp_domains_mod
   type :: domain2D_spec
      private
      type(domain1D_spec), pointer :: x(:)  => NULL() !< x-direction domain decomposition
@@ -318,7 +306,6 @@ module mpp_domains_mod
   end type domain2D_spec
 
   !> Type for overlapping data
-  !> @ingroup mpp_domains_mod
   type :: overlap_type
      private
      integer                  :: count = 0                 !< number of overlapping
@@ -340,7 +327,6 @@ module mpp_domains_mod
   end type overlap_type
 
   !> Private type for overlap specifications
-  !> @ingroup mpp_domains_mod
   type :: overlapSpec
      private
      integer                     :: whalo, ehalo, shalo, nhalo !< halo size
@@ -353,7 +339,6 @@ module mpp_domains_mod
   end type overlapSpec
 
   !> @brief Upper and lower x and y bounds for a tile
-  !> @ingroup mpp_domains_mod
   type :: tile_type
      integer :: xbegin, xend, ybegin, yend
   end type tile_type
@@ -366,7 +351,6 @@ module mpp_domains_mod
   !! Domain types of higher rank can be constructed from type domain1D
   !! typically we only need 1 and 2D, but could need higher (e.g 3D LES)
   !! some elements are repeated below if they are needed once per domain, not once per axis
-  !> @ingroup mpp_domains_mod
   TYPE :: domain2D
      private
      character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
@@ -416,7 +400,6 @@ module mpp_domains_mod
 
   !> Type used to represent the contact between tiles.
   !> @note This type will only be used in mpp_domains_define.inc
-  !> @ingroup mpp_domains_mod
   type, private :: contact_type
      private
      integer          :: ncontact                               !< number of neighbor tile.
@@ -430,14 +413,12 @@ module mpp_domains_mod
   end type contact_type
 
   !> index bounds for use in @ref nestSpec
-  !> @ingroup mpp_domains_mod
   type :: index_type
      integer :: is_me, ie_me, js_me, je_me
      integer :: is_you, ie_you, js_you, je_you
   end type index_type
 
   !> Used to specify bounds and index information for nested tiles as a linked list
-  !> @ingroup mpp_domains_mod
   type :: nestSpec
      private
      integer                     :: xbegin, xend, ybegin, yend
@@ -454,7 +435,6 @@ module mpp_domains_mod
   end type nestSpec
 
   !> @brief domain with nested fine and course tiles
-  !> @ingroup mpp_domains_mod
   type :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
@@ -467,7 +447,6 @@ module mpp_domains_mod
   end type nest_domain_type
 
   !> Private type to hold data for each level of nesting
-  !> @ingroup mpp_domains_mod
   type :: nest_level_type
      private
      logical                    :: on_level
@@ -497,7 +476,6 @@ module mpp_domains_mod
 
 
   !> Used for sending domain data between pe's
-  !> @ingroup mpp_domains_mod
   type :: domaincommunicator2D
      private
      logical            :: initialized=.false.
@@ -547,7 +525,6 @@ module mpp_domains_mod
   integer, parameter :: MAX_REQUEST = 100
 
   !> Used for nonblocking data transfer
-  !> @ingroup mpp_domains_mod
   type :: nonblock_type
      integer                         :: recv_pos
      integer                         :: send_pos
@@ -574,7 +551,6 @@ module mpp_domains_mod
   end type nonblock_type
 
   !> used for updates on a group
-  !> @ingroup mpp_domains_mod
   type :: mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
@@ -630,7 +606,6 @@ module mpp_domains_mod
   end type mpp_group_update_type
 
   !> One dimensional domain used to manage shared data access between pes
-  !> @ingroup mpp_domains_mod
   type :: domain1D
      private
      type(domain_axis_spec) :: compute !< index limits for compute domain
@@ -647,8 +622,6 @@ module mpp_domains_mod
 
 !#######################################################################
 
-!> @addtogroup mpp_domains_mod
-!> @{
 !***********************************************************************
 !
 !     module variables
@@ -756,7 +729,7 @@ module mpp_domains_mod
 
   integer, parameter :: NO_CHECK = -1
   integer            :: debug_update_level = NO_CHECK
-!> @}
+
 !***********************************************************************
 !
 !         public interface from mpp_domains_define.h
@@ -772,7 +745,6 @@ module mpp_domains_mod
   !! that are longer in \e x than \e y, a preference that could improve vector performance.
   !! <br>Example usage:
   !! @code{.F90}call mpp_define_layout( global_indices, ndivs, layout )@endcode
-  !> @ingroup mpp_domains_mod
   interface mpp_define_layout
      module procedure mpp_define_layout2D
   end interface
@@ -890,7 +862,6 @@ module mpp_domains_mod
   !!    |--------------|----------|-----------|-----------|------------|
   !!    |Compute domain|1,100,1,25|1,100,26,50|1,100,51,75|1,100,76,100|
   !!    |Data domain   |0,101,1,25|0,101,26,50|0,101,51,75|1,101,76,100|
-  !> @ingroup mpp_domains_mod
   interface mpp_define_domains
      module procedure mpp_define_domains1D
      module procedure mpp_define_domains2D
@@ -902,7 +873,6 @@ module mpp_domains_mod
   !! @code{.F90}
   !! call mpp_define_null_domain(domain)
   !! @endcode
-  !> @ingroup mpp_domains_mod
   interface mpp_define_null_domain
      module procedure mpp_define_null_domain1D
      module procedure mpp_define_null_domain2D
@@ -911,21 +881,18 @@ module mpp_domains_mod
   !> Copy 1D or 2D domain
   !> @param domain_in Input domain to get read
   !> @param domain_out Output domain to get written to
-  !> @ingroup mpp_domains_mod
   interface mpp_copy_domain
      module procedure mpp_copy_domain1D
      module procedure mpp_copy_domain2D
   end interface mpp_copy_domain
   !> Deallocate given 1D or 2D domain
   !> @param domain an allocated @ref domain1D or @ref domain2D
-  !> @ingroup mpp_domains_mod
   interface mpp_deallocate_domain
      module procedure mpp_deallocate_domain1D
      module procedure mpp_deallocate_domain2D
   end interface
 
   !> Modifies the extents (compute, data and global) of a given domain
-  !> @ingroup mpp_domains_mod
   interface mpp_modify_domain
      module procedure mpp_modify_domain1D
      module procedure mpp_modify_domain2D
@@ -1011,7 +978,6 @@ module mpp_domains_mod
 !!   Update a 1D domain for the given field.
 !!              call mpp_update_domains( fieldx, fieldy, domain, flags, gridtype )
 !!   Update a 2D domain for the given fields.
-!> @ingroup mpp_domains_mod
   interface mpp_update_domains
      module procedure mpp_update_domain2D_r8_2d
      module procedure mpp_update_domain2D_r8_3d
@@ -1056,7 +1022,7 @@ module mpp_domains_mod
 !!    domain-decomposed array on each PE. \e MPP_TYPE_ can be of type
 !!    \e complex, \e integer, \e logical or \e real;
 !!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
-!!    two input data fields) is only present for \ereal types.<br>
+!!    two input data fields) is only present for \real types.<br>
 !!<br>
 !!    \empp_start_update_domains must be paired together with
 !!    \empp_complete_update_domains. In \e mpp_start_update_domains,
@@ -1192,7 +1158,6 @@ module mpp_domains_mod
 !!
 !!                    call mpp_start_update_domains( field, domain, flags )
 !!                    call mpp_complete_update_domains( field, domain, flags )
-!> @ingroup mpp_domains_mod
   interface mpp_start_update_domains
      module procedure mpp_start_update_domain2D_r8_2d
      module procedure mpp_start_update_domain2D_r8_3d
@@ -1235,7 +1200,6 @@ module mpp_domains_mod
   !> Must be used after a call to @ref mpp_start_update_domains
   !! in order to complete a nonblocking domain update. See @ref mpp_start_update_domains
   !! for more info.
-  !> @ingroup mpp_domains_mod
   interface mpp_complete_update_domains
      module procedure mpp_complete_update_domain2D_r8_2d
      module procedure mpp_complete_update_domain2D_r8_3d
@@ -1276,7 +1240,6 @@ module mpp_domains_mod
   end interface
 
   !> Private interface used for non blocking updates
-  !> @ingroup mpp_domains_mod
   interface mpp_start_do_update
      module procedure mpp_start_do_update_r8_3d
      module procedure mpp_start_do_update_r8_3dv
@@ -1293,7 +1256,6 @@ module mpp_domains_mod
   end interface
 
   !> Private interface used for non blocking updates
-  !> @ingroup mpp_domains_mod
   interface mpp_complete_do_update
      module procedure mpp_complete_do_update_r8_3d
      module procedure mpp_complete_do_update_r8_3dv
@@ -1313,7 +1275,6 @@ module mpp_domains_mod
   !! then used with @ref mpp_start_group_update
   !!
   !> @param
-  !> @ingroup mpp_domains_mod
   interface mpp_create_group_update
      module procedure mpp_create_group_update_r4_2d
      module procedure mpp_create_group_update_r4_3d
@@ -1329,7 +1290,6 @@ module mpp_domains_mod
      module procedure mpp_create_group_update_r8_4dv
   end interface mpp_create_group_update
 
-  !> @ingroup mpp_domains_mod
   interface mpp_do_group_update
      module procedure mpp_do_group_update_r4
      module procedure mpp_do_group_update_r8
@@ -1341,7 +1301,6 @@ module mpp_domains_mod
   !!
   !> @param[inout] type(mpp_group_update_type) group type created for group update
   !> @param[inout] type(domain2D) domain to update
-  !> @ingroup mpp_domains_mod
   interface mpp_start_group_update
      module procedure mpp_start_group_update_r4
      module procedure mpp_start_group_update_r8
@@ -1353,13 +1312,11 @@ module mpp_domains_mod
   !> @param[inout] type(mpp_group_update_type) group
   !> @param[inout] type(domain2D) domain
   !> @param[in] d_type data type
-  !> @ingroup mpp_domains_mod
   interface mpp_complete_group_update
      module procedure mpp_complete_group_update_r4
      module procedure mpp_complete_group_update_r8
   end interface mpp_complete_group_update
 
-  !> @ingroup mpp_domains_mod
   interface mpp_reset_group_update_field
      module procedure mpp_reset_group_update_field_r4_2d
      module procedure mpp_reset_group_update_field_r4_3d
@@ -1382,7 +1339,6 @@ module mpp_domains_mod
   !!                call mpp_update_nest_fine(field, nest_domain, wbuffer, ebuffer, sbuffer,
   !!                            nbuffer, nest_level, flags, complete, position, extra_halo, name,
   !!                            tile_count)
-  !> @ingroup mpp_domains_mod
   interface mpp_update_nest_fine
      module procedure mpp_update_nest_fine_r8_2d
      module procedure mpp_update_nest_fine_r8_3d
@@ -1414,7 +1370,6 @@ module mpp_domains_mod
      module procedure mpp_update_nest_fine_i4_4d
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_do_update_nest_fine
      module procedure mpp_do_update_nest_fine_r8_3d
      module procedure mpp_do_update_nest_fine_r8_3dv
@@ -1436,7 +1391,6 @@ module mpp_domains_mod
   !!
   !!               call mpp_update_nest_coarse(field, nest_domain, field_out, nest_level, complete,
   !!                                 position, name, tile_count)
-  !> @ingroup mpp_domains_mod
   interface mpp_update_nest_coarse
      module procedure mpp_update_nest_coarse_r8_2d
      module procedure mpp_update_nest_coarse_r8_3d
@@ -1470,7 +1424,6 @@ module mpp_domains_mod
 
   !> @brief Used by @ref mpp_update_nest_coarse to perform domain updates
   !!
-  !> @ingroup mpp_domains_mod
   interface mpp_do_update_nest_coarse
      module procedure mpp_do_update_nest_coarse_r8_3d
      module procedure mpp_do_update_nest_coarse_r8_3dv
@@ -1491,7 +1444,6 @@ module mpp_domains_mod
   !!
   !!            call mpp_get_F2C_index(nest_domain, is_coarse, ie_coarse, js_coarse, je_coarse,
   !!                            is_fine, ie_fine, js_fine, je_fine, nest_level, position)
-  !> @ingroup mpp_domains_mod
   interface mpp_get_F2C_index
     module procedure mpp_get_F2C_index_fine
     module procedure mpp_get_F2C_index_coarse
@@ -1504,7 +1456,6 @@ module mpp_domains_mod
   !!                    call mpp_broadcast_domain(domain_in, domain_out)
   !!                    call mpp_broadcast_domain(domain, tile_coarse) ! nested domains
   !!
-  !> @ingroup mpp_domains_mod
   interface mpp_broadcast_domain
     module procedure mpp_broadcast_domain_1
     module procedure mpp_broadcast_domain_2
@@ -1517,7 +1468,6 @@ module mpp_domains_mod
 ! for adjoint update
 !--------------------------------------------------------------
   !> Similar to @ref mpp_update_domains , updates adjoint domains
-  !> @ingroup mpp_domains_mod
   interface mpp_update_domains_ad
      module procedure mpp_update_domains_ad_2D_r8_2d
      module procedure mpp_update_domains_ad_2D_r8_3d
@@ -1538,7 +1488,6 @@ module mpp_domains_mod
   end interface
 !
   !> Private interface used for @ref mpp_update_domains
-  !> @ingroup mpp_domains_mod
   interface mpp_do_update
      module procedure mpp_do_update_r8_3d
      module procedure mpp_do_update_r8_3dv
@@ -1554,7 +1503,6 @@ module mpp_domains_mod
      module procedure mpp_do_update_i4_3d
   end interface
   !> Private interface to updates data domain of 3D field whose computational domains have been computed
-  !> @ingroup mpp_domains_mod
   interface mpp_do_check
      module procedure mpp_do_check_r8_3d
      module procedure mpp_do_check_r8_3dv
@@ -1574,7 +1522,6 @@ module mpp_domains_mod
   !! <br>Example usage:
   !!
   !!            call mpp_pass_SG_to_UG(domain, sg_data, ug_data)
-  !> @ingroup mpp_domains_mod
   interface mpp_pass_SG_to_UG
      module procedure mpp_pass_SG_to_UG_r8_2d
      module procedure mpp_pass_SG_to_UG_r8_3d
@@ -1590,7 +1537,6 @@ module mpp_domains_mod
   !! <br>Example usage:
   !!
   !!            call mpp_pass_SG_to_UG(SG_domain, field_SG, field_UG)
-  !> @ingroup mpp_domains_mod
   interface mpp_pass_UG_to_SG
      module procedure mpp_pass_UG_to_SG_r8_2d
      module procedure mpp_pass_UG_to_SG_r8_3d
@@ -1607,7 +1553,6 @@ module mpp_domains_mod
   !!
   !!            call mpp_pass_UG_to_SG(UG_domain, field_UG, field_SG)
   !!
-  !> @ingroup mpp_domains_mod
   interface mpp_do_update_ad
      module procedure mpp_do_update_ad_r8_3d
      module procedure mpp_do_update_ad_r8_3dv
@@ -1623,7 +1568,6 @@ module mpp_domains_mod
 !!
 !!                    call mpp_get_boundary(domain, field, ebuffer, sbuffer, wbuffer, nbuffer)
 !! Get boundary information from domain and field and store in buffers
-!> @ingroup mpp_domains_mod
   interface mpp_get_boundary
      module procedure mpp_get_boundary_r8_2d
      module procedure mpp_get_boundary_r8_3d
@@ -1643,7 +1587,6 @@ module mpp_domains_mod
 !     module procedure mpp_get_boundary_r4_5dv
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_get_boundary_ad
      module procedure mpp_get_boundary_ad_r8_2d
      module procedure mpp_get_boundary_ad_r8_3d
@@ -1655,7 +1598,6 @@ module mpp_domains_mod
      module procedure mpp_get_boundary_ad_r4_3dv
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_do_get_boundary
      module procedure mpp_do_get_boundary_r8_3d
      module procedure mpp_do_get_boundary_r8_3dv
@@ -1663,7 +1605,6 @@ module mpp_domains_mod
      module procedure mpp_do_get_boundary_r4_3dv
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_do_get_boundary_ad
      module procedure mpp_do_get_boundary_ad_r8_3d
      module procedure mpp_do_get_boundary_ad_r8_3dv
@@ -1677,7 +1618,6 @@ module mpp_domains_mod
 !! of 4-byte or 8-byte kind; of rank up to 5.
 !! <br>Example usage:
 !!              call mpp_redistribute( domain_in, field_in, domain_out, field_out )
-!> @ingroup mpp_domains_mod
   interface mpp_redistribute
      module procedure mpp_redistribute_r8_2D
      module procedure mpp_redistribute_r8_3D
@@ -1717,7 +1657,6 @@ module mpp_domains_mod
 !!$     module procedure mpp_redistribute_l4_5D
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_do_redistribute
      module procedure mpp_do_redistribute_r8_3D
 #ifdef OVERLOAD_C8
@@ -1750,7 +1689,6 @@ module mpp_domains_mod
 !! @param e_halo Halo size to be checked, default is 0
 !! @param n_halo Halo size to be checked, default is 0
 !! @param force_abort When true, abort program when any difference found. Default is false.
-!> @ingroup mpp_domains_mod
   interface mpp_check_field
      module procedure mpp_check_field_2D
      module procedure mpp_check_field_3D
@@ -1783,7 +1721,6 @@ module mpp_domains_mod
 !! @code{.F90}
 !! call mpp_global_field( domain, local, global, flags )
 !! @endcode
-!> @ingroup mpp_domains_mod
   interface mpp_global_field
 
 #ifndef __NVCOMPILER
@@ -1840,7 +1777,6 @@ module mpp_domains_mod
 #endif
   end interface
 
-!> @ingroup mpp_domains_mod
   interface mpp_global_field_ad
      module procedure mpp_global_field2D_r8_2d_ad
      module procedure mpp_global_field2D_r8_3d_ad
@@ -1881,7 +1817,6 @@ module mpp_domains_mod
   end interface
 
 !> Same functionality as @ref mpp_global_field but for unstructured domains
-!> @ingroup mpp_domains_mod
   interface mpp_global_field_ug
      module procedure mpp_global_field2D_ug_r8_2d
      module procedure mpp_global_field2D_ug_r8_3d
@@ -1901,7 +1836,6 @@ module mpp_domains_mod
      module procedure mpp_global_field2D_ug_i4_5d
   end interface
 
-!> @ingroup mpp_domains_mod
   interface mpp_do_global_field_ad
      module procedure mpp_do_global_field2D_r8_3d_ad
 #ifdef OVERLOAD_C8
@@ -1933,7 +1867,6 @@ module mpp_domains_mod
 !!
 !! <br>Example usage:
 !!              mpp_global_max( domain, field, locus )
-!> @ingroup mpp_domains_mod
   interface mpp_global_max
      module procedure mpp_global_max_r8_2d
      module procedure mpp_global_max_r8_3d
@@ -1969,7 +1902,6 @@ module mpp_domains_mod
 !!
 !! <br>Example usage:
 !!              mpp_global_min( domain, field, locus )
-!> @ingroup mpp_domains_mod
   interface mpp_global_min
      module procedure mpp_global_min_r8_2d
      module procedure mpp_global_min_r8_3d
@@ -2007,7 +1939,6 @@ module mpp_domains_mod
 !!              call mpp_global_sum( domain, field, flags )
 !! @note All PEs in a domain decomposition must call \e mpp_global_sum,
 !! and each will have the result upon exit.
-!> @ingroup mpp_domains_mod
   interface mpp_global_sum
      module procedure mpp_global_sum_r8_2d
      module procedure mpp_global_sum_r8_3d
@@ -2040,7 +1971,6 @@ module mpp_domains_mod
   end interface
 
 !gag
-!> @ingroup mpp_domains_mod
   interface mpp_global_sum_tl
      module procedure mpp_global_sum_tl_r8_2d
      module procedure mpp_global_sum_tl_r8_3d
@@ -2074,7 +2004,6 @@ module mpp_domains_mod
 !gag
 
 !bnc
-!> @ingroup mpp_domains_mod
   interface mpp_global_sum_ad
      module procedure mpp_global_sum_ad_r8_2d
      module procedure mpp_global_sum_ad_r8_3d
@@ -2131,7 +2060,6 @@ module mpp_domains_mod
   !!                    call mpp_get_neighbor_pe( domain2d, direction=NORTH, pe)
   !!
   !! Get neighbor pe number that's above/north of the current pe
-  !> @ingroup mpp_domains_mod
   interface mpp_get_neighbor_pe
      module procedure mpp_get_neighbor_pe_1d
      module procedure mpp_get_neighbor_pe_2d
@@ -2154,14 +2082,12 @@ module mpp_domains_mod
   !!<br>
   !! Domains are considered equal if and only if the start and end
   !! indices of each of their component global, data and compute domains are equal.
-  !> @ingroup mpp_domains_mod
   interface operator(.EQ.)
      module procedure mpp_domain1D_eq
      module procedure mpp_domain2D_eq
      module procedure mpp_domainUG_eq
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface operator(.NE.)
      module procedure mpp_domain1D_ne
      module procedure mpp_domain2D_ne
@@ -2176,7 +2102,6 @@ module mpp_domains_mod
   !!
   !!            call mpp_get_compute_domain(domain_1D, is, ie)
   !!            call mpp_get_compute_domain(domain_2D, is, ie, js, je)
-  !> @ingroup mpp_domains_mod
   interface mpp_get_compute_domain
      module procedure mpp_get_compute_domain1D
      module procedure mpp_get_compute_domain2D
@@ -2191,13 +2116,11 @@ module mpp_domains_mod
   !!
   !!            call mpp_get_compute_domains( domain, xbegin, xend, xsize, &
   !!                                                ybegin, yend, ysize )
-  !> @ingroup mpp_domains_mod
   interface mpp_get_compute_domains
      module procedure mpp_get_compute_domains1D
      module procedure mpp_get_compute_domains2D
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_get_global_domains
      module procedure mpp_get_global_domains1D
      module procedure mpp_get_global_domains2D
@@ -2211,7 +2134,6 @@ module mpp_domains_mod
   !!
   !!                    call mpp_get_data_domain(domain_1d, isd, ied)
   !!                    call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
-  !> @ingroup mpp_domains_mod
   interface mpp_get_data_domain
      module procedure mpp_get_data_domain1D
      module procedure mpp_get_data_domain2D
@@ -2225,7 +2147,6 @@ module mpp_domains_mod
   !!
   !!                    call mpp_get_global_domain(domain_1d, isg, ieg)
   !!                    call mpp_get_global_domain(domain_2d, isg, ieg, jsg, jeg)
-  !> @ingroup mpp_domains_mod
   interface mpp_get_global_domain
      module procedure mpp_get_global_domain1D
      module procedure mpp_get_global_domain2D
@@ -2239,13 +2160,11 @@ module mpp_domains_mod
   !!
   !!                    call mpp_get_memory_domain(domain_1d, ism, iem)
   !!                    call mpp_get_memory_domain(domain_2d, ism, iem, jsm, jem)
-  !> @ingroup mpp_domains_mod
   interface mpp_get_memory_domain
      module procedure mpp_get_memory_domain1D
      module procedure mpp_get_memory_domain2D
   end interface
 
-  !> @ingroup mpp_domains_mod
   interface mpp_get_domain_extents
      module procedure mpp_get_domain_extents1D
      module procedure mpp_get_domain_extents2D
@@ -2259,7 +2178,6 @@ module mpp_domains_mod
   !!
   !!                    call mpp_get_data_domain(domain_1d, isd, ied)
   !!                    call mpp_get_data_domain(domain_2d, isd, ied, jsd, jed)
-  !> @ingroup mpp_domains_mod
   interface mpp_set_compute_domain
      module procedure mpp_set_compute_domain1D
      module procedure mpp_set_compute_domain2D
@@ -2273,7 +2191,6 @@ module mpp_domains_mod
   !!
   !!                    call mpp_set_data_domain(domain_1d, isd, ied)
   !!                    call mpp_set_data_domain(domain_2d, isd, ied, jsd, jed)
-  !> @ingroup mpp_domains_mod
   interface mpp_set_data_domain
      module procedure mpp_set_data_domain1D
      module procedure mpp_set_data_domain2D
@@ -2287,7 +2204,6 @@ module mpp_domains_mod
   !!
   !!                    call mpp_set_global_domain(domain_1d, isg, ieg)
   !!                    call mpp_set_global_domain(domain_2d, isg, ieg, jsg, jeg)
-  !> @ingroup mpp_domains_mod
   interface mpp_set_global_domain
      module procedure mpp_set_global_domain1D
      module procedure mpp_set_global_domain2D
@@ -2300,7 +2216,6 @@ module mpp_domains_mod
   !! calling PE, i.e., <TT> domain\%list(pos)\%pe</TT> is the local PE,
   !! as returned by @ref mpp_pe().
   !! The 2D version of this call is identical to 1D version.
-  !> @ingroup mpp_domains_mod
   interface mpp_get_pelist
      module procedure mpp_get_pelist1D
      module procedure mpp_get_pelist2D
@@ -2313,13 +2228,11 @@ module mpp_domains_mod
   !! <br>Example usage:
   !!
   !!                    call mpp_get_layout( domain, layout )
-  !> @ingroup mpp_domains_mod
   interface mpp_get_layout
      module procedure mpp_get_layout1D
      module procedure mpp_get_layout2D
   end interface
   !> Private interface for internal usage, compares two sizes
-  !> @ingroup mpp_domains_mod
   interface check_data_size
      module procedure check_data_size_1d
      module procedure check_data_size_2d
@@ -2330,13 +2243,11 @@ module mpp_domains_mod
   !! <br>Example usage:
   !!
   !!                    call mpp_nullify_domain_list(domain)
-  !> @ingroup mpp_domains_mod
   interface mpp_nullify_domain_list
      module procedure nullify_domain2d_list
   end interface
 
   !> Private interface to pack an array into a vector
-  !> @ingroup mpp_domains_mod
   interface arr2vec
 #ifndef __NVCOMPILER
      module procedure arr2vec_r8
@@ -2380,7 +2291,6 @@ module mpp_domains_mod
   end interface
 
   !> Private interface to unpack a vector into an array
-  !> @ingroup mpp_domains_mod
   interface vec2arr
 #ifndef __NVCOMPILER
      module procedure vec2arr_r8
@@ -2424,7 +2334,6 @@ module mpp_domains_mod
   end interface
 
   !> Private interface to initialize an assumed-rank array
-  !> @ingroup mpp_domains_mod
   interface arr_init
 #ifndef __NVCOMPILER
      module procedure arr_init_r8
@@ -2484,3 +2393,4 @@ contains
 #include <mpp_unstruct_domain.inc>
 
 end module mpp_domains_mod
+!> @}

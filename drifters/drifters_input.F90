@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup drifters_input_mod drifters_input_mod
-!> @ingroup drifters
-!> @brief Imports initial drifter positions from a netCDF file
+!! @ingroup drifters
+!! @{
+!! @brief Imports initial drifter positions from a netCDF file
 
-!> @addtogroup drifters_input_mod
-!> @{
 module drifters_input_mod
 #ifdef use_drifters
   implicit none
@@ -33,13 +32,11 @@ module drifters_input_mod
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
   character, parameter, private :: SEPARATOR = ' '
-  !> @}
 
   !> @brief Input data type for drifters.
   !!
   !> @note Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
   !! when adding members
-  !> @ingroup drifters_input_mod
   type drifters_input_type
      ! Be sure to update drifters_input_new, drifters_input_del and drifters_input_copy_new
      ! when adding members
@@ -56,13 +53,9 @@ module drifters_input_mod
   end type drifters_input_type
 
   !> @brief Assignment override for @ref drifters_input_type
-  !> @ingroup drifters_input_mod
   interface assignment(=)
      module procedure drifters_input_copy_new
   end interface
-
-!> @addtogroup drifters_input_mod
-!> @{
 
   contains
 

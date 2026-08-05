@@ -19,12 +19,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @file
+
 !> @brief Routines for use in @ref mpp_domains_mod for routines utilizing
 !! domains with nested grids
-
-!> @addtogroup mpp_domains_mod
-!> @{
 
 !#############################################################################
 !> @brief Set up a domain to pass data between aligned coarse and fine grid of nested model.
@@ -2580,4 +2577,3 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
      mpp_is_nest_coarse = nest_domain%nest(nest_level)%is_coarse_pe
 
   end function mpp_is_nest_coarse
-!> @}

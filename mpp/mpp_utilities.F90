@@ -16,13 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_utilities_mod mpp_utilities_mod
-!> @ingroup mpp
-!> @brief Module for utiltity routines to be used in @ref mpp modules
+!! @ingroup mpp
+!! @{
+!! @brief Module for utiltity routines to be used in @ref mpp modules
 !!
-!> Currently only holds one routine for finding global min and max
+!! Currently only holds one routine for finding global min and max
 
-!> @addtogroup mpp_utilities_mod
-!> @{
 module mpp_utilities_mod
 
 implicit none
@@ -39,7 +38,7 @@ contains
 !> @brief Compute and return the global min and max of an array
 !! and the corresponding lat-lon-depth locations .
 !!
-!> This algorithm works only for an input array that has a unique global
+!! This algorithm works only for an input array that has a unique global
 !! max and min location. This is assured by introducing a factor that distinguishes
 !! the values of extrema at each processor.
 !!

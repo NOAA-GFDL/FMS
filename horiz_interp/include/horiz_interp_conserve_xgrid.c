@@ -27,10 +27,11 @@
 #include <omp.h>
 #endif
 
-/** \file
- *  \ingroup mosaic
- *  \brief Grid creation and calculation functions for use in @ref mosaic_mod
- * /
+/** @defgroup horiz_interp_conserve_xgrid horiz_interp_conserve_xgrid
+ *  @ingroup horiz_interp
+ *  @{
+ *  @brief Grid creation and calculation functions for use in @ref mosaic_mod
+ */
 
 /*******************************************************************************
   void create_xgrid_1dx2d_order1
@@ -1318,3 +1319,4 @@ int get_maxxgrid_(void)
 {
   return get_maxxgrid();
 }
+/** @} */

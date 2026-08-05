@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for writing variable values to netcdf files with different
-!! dimension sizes for the @ref netcdf_write_data interface
-
-!> @addtogroup netcdf_io_mod
-!> @{
 
 !> @brief Character write 0d function.
 subroutine char_write_0d(fileobj, variable_name, variable_data, append_error_msg, err, varid)

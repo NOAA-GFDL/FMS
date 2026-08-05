@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup block_control_mod block_control_mod
-!> @ingroup block_control
+!! @ingroup block_control
+!! @{
 !> @brief Routines for "blocks" used for  OpenMP threading of column-based
 !!        calculations
 
@@ -30,20 +31,17 @@ implicit none
 public block_control_type
 
 !> Type to dereference packed index from global index.
-!> @ingroup block_control_mod
 type :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
 !> Type to dereference packed index from global indices.
-!> @ingroup block_control_mod
 type :: pk_type
   integer, dimension(:), allocatable :: ii
   integer, dimension(:), allocatable :: jj
 end type pk_type
 
 !> @brief Block data and extents for OpenMP threading of column-based calculations
-!> @ingroup block_control_mod
 type :: block_control_type
   integer :: nx_block, ny_block  !< blocking factor using mpp-style decomposition
   integer :: nblks               !< number of blocks cover MPI domain
@@ -63,9 +61,6 @@ type :: block_control_type
   type(pk_type), dimension(:),  allocatable :: index !< dereference global indices from
                                                             !! block/ixp combo
 end type block_control_type
-
-!> @addtogroup block_control_mod
-!> @{
 
 public :: define_blocks, define_blocks_packed
 

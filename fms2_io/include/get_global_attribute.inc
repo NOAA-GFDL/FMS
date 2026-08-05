@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for retrieving global attribute values from netcdf files with different
-!! dimension sizes for the @ref get_global_attribute interface
-
-!> @addtogroup netcdf_io_mod
-!> @{
 
 !> @brief Get the value of a global attribute.
 subroutine get_global_attribute_0d(fileobj, &
@@ -193,4 +187,4 @@ subroutine get_global_attribute_1d(fileobj, &
             &trim(attribute_name)//" for file: "//trim(fileobj%path)//"")
     end select
 end subroutine get_global_attribute_1d
-!> @}
+

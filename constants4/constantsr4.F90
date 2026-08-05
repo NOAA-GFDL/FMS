@@ -16,11 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup constantsR4_mod constantsR4_mod
-!> @ingroup constantsR4
+!! @ingroup constants4
+!! @{
 !> @brief compatibility module as we transition to an FMSConstantsR4 module
-!!
-!> @file
-!> @brief File for @ref constantsR4_mod
 
 module constantsR4_mod
 
@@ -30,3 +28,4 @@ use FMSConstantsR4, version => constantsR4_version, constants_init => FMSconstan
 contains
 
 end module constantsR4_mod
+!> @}

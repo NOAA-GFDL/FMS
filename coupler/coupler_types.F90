@@ -16,12 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup coupler_types_mod coupler_types_mod
-!> @ingroup coupler
-!> @brief This module contains type declarations for the coupler.
-!> @author Richard Slater, John Dunne
+!! @ingroup coupler
+!! @{
+!! @author Richard Slater, John Dunne
+!! @brief This module contains type declarations for the coupler.
 
-!> @addtogroup coupler_types_mod
-!> @{
 module coupler_types_mod
   use fms_mod,           only: write_version_number, lowercase
   use fms2_io_mod,       only: FmsNetcdfDomainFile_t, open_file, register_restart_field
@@ -59,8 +58,6 @@ module coupler_types_mod
 
   character(len=*), parameter :: mod_name = 'coupler_types_mod'
 
-!> @}
-
   !! mixed precision methodology for the encapsulated types:
   !!
   !!                      bc(:) (coupler_nd_real8_field) -> field(:) (coupler_nd_real8_values)
@@ -71,7 +68,6 @@ module coupler_types_mod
   !! from a previously allocated 'template' type
 
   !> Coupler data for 3D values
-  !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real8_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
     logical                 :: mean = .true. !< mean
@@ -89,7 +85,6 @@ module coupler_types_mod
   end type coupler_3d_real8_values_type
 
   !> Coupler data for 3D fields
-  !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real8_field_type
     character(len=48)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
@@ -110,7 +105,6 @@ module coupler_types_mod
   end type coupler_3d_real8_field_type
 
   !> Coupler data for 3D values
-  !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real4_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
     logical                 :: mean = .true. !< mean
@@ -128,7 +122,6 @@ module coupler_types_mod
   end type coupler_3d_real4_values_type
 
   !> Coupler data for 3D fields
-  !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real4_field_type
     character(len=48)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
@@ -152,7 +145,6 @@ module coupler_types_mod
   end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
-  !> @ingroup coupler_types_mod
   type, public :: coupler_3d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
     type(coupler_3d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
@@ -166,7 +158,6 @@ module coupler_types_mod
 
 
   !> Coupler data for 2D values
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real8_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
     real(r8_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
@@ -184,7 +175,6 @@ module coupler_types_mod
   end type coupler_2d_real8_values_type
 
   !> Coupler data for 2D fields
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real8_field_type
     character(len=48)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
@@ -205,7 +195,6 @@ module coupler_types_mod
   end type coupler_2d_real8_field_type
 
   !> Coupler data for 2D values
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real4_values_type
     character(len=44)       :: name = ' '  !< The diagnostic name for this array
     real(r4_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
@@ -223,7 +212,6 @@ module coupler_types_mod
   end type coupler_2d_real4_values_type
 
   !> Coupler data for 2D fields
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real4_field_type
     character(len=44)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
@@ -247,7 +235,6 @@ module coupler_types_mod
   end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
     type(coupler_2d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
@@ -260,7 +247,6 @@ module coupler_types_mod
   end type coupler_2d_bc_type
 
   !> Coupler data for 1D values
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real8_values_type
     character(len=48)           :: name = ' '  !< The diagnostic name for this array
     real(r8_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
@@ -275,7 +261,6 @@ module coupler_types_mod
   end type coupler_1d_real8_values_type
 
   !> Coupler data for 1D fields
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real8_field_type
     character(len=48)              :: name = ' ' !< name
     integer                        :: num_fields = 0 !< num_fields
@@ -301,7 +286,6 @@ module coupler_types_mod
  end type coupler_1d_real8_field_type
 
   !> Coupler data for 1D values
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real4_values_type
     character(len=48)           :: name = ' '  !< The diagnostic name for this array
     real(r4_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
@@ -316,7 +300,6 @@ module coupler_types_mod
   end type coupler_1d_real4_values_type
 
   !> Coupler data for 1D fields
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real4_field_type
     character(len=48)              :: name = ' ' !< name
     integer                        :: num_fields = 0 !< num_fields
@@ -340,7 +323,6 @@ module coupler_types_mod
  end type coupler_1d_real4_field_type
 
   !> Coupler data for 1D boundary conditions
-  !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
     type(coupler_1d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
@@ -350,8 +332,6 @@ module coupler_types_mod
     logical    :: set = .false.       !< If true, this type has been initialized
   end type coupler_1d_bc_type
 
-  !> @addtogroup coupler_types_mod
-  !> @{
   ! The following public parameters can help in selecting the sub-elements of a
   ! coupler type.  There are duplicate values because different boundary
   ! conditions have different sub-elements.
@@ -368,13 +348,11 @@ module coupler_types_mod
   integer, public :: ind_flux0 = 4 !< The index for the piston velocity
   integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
   integer, public :: ind_runoff = 1 !< The index for a runoff flux
-  !> @}
 
   ! Interface definitions for overloaded routines
 
   !> This is the interface to spawn one coupler_bc_type into another and then
   !! register diagnostics associated with the new type.
-  !> @ingroup coupler_types_mod
   interface  coupler_type_copy
     module procedure coupler_type_copy_1d_2d, coupler_type_copy_1d_3d
     module procedure coupler_type_copy_2d_2d, coupler_type_copy_2d_3d
@@ -382,7 +360,6 @@ module coupler_types_mod
   end interface coupler_type_copy
 
   !> This is the interface to spawn one coupler_bc_type into another.
-  !> @ingroup coupler_types_mod
   interface  coupler_type_spawn
     module procedure CT_spawn_1d_2d, CT_spawn_2d_2d, CT_spawn_3d_2d
     module procedure CT_spawn_1d_3d, CT_spawn_2d_3d, CT_spawn_3d_3d
@@ -390,20 +367,17 @@ module coupler_types_mod
 
   !> This is the interface to copy the field data from one coupler_bc_type
   !! to another of the same rank, size and decomposition.
-  !> @ingroup coupler_types_mod
   interface coupler_type_copy_data
     module procedure CT_copy_data_2d, CT_copy_data_3d, CT_copy_data_2d_3d
   end interface coupler_type_copy_data
 
   !> This is the interface to redistribute the field data from one coupler_bc_type
   !! to another of the same rank and global size, but a different decomposition.
-  !> @ingroup coupler_types_mod
   interface coupler_type_redistribute_data
     module procedure CT_redistribute_data_2d, CT_redistribute_data_3d
   end interface coupler_type_redistribute_data
 
   !> This is the interface to rescale the field data in a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_rescale_data
     module procedure CT_rescale_data_2d_r4, CT_rescale_data_3d_r4
     module procedure CT_rescale_data_2d_r8, CT_rescale_data_3d_r8
@@ -412,14 +386,12 @@ module coupler_types_mod
   !> This is the interface to increment the field data from one coupler_bc_type
   !! with the data from another.  Both must have the same horizontal size and
   !! decomposition, but a 2d type may be incremented by a 2d or 3d type
-  !> @ingroup coupler_types_mod
   interface coupler_type_increment_data
     module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d
     module procedure CT_increment_data_2d_3d_r4, CT_increment_data_2d_3d_r8
   end interface coupler_type_increment_data
 
   !> This is the interface to extract a field in a coupler_bc_type into an array.
-  !> @ingroup coupler_types_mod
   interface coupler_type_extract_data
     module procedure CT_extract_data_2d_r4, CT_extract_data_2d_r8
     module procedure CT_extract_data_3d_r4, CT_extract_data_3d_r8
@@ -427,66 +399,54 @@ module coupler_types_mod
   end interface coupler_type_extract_data
 
   !> This is the interface to set a field in a coupler_bc_type from an array.
-  !> @ingroup coupler_types_mod
   interface coupler_type_set_data
     module procedure CT_set_data_2d_r4, CT_set_data_3d_r4, CT_set_data_2d_3d_r4
     module procedure CT_set_data_2d_r8, CT_set_data_3d_r8, CT_set_data_2d_3d_r8
   end interface coupler_type_set_data
 
   !> This is the interface to set diagnostics for the arrays in a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_set_diags
     module procedure CT_set_diags_2d, CT_set_diags_3d
   end interface coupler_type_set_diags
 
   !> This is the interface to write out checksums for the elements of a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_write_chksums
     module procedure CT_write_chksums_2d, CT_write_chksums_3d
   end interface coupler_type_write_chksums
 
   !> This is the interface to write out diagnostics of the arrays in a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_send_data
     module procedure CT_send_data_2d, CT_send_data_3d
   end interface coupler_type_send_data
 
   !> This is the interface to override the values of the arrays in a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_data_override
     module procedure CT_data_override_2d, CT_data_override_3d
   end interface coupler_type_data_override
 
   !> This is the interface to register the fields in a coupler_bc_type to be saved
   !! in restart files.
-  !> @ingroup coupler_types_mod
   interface coupler_type_register_restarts
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
   !> This is the interface to read in the fields in a coupler_bc_type that have
   !! been saved in restart files.
-  !> @ingroup coupler_types_mod
   interface coupler_type_restore_state
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
   !> This function interface indicates whether a coupler_bc_type has been initialized.
-  !> @ingroup coupler_types_mod
   interface coupler_type_initialized
     module procedure CT_initialized_1d, CT_initialized_2d, CT_initialized_3d
   end interface coupler_type_initialized
 
   !> This is the interface to deallocate any data associated with a coupler_bc_type.
-  !> @ingroup coupler_types_mod
   interface coupler_type_destructor
     module procedure CT_destructor_1d, CT_destructor_2d, CT_destructor_3d
   end interface coupler_type_destructor
 
 contains
-
-!> @addtogroup coupler_types_mod
-!> @{
 
   !> @brief Initialize the coupler types
   subroutine coupler_types_init
@@ -3218,7 +3178,7 @@ contains
 
   end subroutine CT_register_restarts_2d
 
-  !< If reading a restart, register the dimensions that are in the file
+  !> If reading a restart, register the dimensions that are in the file
   subroutine register_axis_wrapper_read(fileobj)
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
 
@@ -3271,7 +3231,7 @@ contains
 
   end subroutine register_axis_wrapper_read
 
-  !< If writing a restart, register the variables with dummy axis names
+  !> If writing a restart, register the variables with dummy axis names
   subroutine register_axis_wrapper_write(fileobj, nz)
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
     integer, intent(in), optional :: nz !< length of the z dimension

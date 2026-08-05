@@ -17,13 +17,13 @@
 !***********************************************************************
 !
 !> @defgroup amip_interp_mod amip_interp_mod
-!> @ingroup amip_interp
-!> @brief Provides observed sea surface temperature and ice mask data sets that have been
+!! @ingroup amip_interp
+!! @{
+!! @brief Provides observed sea surface temperature and ice mask data sets that have been
 !! interpolated onto your model's grid.
+!! @author Bruce Wyman
 !!
-!> @author Bruce Wyman
-!!
-!> When using these routines three possible data sets are available:
+!! When using these routines three possible data sets are available:
 !!
 !! 1. AMIP http://www.pcmdi.github.io/mips/amip from Jan 1979 to Jan 1989 (2 deg x 2 deg)
 !! 2. Reynolds OI @ref amip_interp.rey_oi.txt from Nov 1981 to Jan 1999 (1 deg x 1 deg)
@@ -52,7 +52,7 @@
 !!   satellite SSTs and in-situ data are used from 1981 to the
 !!   end of 1998.
 !!
-!> @note The data set used by this module have been reformatted as 32-bit IEEE.
+!! @note The data set used by this module have been reformatted as 32-bit IEEE.
 !!   The data values are packed into 16-bit integers.
 !!
 !!   The data sets are read from the following files:
@@ -110,8 +110,6 @@
 !!                may be useful in accessing model sensitivities.
 !!     Default=0.
 
-!> @addtogroup amip_interp_mod
-!> @{
 module amip_interp_mod
 
 use  time_interp_mod, only: time_interp, fraction_of_year
@@ -172,35 +170,28 @@ public i_sst, j_sst, forecast_mode, use_ncep_sst
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
-!> @}
-
 !> @brief Private data type for representing a calendar date
-!> @ingroup amip_interp_mod
 type date_type
    sequence
    integer :: year, month, day
 end type
 
 !> Assignment overload to allow native assignment between amip_interp_type variables.
-!> @ingroup amip_interp_mod
 interface assignment(=)
   module procedure amip_interp_type_eq
 end interface
 
 !> Private logical equality overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (==)
    module procedure date_equals
 end interface
 
 !> Private logical inequality overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
 !> Private logical greater than overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (>)
    module procedure date_gt
 end interface
@@ -270,7 +261,6 @@ end interface
 !! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !! argument use_annual = true.  This combination is not allowed.
 !!
-!> @ingroup amip_interp_mod
 interface amip_interp_new
    module procedure amip_interp_new_1d_r4, amip_interp_new_1d_r8
    module procedure amip_interp_new_2d_r4, amip_interp_new_2d_r8
@@ -280,7 +270,6 @@ end interface
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
 !! data (r4_kind flavor).
-!> @ingroup amip_interp_mod
 type amip_interp_type
    private
    type (horiz_interp_type)              :: Hintrp, Hintrp2 ! add by JHC
@@ -291,8 +280,6 @@ type amip_interp_type
    logical                               :: I_am_initialized=.false.
 end type amip_interp_type
 
-!> @addtogroup amip_interp_mod
-!> @{
 !-----------------------------------------------------------------------
 !  ---- resolution/grid variables ----
 

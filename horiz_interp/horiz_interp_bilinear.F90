@@ -16,11 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using bilinear interpolation
+!! @ingroup horiz_interp
+!! @{
+!! @brief Performs spatial interpolation between grids using bilinear interpolation
 !!
-!> @author Zhi Liang <Zhi.Liang@noaa.gov>
-!> This module can interpolate data from regular rectangular grid
+!! @author Zhi Liang <Zhi.Liang@noaa.gov>
+!! This module can interpolate data from regular rectangular grid
 !! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
 !! There is an optional mask field for missing input data.
 !! An optional output mask field may be used in conjunction with
@@ -45,7 +46,6 @@ module horiz_interp_bilinear_mod
   public :: horiz_interp_bilinear_init, horiz_interp_read_weights_bilinear
 
   !> Creates a @ref horiz_interp_type for bilinear interpolation.
-  !> @ingroup horiz_interp_bilinear_mod
   interface horiz_interp_bilinear_new
     module procedure horiz_interp_bilinear_new_1d_r4
     module procedure horiz_interp_bilinear_new_1d_r8
@@ -55,7 +55,6 @@ module horiz_interp_bilinear_mod
 
   !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
   !! calculating it
-  !> @ingroup horiz_interp_bilinear_mod
   interface horiz_interp_read_weights_bilinear
     module procedure horiz_interp_read_weights_bilinear_r4
     module procedure horiz_interp_read_weights_bilinear_r8
@@ -66,8 +65,6 @@ module horiz_interp_bilinear_mod
     module procedure horiz_interp_bilinear_r8
   end interface
 
-!> @addtogroup horiz_interp_bilinear_mod
-!> @{
 
   real(r8_kind), parameter :: epsln=1.e-10_r8_kind
   real(r4_kind), parameter :: epsln_r4=1.e-4_r4_kind

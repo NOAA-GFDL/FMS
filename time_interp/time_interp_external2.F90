@@ -16,13 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_interp_external2_mod time_interp_external2_mod
-!> @ingroup time_interp
-!> @brief Perform I/O and time interpolation of external fields (contained in a file), using
+!! @ingroup time_interp
+!! @{
+!! @brief Perform I/O and time interpolation of external fields (contained in a file), using
 !! fms2_io.
 !!
-!> @author M.J. Harrison
+!! @author M.J. Harrison
 !!
-!> Perform I/O and time interpolation for external fields.
+!! Perform I/O and time interpolation for external fields.
 !! Uses udunits library to calculate calendar dates and
 !! convert units.  Allows for reading data decomposed across
 !! model horizontal grid using optional domain2d argument
@@ -30,8 +31,6 @@
 !! data are defined over data domain for domain2d data
 !! (halo values are NOT updated by this module)
 
-!> @addtogroup time_interp_external2_mod
-!> @{
 module time_interp_external2_mod
 
 !<NAMELIST NAME="time_interp_external_nml">
@@ -89,10 +88,8 @@ module time_interp_external2_mod
 
   private find_buf_index,&
          set_time_modulo
-  !> @}
 
   !> Represents external fields
-  !> @ingroup time_interp_external2_mod
   type, private :: ext_fieldtype
         type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
         character(len=128) :: name, units
@@ -124,7 +121,6 @@ module time_interp_external2_mod
     end type ext_fieldtype
 
     !> Holds filename and file object
-    !> @ingroup time_interp_external2_mod
     type, private :: filetype
         character(len=FMS_FILE_LEN) :: filename = ''
         type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
@@ -140,8 +136,7 @@ module time_interp_external2_mod
   !! @param interp time_interp_external defined interpolation method (optional).  Currently
   !! this module only supports LINEAR_TIME_INTERP.
   !! @param verbose verbose flag for debugging (optional).
-  !!
-  !> @ingroup time_interp_external2_mod
+
   interface time_interp_external
       module procedure time_interp_external_0d_r4
       module procedure time_interp_external_1d_r4
@@ -164,8 +159,6 @@ module time_interp_external2_mod
      module procedure time_interp_external_bridge_3d_r8
   end interface
 
-  !> @addtogroup time_interp_external2_mod
-  !> @{
 
   integer :: outunit
 

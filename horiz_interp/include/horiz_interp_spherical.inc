@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_spherical_mod
-!> @{
   !> Initialization routine.
   !!
   !> Allocates space and initializes a derived-type variable
@@ -819,4 +817,4 @@
     enddo
 
   end subroutine FULL_SEARCH_
-!> @}
+

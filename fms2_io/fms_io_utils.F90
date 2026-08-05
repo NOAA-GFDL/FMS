@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_io_utils_mod fms_io_utils_mod
-!> @ingroup fms2_io
-!> @brief Misc. utility routines for use in @ref fms2_io
+!! @ingroup fms2_io
+!! @{
+!! @brief Misc. utility routines for use in @ref fms2_io
 
-!> @addtogroup fms_io_utils_mod
-!> @{
 module fms_io_utils_mod
 use, intrinsic :: iso_fortran_env, only: error_unit
 !use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
@@ -63,10 +62,8 @@ public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
 
-!> @}
 
 !> @brief A linked list of strings
-!> @ingroup fms_io_utils_mod
 type :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
@@ -103,7 +100,6 @@ endtype char_linked_list
 !!
 !! This interface includes support for both 2D and 3D mask tables.
 !!
-!> @ingroup fms_io_utils_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
@@ -113,7 +109,6 @@ end interface parse_mask_table
 !! This is currenly used in the diag_manager and data_override in so that any output files
 !! will include the tile number of the writer. Uses the format "filename.tileN.nc" and requires
 !! the filename to already include the .nc suffix.
-!> @ingroup fms_io_utils_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
@@ -121,7 +116,6 @@ end interface get_mosaic_tile_file
 
 !> Interface to allocate data real, integer, or character buffers for use in read/write routines.
 !! Not meant to be used externally.
-!> @ingroup fms_io_utils_mod
 interface allocate_array
   module procedure allocate_array_i4_kind_1d
   module procedure allocate_array_i4_kind_2d
@@ -162,7 +156,6 @@ end interface allocate_array
 !!    array (start(1):start(1)+sizes(1), start(2):start(2)+sizes(2), ... ) = section(:,:,...)
 !!
 !!  This interface supports integers and reals for both 4 and 8 kind, and up to 5 dimensions.
-!> @ingroup fms_io_utils_mod
 interface put_array_section
   module procedure put_array_section_i4_kind_1d
   module procedure put_array_section_i4_kind_2d
@@ -198,7 +191,6 @@ end interface put_array_section
 !!    section(:,:,...) = array (start(1):start(1)+sizes(1), start(2):start(2)+sizes(2), ... )
 !!
 !!  This interface supports integers and reals for both 4 and 8 kind, and up to 5 dimensions.
-!> @ingroup fms_io_utils_mod
 interface get_array_section
   module procedure get_array_section_i4_kind_1d
   module procedure get_array_section_i4_kind_2d
@@ -234,7 +226,6 @@ end interface get_array_section
 !!    - "float"   real(kind=4)
 !!    - "double"  real(kind=8)
 !!    - "char"    character(len=*)
-!> @ingroup fms_io_utils_mod
 interface get_data_type_string
   module procedure get_data_type_string_0d
   module procedure get_data_type_string_1d
@@ -244,8 +235,6 @@ interface get_data_type_string
   module procedure get_data_type_string_5d
 end interface get_data_type_string
 
-!> @addtogroup fms_io_utils_mod
-!> @{
 contains
 
 

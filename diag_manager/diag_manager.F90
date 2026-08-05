@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
-!> @ingroup diag_manager
+!! @ingroup diag_manager
+!! @{
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF
 !!   format. See @ref diag_manager for diag table information.
@@ -137,10 +138,6 @@
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
-
-!> @file
-!> @ingroup diag_manager_mod
-!> @brief File for @ref diag_manager_mod
 
 MODULE diag_manager_mod
 use platform_mod
@@ -338,7 +335,6 @@ use platform_mod
   !!
   !! Weight in Time averaging is now supported, each time level may have a
   !! different weight. The default of weight is 1.
-  !> @ingroup diag_manager_mod
   INTERFACE send_data
      MODULE PROCEDURE send_data_0d
      MODULE PROCEDURE send_data_1d
@@ -348,14 +344,12 @@ use platform_mod
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
-  !> @ingroup diag_manager_mod
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
      MODULE PROCEDURE register_diag_field_array
   END INTERFACE
 
   !> @brief Send tile-averaged data over to output fields.
-  !> @ingroup diag_manager_mod
   INTERFACE send_tile_averaged_data
      MODULE PROCEDURE send_tile_averaged_data1d
      MODULE PROCEDURE send_tile_averaged_data2d
@@ -363,14 +357,11 @@ use platform_mod
   END INTERFACE
 
   !> @brief Add a attribute to the output field
-  !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
      MODULE PROCEDURE diag_field_add_attribute_1d
      MODULE PROCEDURE diag_field_add_attribute_0d
   END INTERFACE diag_field_add_attribute
 
-!> @addtogroup diag_manager_mod
-!> @{
 CONTAINS
 
   !> @brief Registers a scalar field

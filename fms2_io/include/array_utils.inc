@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Array allocation routines for multiple types for @ref allocate_array interface
-
-!> @addtogroup fms_io_utils_mod
-!> @{
 
 !> @brief Allocate arrays using an input array of sizes.
 subroutine allocate_array_i4_kind_1d(buf, sizes)
@@ -759,4 +754,4 @@ subroutine get_array_section_r8_kind_5d(section, array, s, c)
 
   section(:,:,:,:,:) = array(s(1):s(1)+c(1)-1 ,s(2):s(2)+c(2)-1 ,s(3):s(3)+c(3)-1 ,s(4):s(4)+c(4)-1 ,s(5):s(5)+c(5)-1 )
 end subroutine get_array_section_r8_kind_5d
-!> @}
+

@@ -15,14 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup diag_integral_mod diag_integral_mod
-!> @ingroup diag_integral
-!!
-!! @author Fei Liu <Fei.Liu@noaa.gov>
-!!
-!! @brief This module computes and outputs global and / or hemispheric physics
-!!        integrals.
-!###############################################################################
 !> @brief Perform a 2 dimensional summation of named field
 !!
 !! @implements sum_diag_integral_field
@@ -396,7 +388,3 @@ integer,           intent(in) :: je !< starting/ending i,j indices over which su
 !$OMP END CRITICAL
 
 end subroutine SUM_FIELD_2D_HEMI_
-
-
-!> @}
-! close documentation grouping

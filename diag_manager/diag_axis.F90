@@ -16,17 +16,16 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_axis_mod diag_axis_mod
-!> @ingroup diag_manager
+!! @ingroup diag_manager
+!! @{
 !> @brief An integral part of @ref diag_manager_mod. It helps to create axis IDs
 !! that are used in @ref register_diag_field.
 !!
-!> @author Seth Underwood
+!! @author Seth Underwood
 !!
 !! Users first create axis ID by calling diag_axis_init, then use this axis ID in
 !! register_diag_field.
 
-!> @addtogroup diag_axis_mod
-!> @{
 MODULE diag_axis_mod
 use platform_mod
 
@@ -72,11 +71,9 @@ use platform_mod
   TYPE(diag_axis_type), ALLOCATABLE, SAVE :: Axes(:) !< global storage for all defined axes
   LOGICAL :: module_is_initialized = .FALSE.
 
-  !> @}
-
   !> @brief Add an arbitrary attribute and value to the diagnostic axis.
   !!
-  !> Any number of attributes can be added to a given axis.  All attribute addition must
+  !! Any number of attributes can be added to a given axis.  All attribute addition must
   !! be done before first <TT>send_data</TT> call.<br>
   !!
   !! If a real or integer attribute is already defined, a FATAL error will be called.
@@ -84,7 +81,6 @@ use platform_mod
   !! existing attribute value.
   !! <br>Example usage:
   !! @code{.F90} call diag_axis_add_attribute(diag_axis_id, att_name, att_value) @endcode
-  !> @ingroup diag_axis_mod
   INTERFACE diag_axis_add_attribute
      MODULE PROCEDURE diag_axis_add_attribute_scalar_r
      MODULE PROCEDURE diag_axis_add_attribute_scalar_i
@@ -93,8 +89,6 @@ use platform_mod
      MODULE PROCEDURE diag_axis_add_attribute_i1d
   END INTERFACE diag_axis_add_attribute
 
-  !> @addtogroup diag_axis_mod
-  !> @{
 
 CONTAINS
 

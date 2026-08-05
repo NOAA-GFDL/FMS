@@ -22,9 +22,10 @@
 #include "gradient_c2l.h"
 #include <stdio.h>
 
-/** \file
- *  \ingroup mosaic
- *  \ Grid utility functions for use in @ref mosaic_mod
+/** @defgroup gradient_c2l gradient_c2l
+ *  @ingroup grid_utils
+ *  @{
+ *  @brief Grid utility functions for use in @ref grid_utils
  */
 
 /*------------------------------------------------------------------------------
@@ -467,3 +468,5 @@ void calc_c2l_grid_info(int *nx_pt, int *ny_pt, const double *xt, const double *
   free(yt_tmp);
 
 }
+
+/** @} */

@@ -17,7 +17,6 @@
 !***********************************************************************
 
 !> addtogroup mpp_mod
-!> @{
 
 !> @brief Scatter data from one pe to the specified pes.
 !!
@@ -176,4 +175,3 @@ subroutine MPP_SCATTER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, inp
    return
 
 end subroutine MPP_SCATTER_PELIST_GEN_3D_
-!> @}

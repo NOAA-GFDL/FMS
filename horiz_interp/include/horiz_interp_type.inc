@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_type_mod
-!> @{
 !> @brief This statistics is for bilinear interpolation and spherical regrid.
  subroutine STATS_ ( dat, low, high, avg, miss, missing_value, mask )
  real(FMS_HI_KIND_),    intent(in)  :: dat(:,:)

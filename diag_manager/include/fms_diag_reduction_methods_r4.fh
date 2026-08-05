@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Imports the time reduction methods routines from other include files used
-!! in @ref diag_manager_mod
-
-!> @addtogroup diag_manager_mod
-!> @{
 
 #undef FMS_TRM_KIND_
 #define FMS_TRM_KIND_ r4_kind
@@ -50,6 +44,3 @@
 #define SUM_MASK_VARIANT_ sum_mask_variant_r4
 
 #include "fms_diag_reduction_methods.inc"
-
-!> @}
-! close documentation grouping

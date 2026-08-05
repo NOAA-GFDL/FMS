@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Compressed read routines for @ref read_data interface
-
-!> @addtogroup fms2_io_mod
-!> @{
 
 !> @brief I/O domain reads in data from the netcdf file and broadcasts the
 !!        data to the rest of the ranks.  This routine may only be used with
@@ -185,4 +180,4 @@ subroutine compressed_read_5d(fileobj, variable_name, cdata, unlim_dim_level, &
                        ,edge_lengths=edge_lengths &
                         ,broadcast=.true.)
 end subroutine compressed_read_5d
-!> @}
+

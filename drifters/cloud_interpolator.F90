@@ -18,11 +18,10 @@
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 !> @defgroup cloud_interpolator_mod cloud_interpolator_mod
-!> @ingroup drifters
+!! @ingroup drifters
+!! @{
 !! @brief Cloud interpolation routines for use in @ref drifters_mod
 
-!> @addtogroup cloud_interpolator_mod
-!> @{
 MODULE cloud_interpolator_mod
 #ifdef use_drifters
   implicit none

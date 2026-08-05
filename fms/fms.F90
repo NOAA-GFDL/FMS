@@ -16,12 +16,13 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_mod fms_mod
-!> @ingroup fms
+!! @ingroup fms
+!! @{
 !! @brief The fms module provides routines that are commonly used
 !!   by most FMS modules.
-!> @author Bruce Wyman
+!! @author Bruce Wyman
 !!
-!> Here is a summary of the functions performed by routines
+!! Here is a summary of the functions performed by routines
 !!     in the fms module.
 !!
 !! 1. Output module version numbers to a common (<TT>log</TT>) file
@@ -38,8 +39,6 @@
 !!     the @ref mpp module. These are routines for getting processor
 !!     numbers, commonly used I/O unit numbers, error handling, and timing sections of code.
 
-!> @addtogroup fms_mod
-!> @{
 module fms_mod
 
 !-----------------------------------------------------------------------
@@ -189,9 +188,8 @@ end interface monotonic_array
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
 integer, public :: clock_flag_default
-!> @}
+
   !> Namelist read error values
-  !> @ingroup fms_mod
   TYPE nml_errors_type
      INTEGER :: multipleNMLSinFile
      INTEGER :: badType1
@@ -200,8 +198,6 @@ integer, public :: clock_flag_default
      INTEGER :: NotInFile
   END TYPE nml_errors_type
   TYPE(nml_errors_type), SAVE :: nml_errors
-!> @addtogroup fms_mod
-!> @{
 
 !------ namelist interface -------
 !------ adjustable severity level for warnings ------
@@ -258,10 +254,6 @@ integer, public :: clock_flag_default
 
   logical :: module_is_initialized = .FALSE.
 
-!> @}
-
-!> @addtogroup fms_mod
-!> @{
 contains
 
 !#######################################################################

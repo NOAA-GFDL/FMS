@@ -16,11 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_bicubic_mod horiz_interp_bicubic_mod
-!> @ingroup horiz_interp
-!> @brief Delivers methods for bicubic interpolation from a coarse regular grid
+!! @ingroup horiz_interp
+!! @{
+!! @brief Delivers methods for bicubic interpolation from a coarse regular grid
 !! on a fine regular grid
 !!
-!> This module delivers methods for bicubic interpolation from a
+!! This module delivers methods for bicubic interpolation from a
 !! coarse regular grid on a fine regular grid.
 !! Subroutines
 !!
@@ -61,7 +62,6 @@ module horiz_interp_bicubic_mod
   !> Creates a new @ref horiz_interp_type for bicubic interpolation.
   !! Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  !> @ingroup horiz_interp_bicubic_mod
   interface horiz_interp_bicubic_new
     module procedure horiz_interp_bicubic_new_1d_r8
     module procedure horiz_interp_bicubic_new_1d_s_r8
@@ -75,8 +75,6 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_r8
   end interface
 
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>

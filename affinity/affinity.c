@@ -32,13 +32,11 @@
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
-/** \endcond
- */
 // skips doc parsing for includes and license
 
 /**
- * \addtogroup affinity
- * \@{
+ * @ingroup fms_affinity_mod
+ * @{
  */
 
 /**
@@ -139,4 +137,6 @@ int set_cpu_affinity(int cpu)
 #endif
   return 0;
 }
-///@}
+/**
+* @}
+*/

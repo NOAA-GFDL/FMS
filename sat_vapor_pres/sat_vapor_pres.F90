@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup sat_vapor_pres_mod sat_vapor_pres_mod
-!> @ingroup sat_vapor_pres
-!> @brief Routines for computing the saturation vapor pressure (es),
+!! @ingroup sat_vapor_pres
+!! @{
+!! @brief Routines for computing the saturation vapor pressure (es),
 !! the specific humidity (qs) and vapor mixing ratio (mrs)
-!> Given a specified relative humidity, calculates es, qs, and mrs, as well as their
+!! Given a specified relative humidity, calculates es, qs, and mrs, as well as their
 !! derivatives with respect to temperature, and also includes routines
 !! to initialize the look-up table.
 !! This module contains routines for determining the saturation vapor
@@ -260,7 +261,6 @@ private
  !!          determine where the instability may have occurred.
  !!          If the lookup table needs a larger temperature range,
  !!          then parameters in the module header must be modified.
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es
    module procedure lookup_es_0d_r4, lookup_es_0d_r8
    module procedure lookup_es_1d_r4, lookup_es_1d_r8
@@ -268,7 +268,6 @@ private
    module procedure lookup_es_3d_r4, lookup_es_3d_r8
  end interface lookup_es
  !> Provided for backward compatibility (to be removed soon)
- !> @ingroup sat_vapor_pres_mod
  interface escomp
    module procedure lookup_es_0d_r4, lookup_es_0d_r8
    module procedure lookup_es_1d_r4, lookup_es_1d_r8
@@ -337,7 +336,6 @@ private
  !!
  !! <br>Example usage:
  !! @code{.F90} call lookup_des( temp, desat) @endcode
- !> @ingroup sat_vapor_pres_mod
  interface lookup_des
    module procedure lookup_des_0d_r4, lookup_des_0d_r8
    module procedure lookup_des_1d_r4, lookup_des_1d_r8
@@ -346,7 +344,6 @@ private
  end interface lookup_des
 ! </INTERFACE>
  !> Provided for backward compatibility (to be removed soon)
- !> @ingroup sat_vapor_pres_mod
  interface descomp
    module procedure lookup_des_0d_r4, lookup_des_0d_r8
    module procedure lookup_des_1d_r4, lookup_des_1d_r8
@@ -427,7 +424,6 @@ private
  !! determine where the instability may have occurred.
  !! If the lookup table needs a larger temperature range,
  !! then parameters in the module header must be modified.
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es_des
    module procedure lookup_es_des_0d_r4, lookup_es_des_0d_r8
    module procedure lookup_es_des_1d_r4, lookup_es_des_1d_r8
@@ -435,7 +431,6 @@ private
    module procedure lookup_es_des_3d_r4, lookup_es_des_3d_r8
  end interface lookup_es_des
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es2
    module procedure lookup_es2_0d_r4, lookup_es2_0d_r8
    module procedure lookup_es2_1d_r4, lookup_es2_1d_r8
@@ -443,7 +438,6 @@ private
    module procedure lookup_es2_3d_r4, lookup_es2_3d_r8
  end interface lookup_es2
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_des2
    module procedure lookup_des2_0d_r4, lookup_des2_0d_r8
    module procedure lookup_des2_1d_r4, lookup_des2_1d_r8
@@ -451,7 +445,6 @@ private
    module procedure lookup_des2_3d_r4, lookup_des2_3d_r8
  end interface lookup_des2
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es2_des2
    module procedure lookup_es2_des2_0d_r4, lookup_es2_des2_0d_r8
    module procedure lookup_es2_des2_1d_r4, lookup_es2_des2_1d_r8
@@ -459,7 +452,6 @@ private
    module procedure lookup_es2_des2_3d_r4, lookup_es2_des2_3d_r8
  end interface lookup_es2_des2
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es3
    module procedure lookup_es3_0d_r4, lookup_es3_0d_r8
    module procedure lookup_es3_1d_r4, lookup_es3_1d_r8
@@ -467,7 +459,6 @@ private
    module procedure lookup_es3_3d_r4, lookup_es3_3d_r8
  end interface lookup_es3
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_des3
    module procedure lookup_des3_0d_r4, lookup_des3_0d_r8
    module procedure lookup_des3_1d_r4, lookup_des3_1d_r8
@@ -475,7 +466,6 @@ private
    module procedure lookup_des3_3d_r4, lookup_des3_3d_r8
  end interface lookup_des3
 
- !> @ingroup sat_vapor_pres_mod
  interface lookup_es3_des3
    module procedure lookup_es3_des3_0d_r4, lookup_es3_des3_0d_r8
    module procedure lookup_es3_des3_1d_r4, lookup_es3_des3_1d_r8
@@ -576,7 +566,6 @@ private
  !! Example usage:
  !! @code{.F90} call compute_qs( temp, press, qsat, q, hc, dqsdT, esat, err_msg ) @endcode
  !!
- !> @ingroup sat_vapor_pres_mod
  interface compute_qs
    module procedure compute_qs_0d_r4, compute_qs_0d_r8
    module procedure compute_qs_1d_r4, compute_qs_1d_r8
@@ -678,7 +667,6 @@ private
  !! <br>Example usage:
  !! @code{.F90} call compute_mrs( temp, press, mrsat, mr, hc, dmrsdT, esat,
  !!                       err_msg ) @endcode
- !> @ingroup sat_vapor_pres_mod
  interface compute_mrs
    module procedure compute_mrs_0d_r4, compute_mrs_0d_r8
    module procedure compute_mrs_1d_r4, compute_mrs_1d_r8
@@ -714,7 +702,6 @@ private
 !end interface
 ! </INTERFACE>
 !-----------------------------------------------------------------------
- !> @ingroup sat_vapor_pres_mod
  interface check_1d
     module procedure check_1d_r4, check_1d_r8
  end interface check_1d
@@ -723,14 +710,12 @@ private
     module procedure check_2d_r4, check_2d_r8
  end interface check_2d
 
- !> @ingroup sat_vapor_pres_mod
  interface temp_check
    module procedure temp_check_1d_r4, temp_check_1d_r8
    module procedure temp_check_2d_r4, temp_check_2d_r8
    module procedure temp_check_3d_r4, temp_check_3d_r8
  end interface temp_check
 
- !> @ingroup sat_vapor_pres_mod
  interface show_all_bad
    module procedure show_all_bad_0d_r4, show_all_bad_0d_r8
    module procedure show_all_bad_1d_r4, show_all_bad_1d_r8
@@ -738,8 +723,6 @@ private
    module procedure show_all_bad_3d_r4, show_all_bad_3d_r8
  end interface show_all_bad
 
-!> @addtogroup sat_vapor_pres_mod
-!> @{
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>

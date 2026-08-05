@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fm_util_mod fm_util_mod
-!> @ingroup field_manager
-!> @brief This module provides utility routines for the field manager.
+!! @ingroup field_manager
+!! @{
+!! @brief This module provides utility routines for the field manager.
 !!
-!> Routines for error catching, reporting and
+!! Routines for error catching, reporting and
 !! termination while interfacing with the field manager.
-!> @author Richard D. Slater
+!! @author Richard D. Slater
 
-!> @addtogroup fm_util_mod
-!> @{
 module fm_util_mod  !{
 
 use field_manager_mod, only: fm_string_len, fm_field_name_len, fm_type_name_len
@@ -94,8 +93,6 @@ character(len=FMS_PATH_LEN)     :: save_name
 !        Interface definitions for overloaded routines
 !
 
-!> @}
-
 interface fm_util_set_value_real
   module procedure  fm_util_set_value_real_r4
   module procedure  fm_util_set_value_real_r8
@@ -106,7 +103,6 @@ interface fm_util_set_value_real_array
   module procedure  fm_util_set_value_real_array_r8
 end interface fm_util_set_value_real_array
 
-!> @ingroup fm_util_mod
 interface  fm_util_set_value  !{
   module procedure  fm_util_set_value_integer_array
   module procedure  fm_util_set_value_real_array_r4
@@ -124,9 +120,6 @@ end interface  !}
   !module procedure  fm_util_get_index_list
   !module procedure  fm_util_get_index_string
 !end interface  !}
-
-!> @addtogroup fm_util_mod
-!> @{
 
 contains
 

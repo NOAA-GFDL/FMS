@@ -16,12 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @addtogroup tridiagonal_mod
-!> @{
-
 !> @brief Sets up and solves the tridiagonal system of equations
 !!
-!> For simplicity, A and C are assumed to be dimensioned the same size
+!! For simplicity, A and C are assumed to be dimensioned the same size
 !! as B, D, and X, although any input values for A(N) and C(1) are ignored.
 !! There are no checks to make sure the sizes agree.
 !!

@@ -16,9 +16,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @addtogroup time_interp_mod
-!> @{
-
  !> @brief Calculates the fractional time into the current year
  subroutine TIME_INTERP_FRAC_ ( Time, weight )
 

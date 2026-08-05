@@ -16,8 +16,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @file
-
 !> @brief return grid cell area for the specified model component and tile
 subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   character(len=*), intent(in)    :: component !< Component model (atm, lnd, ocn)
@@ -764,6 +762,3 @@ subroutine GET_GRID_CELL_CENTERS_UG_(component, tile, lon, lat, SG_domain, UG_do
   call mpp_pass_SG_to_UG(UG_domain, SG_lat, lat)
   deallocate(SG_lon, SG_lat)
 end subroutine GET_GRID_CELL_CENTERS_UG_
-
-!> @}
-! close documentation grouping

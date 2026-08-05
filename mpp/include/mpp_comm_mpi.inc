@@ -17,12 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines to initialize and finalize @ref mpp_mod with mpi enabled.
-
-!> @addtogroup mpp_mod
-!> @{
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !       ROUTINES TO INITIALIZE/FINALIZE MPP MODULE: mpp_init, mpp_exit        !
@@ -1486,4 +1480,3 @@ subroutine mpp_type_free(dtype)
         call increment_current_clock(EVENT_TYPE_FREE, MPP_TYPE_BYTELEN_)
 
 end subroutine mpp_type_free
-!> @}

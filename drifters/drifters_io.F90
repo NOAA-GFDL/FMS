@@ -16,11 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup drifters_io_mod drifters_io_mod
-!> @ingroup drifters
-!> @brief Saves drifter data for postprocessing and restarts
-
-!> @addtogroup drifters_io_mod
-!> @{
+!! @ingroup drifters
+!! @{
+!! @brief Saves drifter data for postprocessing and restarts
 module drifters_io_mod
 #ifdef use_drifters
 
@@ -43,9 +41,7 @@ module drifters_io_mod
 
   real :: drfts_eps_t = 10.*epsilon(1.)
 
-!> @}
   !> @brief IO data for drifters.
-  !> @ingroup drifters_input_mod
   type drifters_io_type
      real                 :: time
      integer              :: it !< time index
@@ -54,8 +50,6 @@ module drifters_io_mod
      integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
   end type drifters_io_type
-!> @addtogroup drifters_io_mod
-!> @{
 contains
 
 !###############################################################################

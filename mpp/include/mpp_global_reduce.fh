@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
   function MPP_GLOBAL_REDUCE_2D_( domain, field, locus, position )
     MPP_TYPE_ :: MPP_GLOBAL_REDUCE_2D_
     type(domain2D), intent(in) :: domain
@@ -143,4 +141,3 @@
     end if
     return
   end function MPP_GLOBAL_REDUCE_5D_
-!> @}

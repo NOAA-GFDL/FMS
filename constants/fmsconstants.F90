@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fmsconstants FMSConstants
-!> @ingroup libfms
-!> @brief Defines useful constants for Earth. Constants are defined as real
+!! @ingroup constants
+!! @{
+!! @brief Defines useful constants for Earth. Constants are defined as real
 !!
-!>    FMSconstants have been declared as REAL(kind=sizeof(rvar)), PARAMETER.
+!!    FMSconstants have been declared as REAL(kind=sizeof(rvar)), PARAMETER.
 !!
 !!    The value of a constant defined and used from here cannot be changed
 !!    in a users program. New constants can be defined in terms of values
@@ -45,11 +46,7 @@
 !!    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
 !!    geopotential(:,:) = height(:,:) * grav_new
 !! @endverbatim
-!> @file
-!> @brief File for @ref FMSconstants_mod
 
-!> @addtogroup FMSconstants_mod
-!> @{
 module FMSconstants
 
   use platform_mod, only: r4_kind, r8_kind

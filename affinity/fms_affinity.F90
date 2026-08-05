@@ -17,15 +17,12 @@
 !***********************************************************************
 
 !> @defgroup fms_affinity_mod fms_affinity_mod
-!> @ingroup affinity
-!> @brief Fortran API interfaces to set the thread affinity.
-!! API interfaces to allow setting and getting thread affinity.  The routines @ref get_cpuset
-!! , @ref set_cpu_affinity , and @ref fms_affinity_get are defined via C routines in affinity.c.
-!!
+!! @ingroup affinity
+!! @{
 !! @author Rusty Benson
-
-!> @addtogroup fms_affinity_mod
-!> @{
+!! @brief Fortran API interfaces to set the thread affinity.
+!! API interfaces to allow setting and getting thread affinity.  The routines @ref get_cpuset,
+!! @ref set_cpu_affinity , and @ref fms_affinity_get are defined via C routines in affinity.c.
 module fms_affinity_mod
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
@@ -194,3 +191,4 @@ contains
 
   end subroutine fms_affinity_set
 end module fms_affinity_mod
+!> @}

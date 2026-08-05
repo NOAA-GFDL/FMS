@@ -21,10 +21,10 @@
 !> @endcond
 
 !> @defgroup quicksort quicksort
-!> @ingroup drifters
-!> @brief Fortran implementation of quicksort to be used in @ref drifters_core
-!!
-!> @author Magnus Lie Hetland
+!! @ingroup drifters
+!! @{
+!! @brief Fortran implementation of quicksort to be used in @ref drifters_core
+!! @author Magnus Lie Hetland
 
 !> Create array partitions for quicksort
 function qksrt_partition(n, list, start, end) result(top)
@@ -91,3 +91,4 @@ recursive subroutine qksrt_quicksort(n, list, start, end)
         call qksrt_quicksort(n, list, split+1, end)
      endif
 end subroutine qksrt_quicksort
+!> @}

@@ -16,8 +16,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @file
-
 !> @brief Get exchange grid information from mosaic xgrid file.
 !> Example usage:
 !!
@@ -161,4 +159,3 @@
      return
 
   end function IS_INSIDE_POLYGON_
-!> @}

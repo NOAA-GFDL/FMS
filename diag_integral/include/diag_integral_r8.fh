@@ -15,15 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup diag_integral_mod diag_integral_mod
-!> @ingroup diag_integral
-!!
-!! @author Fei Liu <Fei.Liu@noaa.gov>
-!!
-!! @brief This module computes and outputs global and / or hemispheric physics
-!!        integrals.
-!###############################################################################
-
 
 #undef  FMS_DI_KIND_
 #define FMS_DI_KIND_ r8_kind

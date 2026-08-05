@@ -17,19 +17,15 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_elem_weight_procs_mod fms_diag_elem_weight_procs_mod
-!> @ingroup diag_manager
-!> @brief fms_diag_elem_weight_procs_mod Contains elemental functions for uddating
+!! @diag_manager
+!! @{
+!! @brief fms_diag_elem_weight_procs_mod Contains elemental functions for uddating
 !! one element of a buffer array with field data.
 !!
-!> @author Miguel Zuniga
+!! @author Miguel Zuniga
 !!
 !! <TT>fms_diag_elem_weight_procs_mod</TT> Contains elemental functions for uddating
 !! one element of a buffer array with field data,
-!!
-!> @file
-!> @brief File for @ref fms_diag_elem_weight_procs_mod
-!> @addtogroup fms_diag_elem_weight_procs_mod
-!> @{
 MODULE fms_diag_elem_weight_procs_mod
    USE platform_mod
 
@@ -38,7 +34,6 @@ MODULE fms_diag_elem_weight_procs_mod
   !> @brief Interface for the elemental function addwf, which
   !! Calculates and returns the value given by this formula:
   !! returned_value  = buff  + (weight * field)**pow_value
-  !> @ingroup fms_diag_elem_weight_procs_mod
    INTERFACE addwf
       module procedure addwf_r4
       module procedure addwf_r8
@@ -132,4 +127,3 @@ CONTAINS
 END MODULE fms_diag_elem_weight_procs_mod
 !> @}
 ! close documentation grouping
-

@@ -17,9 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
-
 !> This routine is used to retrieve scalar ad boundary data for symmetric domain.
 subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
@@ -743,4 +740,3 @@ subroutine MPP_GET_BOUNDARY_AD_3D_V_(fieldx, fieldy, domain, ebufferx, sbufferx,
   end if
 
 end subroutine MPP_GET_BOUNDARY_AD_3D_V_
-!> @}

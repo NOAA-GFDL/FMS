@@ -15,16 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup astronomy_mod astronomy_mod
-!> @ingroup astronomy
-!> @brief Provides astronomical variables for use
-!!        by other modules within fms. The only currently used interface is
-!!        for determination of astronomical values needed by the shortwave
-!!        radiation packages.
-!> @author Fei Liu
-
-!> @addtogroup astronomy_mod
-!> @{
 
 !> @brief set_orbital_parameters saves the input values of eccentricity,
 !!        obliquity and perihelion time as module variables for use by
@@ -1588,7 +1578,3 @@ real(kind=FMS_AST_KIND_), dimension(1,1) :: lat_2d, h_2d
     h = h_2d(1,1)
 
 end function HALF_DAY_0D_
-
-
-!> @}
-! close documentation grouping

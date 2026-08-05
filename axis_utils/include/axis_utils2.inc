@@ -15,15 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup axis_utils2_mod axis_utils2_mod
-!> @ingroup axis_utils
-!> @brief A set of utilities for manipulating axes and extracting axis attributes.
-!! FMS2_IO equivalent version of @ref axis_utils_mod.
-!> @author M.J. Harrison
-
-!> @addtogroup axis_utils2_mod
-!> @{
-
   !> get axis edge data from a given file
   subroutine AXIS_EDGES_(fileobj, name, edge_data, reproduce_null_char_bug_flag)
 
@@ -638,5 +629,3 @@ if (yp1>0.99e30_lkind) then
     if(ke == 0 ) call mpp_error(FATAL,' xe locate outside of grid1')
 
   end subroutine FIND_INDEX_
- !> @}
- ! close documentation grouping

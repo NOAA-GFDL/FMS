@@ -74,6 +74,18 @@ SUBDIRS = \
   test_fms \
   ${DOCS}
 
+# Run the Fortran preprocessor on every .F90 file in PREPROCESS_DIRS,
+# writing output to preprocessed/<dir>/<file>.F90. test_fms is excluded.
+preprocess:
+	for dir in $(top_srcdir)/$(SUBDIRS); do \
+	  for f in $$dir/*.F90; do \
+	    [ -e "$$f" ] || continue; \
+	    outdir=$(top_srcdir)/docs/preprocessed/$$dir; \
+	    $(MKDIR_P) $$outdir; \
+	    $(CPP) -Duse_yaml -I$$dir -I$$dir/include -I$(top_srcdir)/include $$f -o $$outdir/`basename $$f`; \
+	  done \
+	done
+
 include_HEADERS = include/file_version.h include/fms_platform.h
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -103,7 +115,7 @@ include $(top_srcdir)/mkmods.mk
 #         -e 's|@PACKAGE_CMAKE_INSTALL_INCLUDEDIR[@]|$(includedir)|g' \
 #         -e 's|@PACKAGE_CMAKE_INSTALL_LIBDIR[@]|$(libdir)|g' \
 #         -e '/@PACKAGE_INIT[@]/ {' -e 'r $(top_srcdir)/_package_init_cmake' -e  'd' -e '}'
-#FMSConfig.cmake FMSConfigVersion.cmake: Makefile
+#FMSConfig.cmake FMSConfigVersion.cmake: MakefileMKDIR_P
 #	rm -f $@ $@.tmp
 #	$(edit) $@.in >$@.tmp
 #	mv $@.tmp $@

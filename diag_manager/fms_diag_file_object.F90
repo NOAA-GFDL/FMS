@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
-!> @ingroup diag_manager
+!! @ingroup diag_manager
+!! @{
 !! @brief fms_diag_file_object_mod handles the file objects data, functions, and subroutines.
 !! @author Tom Robinson
 !! @description The fmsDiagFile_type contains the information for each history file to be written.  It has
@@ -2059,3 +2060,4 @@ result(rslt)
 end function has_send_data_been_called
 #endif
 end module fms_diag_file_object_mod
+!> @}

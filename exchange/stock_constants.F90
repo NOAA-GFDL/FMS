@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup stock_constants_mod stock_constants_mod
-!> @ingroup exchange
-!> @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
+!! @ingroup exchange
+!! @{
+!! @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
 
-!> @addtogroup stock_constants_mod
-!> @{
 module stock_constants_mod
 
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_sum
@@ -45,10 +44,8 @@ module stock_constants_mod
   ! flux integrated increments at present time.
 
   integer, parameter :: NSIDES  = 3         !< top, bottom, side
-  !> @}
 
   !> @brief Holds stocks amounts per PE values
-  !> @ingroup stock_constants_mod
   type stock_type
      real(r8_kind)  :: q_start = 0.0_r8_kind    !< total stocks at start time
      real(r8_kind)  :: q_now   = 0.0_r8_kind    !< total stocks at time t
@@ -59,8 +56,6 @@ module stock_constants_mod
      real(r8_kind)  :: dq(NSIDES)    = 0.0_r8_kind    !< stock increments at present time on the Ice   grid
      real(r8_kind)  :: dq_IN(NSIDES) = 0.0_r8_kind    !< stock increments at present time on the Ocean grid
   end type stock_type
-  !> @addtogroup stock_constants_mod
-  !> @{
 
   type(stock_type), save, public, dimension(NELEMS) :: Atm_stock, Ocn_stock, Lnd_stock, Ice_stock
   type(time_type), save :: init_time

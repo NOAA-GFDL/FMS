@@ -241,5 +241,3 @@ else
 endif
 
 end function  FM_NEW_VALUE_REAL_
-!> @}
-! close documentation grouping

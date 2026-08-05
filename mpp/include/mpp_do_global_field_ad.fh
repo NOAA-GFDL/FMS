@@ -18,9 +18,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
-
     !> Gets a local ad field from a global field
     !! global field may be on compute OR data domain
     subroutine MPP_DO_GLOBAL_FIELD_3D_AD_( domain, local, global, tile, ishift, jshift, flags, default_data)
@@ -280,4 +277,3 @@
 
       return
     end subroutine MPP_DO_GLOBAL_FIELD_3D_AD_
-!> @}

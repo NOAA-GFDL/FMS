@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup gradient_mod gradient_mod
-!> @ingroup mosaic
-!> @brief Implements some utility routines to calculate gradient.
-!> @author Zhi Liang
+!> @ingroup grid_utils
+!! @{
+!! @brief Implements some utility routines to calculate gradient.
+!! @author Zhi Liang
 !!
 !! Currently only gradient on cubic grid is implemented. Also a public interface
 !! is provided to calculate grid information needed to calculate gradient.
 
-!> @addtogroup gradient_mod
-!> @{
 module gradient_mod
 
 use mpp_mod,       only : mpp_error, FATAL

@@ -15,16 +15,9 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup coupler_types_mod coupler_types_mod
-!> @ingroup coupler
+
 !> @brief This module contains type declarations for the coupler.
-!> @author Richard Slater, John Dunne
-
-!> @addtogroup coupler_types_mod
-!> @{
-
-!> @addtogroup coupler_types_mod
-!> @{
+!! @author Richard Slater, John Dunne
 
   !> @brief Rescales the fields in the fields in the elements of a coupler_2d_bc_type
   !!

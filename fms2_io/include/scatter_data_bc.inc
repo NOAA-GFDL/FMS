@@ -15,13 +15,8 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for the @ref gather_data_bc interface
 
-!> @addtogroup netcdf_io_mod
-!> @{
-
-!< Root pe reads the data in the netcdf file and scatters it to the other pes
+!> Root pe reads the data in the netcdf file and scatters it to the other pes
 subroutine scatter_data_bc_2d(fileobj, varname, vdata, bc_info, unlim_dim_level, ignore_checksum)
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< Fms2io netcdf fileobj
   character(len=*), intent(in) :: varname !< Variable name.

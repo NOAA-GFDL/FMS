@@ -17,18 +17,14 @@
 !***********************************************************************
 
 !> @defgroup fm_yaml_mod fm_yaml_mod
-!> @ingroup fm_yaml
-!> @brief Reads entries from a field table yaml into a
+!! @ingroup field_manager
+!! @{
+!! @brief Reads entries from a field table yaml into a
 !! nested object for use in the field manager.
 !!
-!> @author Eric Stofferahn
+!! @author Eric Stofferahn
 !!
 
-!> @file
-!> @brief File for @ref fm_yaml_mod
-
-!> @addtogroup fm_yaml_mod
-!> @{
 module fm_yaml_mod
 #ifdef use_yaml
 
@@ -37,13 +33,11 @@ use mpp_mod, only: mpp_error, fatal
 implicit none
 private
 
-!> @}
 
 public :: build_fmTable
 
 !> @brief This type represents a subparameter block for a given variable parameter.
 !> This type contains the name of the associated parameter and the subparameter key/value pairs
-!> @ingroup fm_yaml_mod
 type, public :: fmAttr_t
   integer                                     :: id                    !< block id of this var
   character(len=:), allocatable               :: paramname             !< name of associated parameter
@@ -54,7 +48,6 @@ end type fmAttr_t
 !> @brief This type represents the entries for a given variable, e.g. dust.
 !> This type contains the name of the variable, the block id, the key/value pairs for the
 !> variable's parameters, and any applicable subparameters
-!> @ingroup fm_yaml_mod
 type, public :: fmVar_t
   integer                                     :: id                    !< block id of this var
   character(len=:), allocatable               :: name                  !< name of the variable
@@ -65,7 +58,6 @@ end type fmVar_t
 
 !> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
 !> This type contains the name of the model, the block id, and the variables within this model
-!> @ingroup fm_yaml_mod
 type, public :: fmModel_t
   integer                       :: id                  !< block id of this model
   character(len=:), allocatable :: name                !< name of the model
@@ -74,7 +66,6 @@ end type fmModel_t
 
 !> @brief This type represents the entries for a specific field type, e.g. a tracer.
 !> This type contains the name of the field type, the block id, and the models within this field type
-!> @ingroup fm_yaml_mod
 type, public :: fmType_t
   integer                       :: id                  !< block id of this type
   character(len=:), allocatable :: name                !< name of the type
@@ -82,15 +73,12 @@ type, public :: fmType_t
 end type fmType_t
 
 !> @brief This type contains the field types within a field table.
-!> @ingroup fm_yaml_mod
 type, public :: fmTable_t
   type (fmType_t), allocatable :: types(:) !< field types in this table
 end type fmTable_t
 
 contains
 
-!> @addtogroup fm_yaml_mod
-!> @{
 
 !> @brief Subroutine to populate an fmTable by reading a yaml file, given an optional filename.
 subroutine build_fmTable(fmTable, filename)

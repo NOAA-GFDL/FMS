@@ -16,9 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_yaml_output_mod fms_yaml_output_mod
-!> @ingroup parser
-!> @author Tom Robinson
-!> @description Writes a 3 tiered yaml where the first and second tier can have 1 key that has an
+!! @ingroup parser
+!! @{
+!! @author Tom Robinson
+!! @description Writes a 3 tiered yaml where the first and second tier can have 1 key that has an
 !! array of values.  This is usefule for writing a diag_output.yaml Here is an example:
 !! \verbatim
 !! ---
@@ -47,11 +48,6 @@
 !! vars is the level2key.  The key3 and var3 arrays should have a size of 4, and a3each=(\3,1\)
 !! corresponding to the number of elements in each array within the yaml.
 
-!> @file
-!> @brief File for @ref fms_yaml_output_mod
-
-!> @addtogroup fms_yaml_output_mod
-!> @{
 module fms_yaml_output_mod
 #ifdef use_yaml
 

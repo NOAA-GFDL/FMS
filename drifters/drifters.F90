@@ -20,7 +20,8 @@
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 !> @defgroup drifters_mod drifters_mod
-!> @ingroup drifters
+!! @ingroup drifters
+!! @{
 !! @brief <TT>Drifters_mod</TT>is a module designed to advect a set of particles, in parallel or
 !!   sequentially, given an prescribed velocity field.
 !! @author Alexander Pletzer
@@ -56,8 +57,6 @@
 !! on a per PE domain basis. There is no support for locally nested or unstrucured
 !! meshes. Meshes need not be smooth and continuous across PE domains, however.
 
-!> @addtogroup drifters_mod
-!> @{
 module drifters_mod
 #ifdef use_drifters
 
@@ -106,10 +105,8 @@ module drifters_mod
   integer, parameter, private :: MAX_STR_LEN = 128
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  !> @}
 
   !> @brief Holds all data needed for drifters communication, io, and input.
-  !> @ingroup drifters_mod
   type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
@@ -153,33 +150,27 @@ module drifters_mod
   end type drifters_type
 
   !> @brief Assignment override for @ref drifters_type
-  !> @ingroup drifters_mod
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
 
   !> @brief "Push" a given drifter at a given velocity for either 2D or 3D data
-  !> @ingroup drifters_mod
   interface drifters_push
     module procedure drifters_push_2
     module procedure drifters_push_3
   end interface
 
-  !> @ingroup drifters_mod
   interface drifters_compute_k
      module procedure drifters_computek2d
      module procedure drifters_computek3d
   end interface
 
   !> @brief Set the value of a given drifter field
-  !> @ingroup drifters_mod
   interface drifters_set_field
     module procedure drifters_set_field_2d
     module procedure drifters_set_field_3d
   end interface
 
-!> @addtogroup drifters_mod
-!> @{
 
 contains
 

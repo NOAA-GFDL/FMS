@@ -17,8 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @ingroup mpp_data_mod
 !> @brief Holds dummy constants and stack data for @ref mpp_mod and @ref mpp_domains_mod.
 !! Accessible through @ref mpp_data_mod
 

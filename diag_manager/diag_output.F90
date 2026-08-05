@@ -16,14 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_output_mod diag_output_mod
-!> @ingroup diag_manager
+!! @ingroup diag_manager
+!! @{
 !! @brief diag_output_mod is an integral part of
 !!   diag_manager_mod. Its function is to write axis-meta-data,
 !!   field-meta-data and field data.
 !! @author Seth Underwood
-
-!> @addtogroup diag_output_mod
-!> @{
 MODULE diag_output_mod
 
 use platform_mod
@@ -75,10 +73,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   ! Include variable "version" to be written to log file.
   character(len=*), parameter :: version = '2020.03'
-  !> @}
 
-!> @addtogroup diag_output_mod
-!> @{
 CONTAINS
 
   !> @brief Opens the output file.

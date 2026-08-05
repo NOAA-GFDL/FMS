@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bilinear_mod
-!> @{
   subroutine HORIZ_INTERP_BILINEAR_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
@@ -1309,5 +1307,3 @@
     Interp% I_am_initialized = .True.
     call close_file(weight_fileobj)
   end subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_
-
-!> @}

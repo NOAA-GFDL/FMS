@@ -15,16 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup astronomy_mod astronomy_mod
-!> @ingroup astronomy
-!> @brief Provides astronomical variables for use
-!!        by other modules within fms. The only currently used interface is
-!!        for determination of astronomical values needed by the shortwave
-!!        radiation packages.
-!> @author Fei Liu
-
-!> @addtogroup astronomy_mod
-!> @{
 
 #undef FMS_AST_KIND_
 #define FMS_AST_KIND_ r8_kind
@@ -102,5 +92,3 @@
 #define HALF_DAY_0D_ half_day_0d_r8
 
 #include "astronomy.inc"
-!> @}
-! close documentation grouping

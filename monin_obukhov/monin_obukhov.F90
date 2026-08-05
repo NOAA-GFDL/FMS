@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup monin_obukhov_mod monin_obukhov_mod
-!> @ingroup monin_obukhov
-!> @brief Routines for computing surface drag coefficients
+!! @ingroup monin_obukhov
+!! @{
+!! @brief Routines for computing surface drag coefficients
 !! from data at the lowest model level
 !! and for computing the profile of fields
 !! between the lowest model level and the ground
@@ -46,7 +47,6 @@ private
 !=======================================================================
 
 !> @brief Compute surface drag coefficients
-!> @ingroup monin_obukhov_mod
 interface mo_drag
     module procedure mo_drag_0d_r4, mo_drag_0d_r8
     module procedure mo_drag_1d_r4, mo_drag_1d_r8
@@ -54,7 +54,6 @@ interface mo_drag
 end interface
 
 
-!> @ingroup monin_obukhov_mod
 interface mo_profile
     module procedure mo_profile_0d_r4, mo_profile_0d_r8
     module procedure mo_profile_1d_r4, mo_profile_1d_r8
@@ -64,7 +63,6 @@ interface mo_profile
     module procedure mo_profile_2d_n_r4, mo_profile_2d_n_r8
 end interface
 
-!> @ingroup monin_obukhov_mod
 interface mo_diff
     module procedure mo_diff_0d_n_r4, mo_diff_0d_n_r8
     module procedure mo_diff_0d_1_r4, mo_diff_0d_1_r8
@@ -74,7 +72,6 @@ interface mo_diff
     module procedure mo_diff_2d_1_r4, mo_diff_2d_1_r8
 end interface
 
-!> @ingroup monin_obukhov_mod
 interface stable_mix
     module procedure stable_mix_0d_r4, stable_mix_0d_r8
     module procedure stable_mix_1d_r4, stable_mix_1d_r8
@@ -97,8 +94,6 @@ end interface mo_derivative_m
 interface mo_derivative_t
     module procedure mo_derivative_t_r4, mo_derivative_t_r8
 end interface mo_derivative_t
-!> @addtogroup monin_obukhov_mod
-!> @{
 
 !-----------------------------------------------------------------------
 ! version number of this module

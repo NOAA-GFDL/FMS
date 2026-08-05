@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup ensemble_manager_mod ensemble_manager_mod
-!> @ingroup coupler
-!> @brief Routines for setting up and managing ensembles and ensemble pe lists.
+!! @ingroup coupler
+!! @{
+!! @brief Routines for setting up and managing ensembles and ensemble pe lists.
 
-!> @addtogroup ensemble_manager_mod
-!> @{
 module ensemble_manager_mod
 
 

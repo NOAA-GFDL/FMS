@@ -17,14 +17,9 @@
 !***********************************************************************
 
 !> @defgroup fms_string_utils_mod fms_string_utils_mod
-!> @ingroup string_utils
-!> @brief Routines to use for string manipulation
-
-!> @file
-!> @brief File for @ref fms_string_utils_mod
-
-!> @addtogroup fms_string_utils_mod
-!> @{
+!! @ingroup string_utils
+!! @{
+!! @brief Routines to use for string manipulation
 module fms_string_utils_mod
 #include <fms_platform.h>
   use, intrinsic :: iso_c_binding
@@ -45,7 +40,6 @@ module fms_string_utils_mod
   public :: string
   public :: string_copy
   public :: stringify
-!> @}
 
   interface
   !> @brief Sorts an array of pointers (my pointer) of size (p_size) in
@@ -108,22 +102,18 @@ module fms_string_utils_mod
 end interface
 
 !> Converts a C string to a Fortran string
-!> @ingroup fms_mod
 interface fms_c2f_string
   module procedure cstring_fortran_conversion
   module procedure cpointer_fortran_conversion
 end interface
 
 !> Converts an array of real numbers to a string
-!> @ingroup fms_mod
 interface stringify
   module procedure stringify_1d_r4, stringify_1d_r8
   module procedure stringify_2d_r4, stringify_2d_r8
   module procedure stringify_3d_r4, stringify_3d_r8
 end interface
 
-!> @addtogroup fms_string_utils_mod
-!> @{
 contains
 
   !> @brief Converts a character array to an array of c pointers!

@@ -59,7 +59,7 @@
 !> @file
 !> @brief File for @ref FMS
 
-!> @addtogroup FMS
+!> @ingroup FMS
 !> @{
 module fms
 

@@ -16,14 +16,15 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup tracer_manager_mod tracer_manager_mod
-!> @ingroup tracer_manager
-!> @brief Code to manage the simple addition of tracers to the FMS code.
+!! @ingroup tracer_manager
+!! @{
+!! @brief Code to manage the simple addition of tracers to the FMS code.
 !! This code keeps track of the numbers and names of tracers included
 !! in a tracer table.
 !!
 !> @author William Cooke
 !!
-!> This code is a grouping of calls which will allow the simple
+!! This code is a grouping of calls which will allow the simple
 !! introduction of tracers into the FMS framework. It is designed to
 !! allow users of a variety of component models interact easily with
 !! the dynamical core of the model.
@@ -121,7 +122,6 @@ public  tracer_manager_init, &
 !!     logical:
 !!       if ( get_tracer_index(model, name, index, indices, verbose) ) then
 !! @endcode
-!> @ingroup tracer_manager_mod
 interface get_tracer_index
   module procedure get_tracer_index_integer, get_tracer_index_logical
 end interface
@@ -132,7 +132,6 @@ interface set_tracer_profile
 end interface set_tracer_profile
 
 !> Private type to hold metadata for a tracer
-!> @ingroup tracer_manager_mod
 type, private ::  tracer_type
    character(len=32)        :: tracer_name, tracer_units
    character(len=128)       :: tracer_longname
@@ -146,21 +145,17 @@ type, private ::  tracer_type
 end type tracer_type
 
 !> Private type to holds string data for a tracer
-!> @ingroup tracer_manager_mod
 type, private ::  tracer_name_type
    character(len=32)  :: model_name, tracer_name, tracer_units
    character(len=128) :: tracer_longname
 end type tracer_name_type
 
 !> Private type to represent named instances
-!> @ingroup tracer_manager_mod
 type, private :: inst_type
    character(len=128) :: name
    integer            :: instances
 end type inst_type
 
-!> @addtogroup tracer_manager_mod
-!> @{
 
 integer            :: num_tracer_fields = 0
 integer, parameter :: MAX_TRACER_FIELDS = 250

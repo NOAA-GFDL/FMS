@@ -16,8 +16,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
     !> Updates data domain of 3D ad field whose computational domains have been computed
     !! @brief Applies linear adjoint operation to 3D field based on duality of MPP_DO_UPDATE_3D_
     !! @note Adjoint duality exists between MPI SEND and MPI_RECV.
@@ -353,4 +351,3 @@
 
       return
     end subroutine MPP_DO_UPDATE_AD_3D_
-!> @}
