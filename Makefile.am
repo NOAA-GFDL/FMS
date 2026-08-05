@@ -82,7 +82,7 @@ preprocess:
 	    [ -e "$$f" ] || continue; \
 	    outdir=$(top_srcdir)/docs/preprocessed/$$dir; \
 	    $(MKDIR_P) $$outdir; \
-	    $(FC) -E -Duse_yaml -I$$dir -I$$dir/include -I$(top_srcdir)/include $$f -o $$outdir/`basename $$f`; \
+	    $(CPP) -Duse_yaml -I$$dir -I$$dir/include -I$(top_srcdir)/include $$f -o $$outdir/`basename $$f`; \
 	  done \
 	done
 
