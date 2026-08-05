@@ -233,8 +233,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
-  dim_order(xdim_index) = 1
-  dim_order(ydim_index) = 2
+  dim_order = (/xdim_index, ydim_index/)
 
   select type(vdata)
   type is (integer(kind=i4_kind))
@@ -437,9 +436,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ! Calculate the index of the z dimension
   zdim_index = 6 - xdim_index - ydim_index
 
-  dim_order(xdim_index) = 1
-  dim_order(ydim_index) = 2
-  dim_order(zdim_index) = 3
+  dim_order = (/xdim_index, ydim_index, zdim_index/)
 
   select type(vdata)
   type is (integer(kind=i4_kind))
