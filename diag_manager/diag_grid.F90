@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_grid_mod diag_grid_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.

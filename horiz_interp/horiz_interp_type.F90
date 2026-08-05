@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_type_mod horiz_interp_type_mod
-!! @ingroup horiz_interp
+!! @addtogroup horiz_interp
 !! @{
 !! @brief define derived data type that contains indices and weights used for subsequent
 !! interpolations.

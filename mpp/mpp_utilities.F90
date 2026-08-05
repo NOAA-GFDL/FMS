@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_utilities_mod mpp_utilities_mod
-!! @ingroup mpp
+!! @addtogroup mpp
 !! @{
 !! @brief Module for utiltity routines to be used in @ref mpp modules
 !!

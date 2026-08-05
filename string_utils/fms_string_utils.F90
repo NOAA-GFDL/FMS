@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_string_utils_mod fms_string_utils_mod
-!! @ingroup string_utils
+!! @addtogroup string_utils
 !! @{
 !! @brief Routines to use for string manipulation
 module fms_string_utils_mod

@@ -17,7 +17,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !> @defgroup mpp_domains_mod mpp_domains_mod
-!! @ingroup mpp
+!! @addtogroup mpp
 !! @{
 !! @brief Domain decomposition and domain update for message-passing codes
 !! @author V. Balaji SGI/GFDL Princeton University

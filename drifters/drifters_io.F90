@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup drifters_io_mod drifters_io_mod
-!! @ingroup drifters
+!! @addtogroup drifters
 !! @{
 !! @brief Saves drifter data for postprocessing and restarts
 module drifters_io_mod

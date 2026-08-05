@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup xgrid_mod xgrid_mod
-!! @ingroup exchange
+!! @addtogroup exchange
 !! @{
 !! @brief Implements exchange grids for coupled models running on multiple processors
 !! @author Michael Winton, Zhi Liang
@@ -201,7 +201,7 @@ end interface
 !> @brief @ref put_to_xgrid for unstructured grids.
 !!
 !> Scatters data from unstructured grid onto exchange grid.
-!> @ingroup xgrid_mod
+!> @addtogroup xgrid_mod
 interface put_to_xgrid_ug
   module procedure put_side1_to_xgrid_ug
   module procedure put_side2_to_xgrid_ug

@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_interp_external2_mod time_interp_external2_mod
-!! @ingroup time_interp
+!! @addtogroup time_interp
 !! @{
 !! @brief Perform I/O and time interpolation of external fields (contained in a file), using
 !! fms2_io.

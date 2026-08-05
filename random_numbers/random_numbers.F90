@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup random_numbers_mod random_numbers_mod
-!! @ingroup random_numbers
+!! @addtogroup random_numbers
 !! @{
 !! @brief Generic module to wrap random number generators.
 !!

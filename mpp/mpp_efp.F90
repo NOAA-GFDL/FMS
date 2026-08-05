@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_efp_mod mpp_efp_mod
-!! @ingroup mpp
+!! @addtogroup mpp
 !! @{
 !! @brief This module provides interfaces to the non-domain-oriented communication
 !! subroutines.

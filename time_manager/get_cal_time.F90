@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup get_cal_time_mod get_cal_time_mod
-!! @ingroup time_manager
+!! @addtogroup time_manager
 !! @{
 !! @brief Given a time increment as a real number, and base time and calendar
 !!  as a character strings, returns time as a time_type variable.

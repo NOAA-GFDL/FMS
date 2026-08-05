@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_table_mod diag_table_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a
 !! <TT>diag_table</TT>.  This module

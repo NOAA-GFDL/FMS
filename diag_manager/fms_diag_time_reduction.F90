@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_time_reduction_mod fms_diag_time_reduction_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief fms_diag_time_reduction_mod defines classes encapsulating the diag_manager
 !! time redution types.

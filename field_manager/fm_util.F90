@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fm_util_mod fm_util_mod
-!! @ingroup field_manager
+!! @addtogroup field_manager
 !! @{
 !! @brief This module provides utility routines for the field manager.
 !!

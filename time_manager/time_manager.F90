@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_manager_mod time_manager_mod
-!! @ingroup time_manager
+!! @addtogroup time_manager
 !! @{
 !! @brief A software package that provides a set of simple interfaces for
 !!   modelers to perform computations related to time and dates.

@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_reduction_methods_mod fms_diag_reduction_methods_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief fms_diag_reduction_methods_mod contains routines that are meant to be used for
 !! error checking and setting up to do the reduction methods

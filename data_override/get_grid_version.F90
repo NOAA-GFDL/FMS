@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup get_grid_version_mod get_grid_version_mod
-!! @ingroup data_override
+!! @addtogroup data_override
 !! @{
 !! @brief get_grid implementations and helper routines for @ref data_override_mod
 

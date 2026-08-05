@@ -24,7 +24,7 @@
 !-----------------------------------------------------------------------
 
 !> @defgroup mpp_mod mpp_mod
-!! @ingroup mpp
+!! @addtogroup mpp
 !! @{
 !! @brief This module defines interfaces for common operations using message-passing libraries.
 !! Any type-less arguments in the documentation are MPP_TYPE_ which is defined by the pre-processor

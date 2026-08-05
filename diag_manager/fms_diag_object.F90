@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_object_mod fms_diag_object_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout

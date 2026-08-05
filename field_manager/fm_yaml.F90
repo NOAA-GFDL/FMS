@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fm_yaml_mod fm_yaml_mod
-!! @ingroup field_manager
+!! @addtogroup field_manager
 !! @{
 !! @brief Reads entries from a field table yaml into a
 !! nested object for use in the field manager.

@@ -1,7 +1,7 @@
 !* This file includes a 3 clause BSD license header below.
 
 !> @defgroup mersennetwister_mod MersenneTwister_mod
-!! @ingroup random_numbers
+!! @addtogroup random_numbers
 !! @{
 !! @brief Fortran-95 implementation of the Mersenne Twister 19937 algorithm
 !! @author Robert Pincus
@@ -94,13 +94,13 @@ module MersenneTwister_mod
   !> @}
 
   !> The type containing the state variable
-  !> @ingroup mersennetwister_mod
+  !> @addtogroup mersennetwister_mod
   type randomNumberSequence
     integer                            :: currentElement ! = blockSize
     integer, dimension(0:blockSize -1) :: state ! = 0
   end type randomNumberSequence
 
-  !> @ingroup mersennetwister_mod
+  !> @addtogroup mersennetwister_mod
   interface new_RandomNumberSequence
     module procedure initialize_scalar, initialize_vector
   end interface new_RandomNumberSequence

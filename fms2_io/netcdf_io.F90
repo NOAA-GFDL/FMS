@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
-!! @ingroup fms2_io
+!! @addtogroup fms2_io
 !! @{
 !! @brief This module defines the derived type, FmsNetcdfFile_t, and routines
 !! to handle calls to the netcdf library in order to read and write netcdf files.

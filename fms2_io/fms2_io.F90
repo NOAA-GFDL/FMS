@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
-!! @ingroup fms2_io
+!! @addtogroup fms2_io
 !! @{
 !! @brief This module supports netCDF I/O operations.
 !!
@@ -182,7 +182,7 @@ public :: nullify_filename_appendix
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
+!> @addtogroup fms2_io_mod
 interface open_file
   module procedure netcdf_file_open_wrap
   module procedure open_domain_file

@@ -20,7 +20,7 @@
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 !> @defgroup drifters_mod drifters_mod
-!! @ingroup drifters
+!! @addtogroup drifters
 !! @{
 !! @brief <TT>Drifters_mod</TT>is a module designed to advect a set of particles, in parallel or
 !!   sequentially, given an prescribed velocity field.

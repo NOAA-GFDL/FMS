@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_yaml_output_mod fms_yaml_output_mod
-!! @ingroup parser
+!! @addtogroup parser
 !! @{
 !! @author Tom Robinson
 !! @description Writes a 3 tiered yaml where the first and second tier can have 1 key that has an

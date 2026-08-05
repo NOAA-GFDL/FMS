@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup memutils_mod memutils_mod
-!! @ingroup memutils
+!! @addtogroup memutils
 !! @{
 !! @brief Module to expose the memory printing API
 !! @author V. Balaji

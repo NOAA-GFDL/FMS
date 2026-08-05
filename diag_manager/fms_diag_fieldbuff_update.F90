@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_fieldbuff_update_mod fms_diag_fieldbuff_update_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief fms_diag_fieldbuff_update_mod Contains routines for updating the
 !! buffer (array) of field data statistics (e.g. average, rms) with new field data.

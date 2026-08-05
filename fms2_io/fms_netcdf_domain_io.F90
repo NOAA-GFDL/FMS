@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
-!! @ingroup fms2_io
+!! @addtogroup fms2_io
 !! @{
 !! @brief This module defines the derived type, FmsNetcdfDomainFile_t, and routines
 !! to handle calls to the netcdf library for data on a domain decomposed standard rectangular grid.

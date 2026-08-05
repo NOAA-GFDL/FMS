@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_axis_mod diag_axis_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !> @brief An integral part of @ref diag_manager_mod. It helps to create axis IDs
 !! that are used in @ref register_diag_field.

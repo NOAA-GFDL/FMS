@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup monin_obukhov_inter monin_obukhov_inter
-!! @ingroup monin_obukhov
+!! @addtogroup monin_obukhov
 !! @{
 !! @brief Utility routines to be used in @ref monin_obukhov_mod
 

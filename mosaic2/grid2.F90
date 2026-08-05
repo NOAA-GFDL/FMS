@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup grid2_mod grid2_mod
-!! @ingroup mosaic2
+!! @addtogroup mosaic2
 !! @{
 !! @brief Routines for grid calculations, using @ref fms2_io
 

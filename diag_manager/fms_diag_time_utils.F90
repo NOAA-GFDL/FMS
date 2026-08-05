@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_time_utils_mod fms_diag_time_utils_mod
-!! @ingroup diag_manager
+!! @addtogroup diag_manager
 !! @{
 !! @brief fms_diag_time_utils contains functions and subroutines necessary for the
 !! <TT>diag_manager_mod</TT> related to time handling.

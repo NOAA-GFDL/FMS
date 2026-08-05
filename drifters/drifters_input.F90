@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup drifters_input_mod drifters_input_mod
-!! @ingroup drifters
+!! @addtogroup drifters
 !! @{
 !! @brief Imports initial drifter positions from a netCDF file
 

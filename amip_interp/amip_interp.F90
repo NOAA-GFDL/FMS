@@ -17,7 +17,7 @@
 !***********************************************************************
 !
 !> @defgroup amip_interp_mod amip_interp_mod
-!! @ingroup amip_interp
+!! @addtogroup amip_interp
 !! @{
 !! @brief Provides observed sea surface temperature and ice mask data sets that have been
 !! interpolated onto your model's grid.

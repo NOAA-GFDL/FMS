@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup stock_constants_mod stock_constants_mod
-!! @ingroup exchange
+!! @addtogroup exchange
 !! @{
 !! @brief Parameters, routines, and types for computing stocks in @ref xgrid_mod
 
