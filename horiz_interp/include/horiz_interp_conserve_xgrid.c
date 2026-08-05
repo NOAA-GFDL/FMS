@@ -31,7 +31,7 @@
  *  @ingroup horiz_interp
  *  @{
  *  @brief Grid creation and calculation functions for use in @ref mosaic_mod
- * /
+ */
 
 /*******************************************************************************
   void create_xgrid_1dx2d_order1
