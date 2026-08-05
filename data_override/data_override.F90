@@ -48,7 +48,7 @@ end module data_override_r8
 !! component's grid files is required during data_override_init.
 !!
 !! The operations performed are specified by the data_table. The data_table is a user-provided file that describes
-!! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table 
+!! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table
 !! can be specified in either the legacy ASCII format (data_table) or the YAML format (data_table.yaml).
 !! See the README.md in this directory for more information about the data_table yaml format.
 module data_override_mod
@@ -64,14 +64,18 @@ private
 
 !> Interface for reading and interpolating data from a file
 !! into the model's grid and time. Data path must be described in
-!! a user-provided data_table, see @ref data_override_mod "module description"
-!! for more information.
+!! a user-provided data_table, see data_override/README.md for more information.
+!! on specifying the data_table or data_table.yaml file.
+!!
+!! The optional "override" argument is intent(out) and will be set to true if the data was successfully read and
+!! interpolated, or false if the data was not found in the data_table.
 !!
 !! Typical calls to @ref data_override are shown below. The selected specific
 !! routine depends on argument rank and real kind.
 !! @code{.f90}
 !! use platform_mod, only: r4_kind, r8_kind
 !! use time_manager_mod, only: time_type
+!! use mpp_domains_mod, only: domain2d
 !!
 !! type(time_type) :: Time
 !! logical :: used
@@ -81,6 +85,7 @@ private
 !! real(r8_kind) :: field2d_r8(is:ie,js:je)
 !! real(r4_kind) :: field3d_r4(is:ie,js:je,nlev)
 !! real(r8_kind) :: field3d_r8(is:ie,js:je,nlev)
+!! type(domain2d) :: Domain
 !!
 !! ! Initializes both r4 and r8 implementations for this domain.
 !! call data_override_init(Ocean_domain_in=Domain)
@@ -120,6 +125,7 @@ end interface
 !! @code{.f90}
 !! use platform_mod, only: r4_kind, r8_kind
 !! use time_manager_mod, only: time_type
+!! use mpp_domains_mod, only: domainUG
 !!
 !! type(time_type) :: Time
 !! logical :: used
@@ -127,6 +133,7 @@ end interface
 !! real(r8_kind) :: ug1d_r8(npts_local)
 !! real(r4_kind) :: ug2d_r4(npts_local,nlev)
 !! real(r8_kind) :: ug2d_r8(npts_local,nlev)
+!! type(domainUG) :: UG_domain
 !!
 !! ! Initialize with an unstructured land domain.
 !! call data_override_init(Land_domainUG_in=UG_domain)
