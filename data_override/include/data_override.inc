@@ -769,24 +769,28 @@ subroutine check_valid_lat_lon(lon_start, lon_end, lat_start, lat_end)
 end subroutine check_valid_lat_lon
 #endif
 
+!> Deallocate the local lon/lat arrays and reset the atmosphere domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_ATM_
   atm_domain = NULL_DOMAIN2D
   if (allocated(lon_local_atm)) deallocate(lon_local_atm)
   if (allocated(lat_local_atm)) deallocate(lat_local_atm)
 end subroutine
 
+!> Deallocate the local lon/lat arrays and reset the ocean domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_OCN_
   ocn_domain = NULL_DOMAIN2D
   if (allocated(lon_local_ocn)) deallocate(lon_local_ocn)
   if (allocated(lat_local_ocn)) deallocate(lat_local_ocn)
 end subroutine
 
+!> Deallocate the local lon/lat arrays and reset the land domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_LND_
   lnd_domain = NULL_DOMAIN2D
   if (allocated(lon_local_lnd)) deallocate(lon_local_lnd)
   if (allocated(lat_local_lnd)) deallocate(lat_local_lnd)
 end subroutine
 
+!> Deallocate the local lon/lat arrays and reset the ice domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_ICE_
   ice_domain = NULL_DOMAIN2D
   if (allocated(lon_local_ice)) deallocate(lon_local_ice)
