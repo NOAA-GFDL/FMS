@@ -704,7 +704,7 @@
       !< is the minimum number of neighbors required.
 
     logical :: UPDATE_DEST_NEIGHBORS_, already_exist = .false.
-      !< is .true. if the candidate neighbor was inserted into the list.
+      ! is .true. if the candidate neighbor was inserted into the list.
 
     integer :: n,m
 
