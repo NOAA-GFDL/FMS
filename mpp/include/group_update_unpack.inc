@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
+subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos, use_device_ptr)
   type(mpp_group_update_type), intent(in) :: group
   MPP_TYPE_, intent(in) :: buffer(:)
   integer, intent(in) :: buffer_start_pos
+  logical, intent(in) :: use_device_ptr
 
   integer :: n, buffer_pos, pos, is, ie, js, je, ni, nj
   integer :: i, j, k, l, idx, nk

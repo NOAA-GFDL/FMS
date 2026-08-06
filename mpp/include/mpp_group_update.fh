@@ -365,10 +365,11 @@ subroutine MPP_CREATE_GROUP_UPDATE_V_( group, fieldx, fieldy, domain, flags, gri
 end subroutine MPP_CREATE_GROUP_UPDATE_V_
 
 
-subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
+subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   type(mpp_group_update_type), intent(inout) :: group
   type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
+  logical, optional, intent(in) :: omp_offload
 
   integer   :: nscalar, nvector
   logical   :: recv_y(8)
@@ -379,6 +380,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: n, l, m, i, j, k, nk
   integer   :: shift, gridtype, midpoint
   integer   :: rotation, isd
+  logical   :: use_device_ptr
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
@@ -386,6 +388,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nscalar = group%nscalar
   nvector = group%nvector
   gridtype = group%gridtype
+
+  use_device_ptr = .false.
+  if (present(omp_offload)) use_device_ptr = omp_offload
 
   if(nvector.eq.0 .and. nscalar.eq.0) then
      call mpp_error(FATAL, "MPP_DO_GROUP_UPDATE: nscalar and nvector are both 0")
@@ -406,13 +411,16 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
+#ifdef __NVCOMPILER_OPENMP_GPU
+  !$omp target enter data map(alloc: buffer) if(use_device_ptr)
+#endif
   do m = 1, nrecv
      msgsize = group%recv_size(m)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_recv(m)
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
-             tag=COMM_TAG_1)
+             tag=COMM_TAG_1, omp_offload=omp_offload)
      end if
   end do
 
@@ -423,7 +431,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   call mpp_clock_begin(group_pack_clock)
   !pack the data
-  call GROUP_UPDATE_PACK_ (group, buffer, 0)
+  call GROUP_UPDATE_PACK_ (group, buffer, 0, use_device_ptr)
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
@@ -432,7 +440,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n)
         to_pe = group%to_pe(n)
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, omp_offload=omp_offload)
      endif
   enddo
   call mpp_clock_end(group_send_clock)
@@ -445,7 +453,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   !---unpack the buffer
   call mpp_clock_begin(group_unpk_clock)
-  call GROUP_UPDATE_UNPACK_ (group, buffer, 0)
+  call GROUP_UPDATE_UNPACK_ (group, buffer, 0, use_device_ptr)
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -460,10 +468,11 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            j  = domain%y(1)%global%end+shift
            is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
            if( .NOT. domain%symmetry ) is = is - 1
+           isd = domain%x(1)%domain_data%begin
            do i = is ,ie, midpoint
-              if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
-                 call SET_ZERO_ (group, FIELD_X, i, j)
-                 call SET_ZERO_ (group, FIELD_Y, i, j)
+              if( isd.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
+                 call SET_ZERO_ (group, FIELD_X, i, j, use_device_ptr)
+                 call SET_ZERO_ (group, FIELD_Y, i, j, use_device_ptr)
               end if
            end do
         endif
@@ -479,13 +488,14 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               else
                  is = domain%x(1)%global%begin - 1
               end if
-              if( is.GT.domain%x(1)%domain_data%begin )then
+              isd = domain%x(1)%domain_data%begin
+              if( is.GT.isd )then
 
-                 if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
+                 if( 2*is-isd.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
 
-                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is)
-                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is)
+                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is, use_device_ptr)
+                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is, use_device_ptr)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
@@ -494,7 +504,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
 
-                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1)
+                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1, use_device_ptr)
               end if
            end select
         end if
@@ -507,10 +517,10 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            case(BGRID_NE)
               is = is + shift
               ie = ie + shift
-              call NEGATE_HALO_ (group, FIELD_X, j, is, ie)
-              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_X, j, is, ie, use_device_ptr)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie, use_device_ptr)
            case(CGRID_NE)
-              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie, use_device_ptr)
            end select
         end if
      end if
@@ -541,6 +551,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: is, ie, js, je
   integer   :: n, l, m, i, j, k, nk
   logical   :: reuse_buf_pos
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   character(len=8)            :: text
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
@@ -604,7 +615,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
 
   !pack the data
   call mpp_clock_begin(nonblock_group_pack_clock)
-  call GROUP_UPDATE_PACK_ (group, buffer, group%buffer_start_pos)
+  call GROUP_UPDATE_PACK_ (group, buffer, group%buffer_start_pos, use_device_ptr)
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
@@ -632,6 +643,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: shift, gridtype, midpoint, flags_v
   integer   :: rotation, nk, isd
   logical   :: recv_y(8)
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
@@ -662,7 +674,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   !---unpack the buffer
 
   call mpp_clock_begin(nonblock_group_unpk_clock)
-  call GROUP_UPDATE_UNPACK_ (group, buffer, group%buffer_start_pos)
+  call GROUP_UPDATE_UNPACK_ (group, buffer, group%buffer_start_pos, use_device_ptr)
   call mpp_clock_end(nonblock_group_unpk_clock)
 
   ! ---northern boundary fold
@@ -679,8 +691,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            if( .NOT. domain%symmetry ) is = is - 1
            do i = is ,ie, midpoint
               if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
-                 call SET_ZERO_ (group, FIELD_X, i, j)
-                 call SET_ZERO_ (group, FIELD_Y, i, j)
+                 call SET_ZERO_ (group, FIELD_X, i, j, use_device_ptr)
+                 call SET_ZERO_ (group, FIELD_Y, i, j, use_device_ptr)
               end if
            end do
         endif
@@ -700,8 +712,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
                  if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
-                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is)
-                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is)
+                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is, use_device_ptr)
+                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is, use_device_ptr)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
@@ -709,7 +721,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               if( is.GT.isd)then
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
-                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1)
+                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1, use_device_ptr)
               end if
            end select
         end if
@@ -722,10 +734,10 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            case(BGRID_NE)
               is = is + shift
               ie = ie + shift
-              call NEGATE_HALO_ (group, FIELD_X, j, is, ie)
-              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_X, j, is, ie, use_device_ptr)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie, use_device_ptr)
            case(CGRID_NE)
-              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie, use_device_ptr)
            end select
         end if
      end if
@@ -798,10 +810,11 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_(group, fieldx, fieldy)
   group%addrs_y(group%reset_index_v) = c_loc(fieldy)
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_
 
-subroutine SET_ZERO_  (group, field_type, i0, j0)
+subroutine SET_ZERO_  (group, field_type, i0, j0, use_device_ptr)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
   integer, intent(in) :: i0, j0 !< i,j point to initialize to zero
+  logical, intent(in) :: use_device_ptr
 
   integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
@@ -858,28 +871,52 @@ subroutine SET_ZERO_  (group, field_type, i0, j0)
     lb(iy) = j0 - js0 + 1
     ub(iy) = j0 - js0 + 1
 
-    select case(nd)
-      case (2)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-          field2d(i1, i2) = zero_
-        end do
-      case (3)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-          field3d(i1, i2, i3) = zero_
-        end do
-      case (4)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-          field4d(i1, i2, i3, i4) = zero_
-        end do
-    end select
+    if (use_device_ptr) then
+      select case(nd)
+        case (2)
+          !$omp target teams distribute parallel do default(shared) &
+          !$omp   shared(lb,ub,zero_)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+            field2d(i1, i2) = zero_
+          end do
+        case (3)
+          !$omp target teams distribute parallel do default(shared) &
+          !$omp   shared(lb,ub,zero_)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+            field3d(i1, i2, i3) = zero_
+          end do
+        case (4)
+          !$omp target teams distribute parallel do default(shared) &
+          !$omp   shared(lb,ub,zero_)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+            field4d(i1, i2, i3, i4) = zero_
+          end do
+      end select
+    else
+      select case(nd)
+        case (2)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+            field2d(i1, i2) = zero_
+          end do
+        case (3)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+            field3d(i1, i2, i3) = zero_
+          end do
+        case (4)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+            field4d(i1, i2, i3, i4) = zero_
+          end do
+      end select
+    endif
   enddo
 end subroutine SET_ZERO_
 
-subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
+subroutine NEGATE_HALO_  (group, field_type, j0, is, ie, use_device_ptr)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
   integer, intent(in) :: j0 !< j point to negate
   integer, intent(in) :: is, ie !< range of i indices to negate
+  logical, intent(in) :: use_device_ptr
 
   integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
@@ -935,29 +972,53 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
     lb(iy) = j0 - js0 + 1
     ub(iy) = j0 - js0 + 1
 
-    select case(nd)
-      case (2)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-          field2d(i1,i2) = -field2d(i1,i2)
-        end do
-      case (3)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-          field3d(i1,i2,i3) = -field3d(i1,i2,i3)
-        end do
-      case (4)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-          field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
-        end do
-    end select
+    if (use_device_ptr) then
+      select case(nd)
+        case (2)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+            field2d(i1,i2) = -field2d(i1,i2)
+          end do
+        case (3)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+            field3d(i1,i2,i3) = -field3d(i1,i2,i3)
+          end do
+        case (4)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+            field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
+          end do
+      end select
+    else
+      select case(nd)
+        case (2)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+            field2d(i1,i2) = -field2d(i1,i2)
+          end do
+        case (3)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+            field3d(i1,i2,i3) = -field3d(i1,i2,i3)
+          end do
+        case (4)
+          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+            field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
+          end do
+      end select
+    endif
   enddo
 end subroutine NEGATE_HALO_
 
-subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
+subroutine FLIP_I_  (group, field_type, j0, is, ie, offset, use_device_ptr)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
   integer, intent(in) :: j0 !< j point to negate
   integer, intent(in) :: is, ie !< range of i indices to negate
   integer, intent(in) :: offset !< Offset when flipping the i axis
+  logical, intent(in) :: use_device_ptr
 
   integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
@@ -1015,50 +1076,103 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
 
     offset1 = offset - 2*is0 + 2
 
-    select case(nd)
-      case (2)
-        do i1=lb(1),ub(1)
-          do i2=lb(2),ub(2)
-            block
-              integer :: src(2)
-
-              src = [i1, i2]
-              src(ix) = offset1 - src(ix)
-              field2d(i1,i2) = field2d(src(1),src(2))
-            end block
-          end do
-        end do
-      case (3)
-        do i1=lb(1),ub(1)
-          do i2=lb(2),ub(2)
-            do i3=lb(3),ub(3)
+    if (use_device_ptr) then
+      select case(nd)
+        case (2)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub,offset1)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
               block
-                integer :: src(3)
+                integer :: src(2)
 
-                src = [i1, i2, i3]
+                src = [i1, i2]
                 src(ix) = offset1 - src(ix)
-                field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+                field2d(i1,i2) = field2d(src(1),src(2))
               end block
             end do
           end do
-        end do
-      case (4)
-        do i1=lb(1),ub(1)
-          do i2=lb(2),ub(2)
-            do i3=lb(3),ub(3)
-              do i4=lb(4),ub(4)
+        case (3)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub,offset1)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
                 block
-                  integer :: src(4)
+                  integer :: src(3)
 
-                  src = [i1, i2, i3, i4]
+                  src = [i1, i2, i3]
                   src(ix) = offset1 - src(ix)
-                  field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+                  field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
                 end block
               end do
             end do
           end do
-        end do
-    end select
+        case (4)
+          !$omp target teams distribute parallel do collapse(2) default(shared) &
+          !$omp   shared(lb,ub,offset1)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                do i4=lb(4),ub(4)
+                  block
+                    integer :: src(4)
+
+                    src = [i1, i2, i3, i4]
+                    src(ix) = offset1 - src(ix)
+                    field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+                  end block
+                end do
+              end do
+            end do
+          end do
+      end select
+    else
+      select case(nd)
+        case (2)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              block
+                integer :: src(2)
+
+                src = [i1, i2]
+                src(ix) = offset1 - src(ix)
+                field2d(i1,i2) = field2d(src(1),src(2))
+              end block
+            end do
+          end do
+        case (3)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                block
+                  integer :: src(3)
+
+                  src = [i1, i2, i3]
+                  src(ix) = offset1 - src(ix)
+                  field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+                end block
+              end do
+            end do
+          end do
+        case (4)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                do i4=lb(4),ub(4)
+                  block
+                    integer :: src(4)
+
+                    src = [i1, i2, i3, i4]
+                    src(ix) = offset1 - src(ix)
+                    field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+                  end block
+                end do
+              end do
+            end do
+          end do
+      end select
+    endif
   enddo
 end subroutine FLIP_I_
 
