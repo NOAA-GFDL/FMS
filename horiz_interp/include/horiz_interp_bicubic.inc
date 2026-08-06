@@ -542,7 +542,7 @@
 !-----------------------------------------------------------------------
 
    !> @parblock
-   !! Unused subroutine to find the lower neighbor of xf in field xc, return is the index.
+   !! Internally used subroutine to find the lower neighbor of xf in field xc, return is the index.
    !! (TODO These routines are redundant, we can find the lower neighbor and add 1.)
    !! xc, yc : co-ordinates of the coarse grid
    !! xf, yf : co-ordinates of the fine grid
@@ -564,7 +564,7 @@
 !-----------------------------------------------------------------------
 
     !> @parblock
-    !> Unused subroutine to find the upper neighbour of xf in field xc, return is the index.
+    !> Internally used subroutine to find the upper neighbour of xf in field xc, return is the index.
     !! xc, yc : co-ordinates of the coarse grid
     !! co-ordinates of the fine grid
     !! @endparblock

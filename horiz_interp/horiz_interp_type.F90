@@ -136,7 +136,7 @@ end type horizInterpReals4_type
 !> Datatype holding interpolation weights, mapping indices, and metadata for horizontal interpolation.
 !! All real members are stored in horizInterpReals8_type if the grid and data are represented in 64-bit
 !! floating point precision or horizInterpReals4_type if the grid and data are represented in 32-bit
-!! floating point eprecision.  Only one type, horizInterpReals4_type or horizInterpReals8_type, is allocated
+!! floating point precision.  Only one type, horizInterpReals4_type or horizInterpReals8_type, is allocated
 !! and used for interpolation.
  type horiz_interp_type
    integer, dimension(:,:), allocatable   :: ilon

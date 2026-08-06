@@ -109,13 +109,13 @@ module horiz_interp_bicubic_mod
       module procedure bcucof_r8
    end interface
 
-   !> Unused generic interface.
+   !> Generic interface used internally in finding neighbors
    interface indl
       module procedure indl_r4
       module procedure indl_r8
    end interface
 
-   !> Unused generic interface.
+   !> Generic interface used internally in finding neighbors
    interface indu
       module procedure indu_r4
       module procedure indu_r8

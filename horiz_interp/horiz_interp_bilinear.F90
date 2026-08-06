@@ -23,7 +23,7 @@
 !! Horiz_interp_bilinear_mod contains methods called from horiz_interp_mod to
 !! interpolate data on a regular rectangular grid to a rectangular/tripolar grid.
 !! Users are recommened to use the top-level module horiz_interp_mod with "interp"
-!! set to "bilinear" for bilinera interpolation.
+!! set to "bilinear" for bilinear interpolation.
 !! @endparblock
 
 module horiz_interp_bilinear_mod

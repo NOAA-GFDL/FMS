@@ -55,7 +55,7 @@ module horiz_interp_spherical_mod
     module procedure horiz_interp_spherical_new_r8
   end interface
 
-  !> Unused interface,
+  !> Unused interface
   interface horiz_interp_spherical_wght
     module procedure horiz_interp_spherical_wght_r4
     module procedure horiz_interp_spherical_wght_r8

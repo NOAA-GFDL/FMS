@@ -17,7 +17,7 @@
 !***********************************************************************
   !> @parblock
   !! Subroutine to generate weights and mapping indices for bilinear interpolation from a
-  !! rectangular input grid specified as 1D arrays to any output grid specified as 2D arrays.
+  !! rectilinear input grid specified as 1D arrays to any output grid specified as 2D arrays.
   !! @endparblock
   subroutine HORIZ_INTERP_BILINEAR_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
@@ -26,9 +26,9 @@
     type(horiz_interp_type), intent(inout) :: Interp
       !< will be populated with interpolation weights and mapping indices.
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
-      !< are the longitude coordinates for the rectangular input grid in radians.
+      !< are the longitude coordinates for the rectilinear input grid in radians.
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
-      !< are the latitude coordinates for the rectangular input grid in radians.
+      !< are the latitude coordinates for the rectilinear input grid in radians.
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
       !< are the longitude coordinates for the output grid in radians.
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
@@ -724,8 +724,8 @@
 
   !#######################################################################
   !> @parblock
-  !! The newer internally used subroutine to search the source grid for grid cells that neighbors
-  !! each destination grid cells.
+  !! The newer internally used subroutine to search the source grid for grid cells that neighbor
+  !! each destination grid cell.
   !! @endparblock
   subroutine FIND_NEIGHBOR_NEW_( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
     type(horiz_interp_type), intent(inout) :: Interp
@@ -1288,9 +1288,9 @@
     real(FMS_HI_KIND_), target, intent(in) :: lon_out(:,:)
       !< are the longitude coordinates of output grid.
     real(FMS_HI_KIND_), intent(in) :: lat_in(:)
-      !< are the latitude coordinates for the rectangular input grid in radians.
+      !< are the latitude coordinates for the rectilinear input grid in radians.
     real(FMS_HI_KIND_), intent(in) :: lon_in(:)
-      !< are the longitude coordinates for the rectangular input grid in radians.
+      !< are the longitude coordinates for the rectilinear input grid in radians.
     character(len=*), intent(in) :: weight_file_source
       !< source of the weight file, only accepts "fregrid" at this time.
     character(len=*), intent(in) :: interp_method

@@ -115,29 +115,37 @@ use platform_mod,               only: r4_kind, r8_kind
  !! first argument.  Else, if Interp is not provided, calls horiz_interp_solo_* blackbox methods:
  !! Following captures the main input arguments for each subroutine:
  !! horiz_interp_base_2d_r4:
- !!   2d input data to 2d output data in 32-bit floating point precision.
+ !!   2d input data to 2d output data in 32-bit floating point precision.  Takes Interp as first argument.
  !! horiz_interp_base_2d_r8:
- !!   2d input data to 2d output data in 64-bit floating point precision.
+ !!   2d input data to 2d output data in 64-bit floating point precision.  Takes Interp as first argument.
  !! horiz_interp_base_3d_r4:
- !!   3d input data to 3d output data in 32-bit floating point precision.
+ !!   3d input data to 3d output data in 32-bit floating point precision.  Takes Interp as first argument.
  !! horiz_interp_base_3d_r8:
- !!   3d input data to 3d output data in 64-bit floating point precision.
+ !!   3d input data to 3d output data in 64-bit floating point precision.  Takes Interp as first argument.
  !! horiz_interp_solo_1d_r4:
  !!   input and output grids provided as 1D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_1d_r8:
  !!   input and output grids provided as 1D arrays to interpolate 64-bit 2D data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_1d_src_r4:
  !!   input grid provided as 32-bit 1D arrays, output as 2D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Inerp as argument.
  !! horiz_interp_solo_1d_src_r8:
  !!   input grid provided as 64-bit 1D arrays, output as 2D arrays to interpolate  32-bit 2D data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_2d_r4:
  !!   input and output grids provided as 32-bit 2D arrays to interpolate 32-bit 2d data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_2d_r8:
  !!   input and output grids provided as 64-bit 2D arrays to interpolate 64-bit 2d data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_1d_dst_r4:
  !!   input grid provided as 32-bit 2D arrays, input as 1D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Interp as argument.
  !! horiz_interp_solo_1d_dst_r8
  !!   input grid provided as 64-bit 2D arrays, input as 1D arrays to interpolate 64-bit 2D data.
+ !!   Does not take Interp as argument.
  !! @endparblock
  interface horiz_interp
     module procedure horiz_interp_base_2d_r4
@@ -176,6 +184,7 @@ use platform_mod,               only: r4_kind, r8_kind
    !< is a namelist flag to reproduces siena results if set to .true.  Else, defaults
    !! to false to decrease truncation error in function poly_area in file mosaic_util.c.
    !! The truncation error of second order conservative remapping might be big for high resolution grid.
+   !! This namelist flag will be removed soon.
 
  namelist /horiz_interp_nml/ reproduce_siena
 
