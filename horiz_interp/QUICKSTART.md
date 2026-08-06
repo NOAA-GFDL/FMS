@@ -37,10 +37,11 @@ call fms_init()
 ! initialize horiz_interp_mod
 call horiz_interp_init()
 
-! Compute interpolation weights and mapping indices
+! Populate Interp with interpolation weights and mapping indices
+! Interpolate (can be reused for many data fields on the same grid)
 call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
 
-! Interpolate (can be reused for many data fields on the same grid)
+! Interpolate data into data_dst
 call horiz_interp(Interp, data_src, data_dst)
 
 ! Release the interpolator when finished
@@ -93,7 +94,7 @@ call fms_end()
 Rectilinear grids such as a lat/lon grid where the longitude coordinates are 
 identical along every line of latitude and the latitude coordinates are identical
 along every line of longitude, can be represented as 1D arrays of longitude and 
-latitude gridpoints and weight-generating algorithms can be simplified for efficiency.
+latitude gridpoints, leading to a simpler and more efficient weight-generating algorithms.
 
 ```fortran
 use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
@@ -128,9 +129,10 @@ call fms_init()
 call horiz_interp_init()
 
 ! Compute interpolation weights and mapping indices
+! Interpolate (can be reused for many data fields on the same grid)
 call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
 
-! Interpolate (can be reused for many data fields on the same grid)
+! Interpolate data into data_dst
 call horiz_interp(Interp, data_src, data_dst)
 
 ! Release the interpolator when finished
@@ -144,6 +146,10 @@ call fms_end()
 ```
 
 ## 3D data
+For example, if 3D data array is provided, horiz_interp_mod will conduct spatial
+interpolation, for example, for each vertical level using the same interpolation weights.  
+Horiz_interp_mod does not support vertical interpolation.
+
 ```fortran
 use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
                              horiz_interp, horiz_interp_del, horiz_interp_type
@@ -204,7 +210,7 @@ method itself) are accepted by `horiz_interp_new` regardless of method and are n
 * `mask_in`:  mask for the source grid; excludes masked input cells from the interpolation.
   Values must be between 0 and 1.  If not provided, all source grid cells will be remapped to the destination grid.
 * `mask_out`:   will be populated with fractional area of each output grid cell covered by unmasked input cells.  
-   Will not be computed if not provided.
+   Will not be computed if not provided. CHECK 
 * `is_latlon_in`/`is_latlon_out`:  .true. if the 2D input/destination grid is a lat/lon grid.  If not provided, 
   `horiz_interp_new` will automatically check the grids and trigger the more efficient "1D" algorithms.
   
@@ -214,7 +220,7 @@ method itself) are accepted by `horiz_interp_new` regardless of method and are n
 * `src_modulo`:  `.true.` if the source grid is cyclic (periodic) in longitude.  Defaults to `.false.` if not provided.
 * `grid_at_center`:  set to `.true.` if the input lon/lat coordinates (1D source grids only) are the
   grid cell center points. If not provided, defaults to `.false.` and the input coordinates are treated as edge points
-  to compute the centers internally.
+  to compute the centers.
 
 
 ## bicubic
