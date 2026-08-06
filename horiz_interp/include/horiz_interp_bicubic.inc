@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
   !> @parblock
-  !! Computes weights and mapping indices for bicubic interpation from a rectangular input grid
+  !! Computes weights and mapping indices for bicubic interpation from a rectilinear input grid
   !! specified as 1D arrays to a general output grid specified as 2D arrays.
   !! @endparblock
   subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
@@ -26,9 +26,9 @@
     type(horiz_interp_type), intent(inout) :: Interp
       !< will be populated with interpolation weights and mapping indices
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
-      !< are the longitude coordinates for the rectangular input grid in radians
+      !< are the longitude coordinates for the rectilinear input grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
-      !< are the latitude coordinates for the rectangular input grid in radians
+      !< are the latitude coordinates for the rectilinear input grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
       !< are the longitude coordinates for the output grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
@@ -194,7 +194,7 @@
 
   !> @parblock
   !! Subroutine to compute weignts and mapping indices for bicubic interpolation
-  !! from a rectangular input grid to a rectangular output grid, both supplied
+  !! from a rectilinear input grid to a rectilinear output grid, both supplied
   !! as 1D arrays of latitude and longitude gridpoints.
   !! @endparblock
   subroutine HORIZ_INTERP_BICUBIC_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
@@ -204,13 +204,13 @@
     type(horiz_interp_type), intent(inout) :: Interp
       !< will be populated with interpolation weights and mapping indices
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
-      !< are the longitude coordinates for the rectangular input grid in radians
+      !< are the longitude coordinates for the rectilinear input grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
-      !< are the latitude coordinates for the rectangular input grid in radians
+      !< are the latitude coordinates for the rectilinear input grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_out
-      !< are the longitude coordinates for the rectangular output grid in radians
+      !< are the longitude coordinates for the rectilinear output grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_out
-      !< are the latitude coordinates for the rectangular output grid in radians
+      !< are the latitude coordinates for the rectilinear output grid in radians
     integer, intent(in), optional :: verbose
       !< sets the verbosity level for output
     logical, intent(in), optional :: src_modulo
