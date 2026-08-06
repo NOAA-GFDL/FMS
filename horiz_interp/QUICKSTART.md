@@ -7,7 +7,18 @@ grids, specified in longititude and latitude, must be in radians.
 
 # Basic usage
 
+`Horiz_interp_new` and `horiz_interp` are Fortran generic interfaces that accept 
+varying lists of input arguments.  For example, `horiz_interp_new` will accept different combinations
+of grids represented as 1D and 2D arrays (Rectilinear grids such as lat/lon can be defined
+as 1D arrays).  `Horiz_interp` will accept arguments with and without `Interp` (an instance of `horiz_interp_type`): 
+when `horiz_interp` is called with `Interp` as the first argument followed by the input and output data, `horiz_interp` 
+will use the interpolation weights stored in `Interp` to interpolate the input data to the output data.  If `Interp`
+is not the first argument, but instead the input and output grids are provided as the first arguments followed by
+the input and output data, `horiz_interp` will take the "blackbox" route where weights are automatically generated 
+before interpolation.  For the latter case, the weights will not be stored.  For clarity, see examples below:
+
 ## 2-step interpolation
+
 1. Call `horiz_interp_init`.
 2. Pass in grid to `horiz_interp_new` to compute and store weights in `Interp`.     
 3. Pass `Interp` and `data` to `horiz_interp` to interpolate.
@@ -43,7 +54,7 @@ call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method=
 ! Interpolate (can be reused for many data fields on the same grid)
 call horiz_interp(Interp, data_src, data_dst)
 
-! Release the interpolator when finished
+! deallocate memory stored in Inerp
 call horiz_interp_del(Interp)
 
 ! finalize horiz_interp_mod
@@ -54,6 +65,7 @@ call fms_end()
 ```
 
 ## "Solo" blackbox interpolation
+ 
 1. Call `horiz_interp_init`.
 2. Pass in the data and grid to `horiz_interp`.  The weights will not be saved.
 
@@ -90,6 +102,7 @@ call fms_end()
 ```
 
 ## 1D destination grid example
+
 Rectilinear grids such as a lat/lon grid where the longitude coordinates are 
 identical along every line of latitude and the latitude coordinates are identical
 along every line of longitude, can be represented as 1D arrays of longitude and 
@@ -133,7 +146,7 @@ call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method=
 ! Interpolate (can be reused for many data fields on the same grid)
 call horiz_interp(Interp, data_src, data_dst)
 
-! Release the interpolator when finished
+! Deallocate memory in Interp
 call horiz_interp_del(Interp)
 
 ! finalize horiz_interp_mod
@@ -174,7 +187,7 @@ call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method=
 ! Interpolate (can be reused for many data fields on the same grid)
 call horiz_interp(Interp, data_src, data_dst)
 
-! Release the interpolator when finished
+! Deallocate memory in Interp
 call horiz_interp_del(Interp)
 
 ! finalize horiz_interp_mod
@@ -203,8 +216,7 @@ method itself) are accepted by `horiz_interp_new` regardless of method and are n
 
 * `mask_in`:  mask for the source grid; excludes masked input cells from the interpolation.
   Values must be between 0 and 1.  If not provided, all source grid cells will be remapped to the destination grid.
-* `mask_out`:   will be populated with fractional area of each output grid cell covered by unmasked input cells.  
-   Will not be computed if not provided.
+* `mask_out`:   will be populated with destination grid cells area computed from the exchange grid.   
 * `is_latlon_in`/`is_latlon_out`:  .true. if the 2D input/destination grid is a lat/lon grid.  If not provided, 
   `horiz_interp_new` will automatically check the grids and trigger the more efficient "1D" algorithms.
   
