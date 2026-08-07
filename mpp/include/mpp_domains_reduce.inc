@@ -905,6 +905,8 @@
 #undef MPP_TYPE_INIT_VALUE
 
 !****************************************************
+#ifndef __NVCOMPILER
+
 #undef MPP_GLOBAL_FIELD_
 #define MPP_GLOBAL_FIELD_ mpp_global_field_r8
 #undef MPP_TYPE_
@@ -972,6 +974,127 @@
 #undef DEFAULT_VALUE_
 #define DEFAULT_VALUE_ .false._l4_kind
 #include <mpp_global_field.fh>
+
+
+!! if __NVCOMPILER is defined, use compatibility version
+#else
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(r8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0._r8_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_r8_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_r8_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_r8_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_r8_5d
+#include <mpp_global_field_compat.fh>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(i8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0_i8_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_i8_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_i8_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_i8_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_i8_5d
+#include <mpp_global_field_compat.fh>
+
+#ifdef OVERLOAD_C8
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(c8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ (0._r8_kind,0._r8_kind)
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_c8_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_c8_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_c8_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_c8_5d
+#include <mpp_global_field_compat.fh>
+#endif
+
+#ifdef OVERLOAD_C4
+#undef MPP_TYPE_
+#define MPP_TYPE_ complex(c4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ (0._r4_kind,0._r4_kind)
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_c4_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_c4_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_c4_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_c4_5d
+#include <mpp_global_field_compat.fh>
+#endif
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ logical(l8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ .false._l8_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_l8_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_l8_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_l8_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_l8_5d
+#include <mpp_global_field_compat.fh>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(r4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0._r4_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_r4_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_r4_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_r4_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_r4_5d
+#include <mpp_global_field_compat.fh>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ integer(i4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0_i4_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_i4_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_i4_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_i4_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_i4_5d
+#include <mpp_global_field_compat.fh>
+
+#undef MPP_TYPE_
+#define MPP_TYPE_ logical(l4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ .false._l4_kind
+#undef MPP_GLOBAL_FIELD_2D_
+#define MPP_GLOBAL_FIELD_2D_ mpp_global_field_l4_2d
+#undef MPP_GLOBAL_FIELD_3D_
+#define MPP_GLOBAL_FIELD_3D_ mpp_global_field_l4_3d
+#undef MPP_GLOBAL_FIELD_4D_
+#define MPP_GLOBAL_FIELD_4D_ mpp_global_field_l4_4d
+#undef MPP_GLOBAL_FIELD_5D_
+#define MPP_GLOBAL_FIELD_5D_ mpp_global_field_l4_5d
+#include <mpp_global_field_compat.fh>
+#endif
 !****************************************************
 #undef MPP_DO_GLOBAL_FIELD_3D_AD_
 #define MPP_DO_GLOBAL_FIELD_3D_AD_ mpp_do_global_field2D_r8_3d_ad

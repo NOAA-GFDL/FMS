@@ -234,7 +234,7 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
- class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
+ class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(:)           !< Range to add as a attribute (#1896)
  LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< .True. if mask changes over time
  LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
@@ -1183,8 +1183,12 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if ( diag_field_id .LE. 0 ) THEN
     RETURN
   else
-    if (this%FMS_diag_fields(diag_field_id)%is_registered() ) &
+    if (this%FMS_diag_fields(diag_field_id)%is_registered() ) then
+#ifdef __NVCOMPILER
+      call mpp_error(NOTE, "use_modern_diag:: metadata output is currently unsupported for NVHPC compilers")
+#endif
       call this%FMS_diag_fields(diag_field_id)%add_attribute(att_name, att_value)
+    endif
   endif
 #endif
 end subroutine fms_diag_field_add_attribute
@@ -1230,6 +1234,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       enddo
       call axis%add_structured_axis_ids(uncmx_ids)
     endif
+#ifdef __NVCOMPILER
+    call mpp_error(NOTE, "use_modern_diag:: metadata output is currently unsupported for NVHPC compilers")
+#endif
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute

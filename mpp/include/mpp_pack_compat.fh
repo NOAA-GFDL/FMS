@@ -1,0 +1,385 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
+
+      !> @brief This file provides duplicate subroutines for the mpp_pack.fh, specifically for compatibility with
+      !! Fortran compilers that do not support the 2018 standard, specfically deferred rank arrays and select rank
+      !! constructs.
+
+      !> @brief Pack a 2D domain-decomposed array into a contiguous 1D array. This is
+      !!        typically used to prepare a contiguous array which will be transmitted via MPI.
+      subroutine ARR2VEC_2D (arr, vec, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: arr(:,:) !< The array to be packed
+        MPP_TYPE_, intent(out) :: vec(:) !< The vector to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within ARR2VEC_2D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed),
+                                              !! and you wish to pack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 2
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        n = product(ub - lb + 1)
+
+        vec(1:n) = reshape(arr(lb(1):ub(1), lb(2):ub(2)), [n])
+      end subroutine ARR2VEC_2D
+
+      !> @brief Pack a 3D domain-decomposed array into a contiguous 1D array. This is
+      !!        typically used to prepare a contiguous array which will be transmitted via MPI.
+      subroutine ARR2VEC_3D (arr, vec, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: arr(:,:,:) !< The array to be packed
+        MPP_TYPE_, intent(out) :: vec(:) !< The vector to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within ARR2VEC_3D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to pack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 3
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        n = product(ub - lb + 1)
+
+        vec(1:n) = reshape(arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3)), [n])
+      end subroutine ARR2VEC_3D
+
+      !> @brief Pack a 4D domain-decomposed array into a contiguous 1D array. This is
+      !!        typically used to prepare a contiguous array which will be transmitted via MPI.
+      subroutine ARR2VEC_4D (arr, vec, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: arr(:,:,:,:) !< The array to be packed
+        MPP_TYPE_, intent(out) :: vec(:) !< The vector to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within ARR2VEC_4D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to pack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 4
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        n = product(ub - lb + 1)
+
+        vec(1:n) = reshape(arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3), lb(4):ub(4)), [n])
+      end subroutine ARR2VEC_4D
+
+      !> @brief Pack a 5D domain-decomposed array into a contiguous 1D array. This is
+      !!        typically used to prepare a contiguous array which will be transmitted via MPI.
+      subroutine ARR2VEC_5D (arr, vec, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: arr(:,:,:,:,:) !< The array to be packed
+        MPP_TYPE_, intent(out) :: vec(:) !< The vector to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within ARR2VEC_5D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to pack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 5
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        n = product(ub - lb + 1)
+
+        vec(1:n) = reshape(arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3), lb(4):ub(4), lb(5):ub(5)), [n])
+      end subroutine ARR2VEC_5D
+
+      !> @brief Unpack a contiguous 1D array into a 2D array. This is typically used to transform
+      !!        data obtained from an MPI call into the format that is expected by the calling code.
+      subroutine VEC2ARR_2D (vec, arr, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:) !< The 1D array to be unpacked
+        MPP_TYPE_, intent(out) :: arr(:,:) !< The multi-dimensional array to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within VEC2ARR_2D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed),
+                                              !! and you wish to unpack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 2
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        associate (s => ub - lb + 1)
+          n = product(s)
+          arr(lb(1):ub(1), lb(2):ub(2)) = reshape(vec(1:n), s(1:2))
+        end associate
+      end subroutine VEC2ARR_2D
+
+      !> @brief Unpack a contiguous 1D array into a 3D array. This is typically used to transform
+      !!        data obtained from an MPI call into the format that is expected by the calling code.
+      subroutine VEC2ARR_3D (vec, arr, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:) !< The 1D array to be unpacked
+        MPP_TYPE_, intent(out) :: arr(:,:,:) !< The multi-dimensional array to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within VEC2ARR_3D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to unpack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 3
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        associate (s => ub - lb + 1)
+          n = product(s)
+          arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3)) = reshape(vec(1:n), s(1:3))
+        end associate
+      end subroutine VEC2ARR_3D
+
+      !> @brief Unpack a contiguous 1D array into a 4D array. This is typically used to transform
+      !!        data obtained from an MPI call into the format that is expected by the calling code.
+      subroutine VEC2ARR_4D (vec, arr, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:) !< The 1D array to be unpacked
+        MPP_TYPE_, intent(out) :: arr(:,:,:,:) !< The multi-dimensional array to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within VEC2ARR_4D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to unpack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 4
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        associate (s => ub - lb + 1)
+          n = product(s)
+          arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3), lb(4):ub(4)) = reshape(vec(1:n), s(1:4))
+        end associate
+      end subroutine VEC2ARR_4D
+
+      !> @brief Unpack a contiguous 1D array into a 5D array. This is typically used to transform
+      !!        data obtained from an MPI call into the format that is expected by the calling code.
+      subroutine VEC2ARR_5D (vec, arr, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:) !< The 1D array to be unpacked
+        MPP_TYPE_, intent(out) :: arr(:,:,:,:,:) !< The multi-dimensional array to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within VEC2ARR_5D. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to unpack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
+        integer :: ndims, n
+        integer :: i1, i2, i3, i4, i5
+
+        ndims = 5
+        allocate (lb(ndims), ub(ndims))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(xdim) = is
+        lb(ydim) = js
+
+        ub(xdim) = ie
+        ub(ydim) = je
+
+        associate (s => ub - lb + 1)
+          n = product(s)
+          arr(lb(1):ub(1), lb(2):ub(2), lb(3):ub(3), lb(4):ub(4), lb(5):ub(5)) = reshape(vec(1:n), s(1:5))
+        end associate
+      end subroutine VEC2ARR_5D
+
+      !> @brief Initialize a 1D array to `val`.
+      subroutine ARR_INIT_1D (arr, val)
+        MPP_TYPE_, dimension(:), intent(out) :: arr !< The array to be initialized
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
+
+        arr = val
+      end subroutine ARR_INIT_1D
+
+      !> @brief Initialize a 2D array to `val`.
+      subroutine ARR_INIT_2D (arr, val)
+        MPP_TYPE_, dimension(:,:), intent(out) :: arr !< The array to be initialized
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
+
+        arr = val
+      end subroutine ARR_INIT_2D
+
+      !> @brief Initialize a 3D array to `val`.
+      subroutine ARR_INIT_3D (arr, val)
+        MPP_TYPE_, dimension(:,:,:), intent(out) :: arr !< The array to be initialized
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
+
+        arr = val
+      end subroutine ARR_INIT_3D
+
+      !> @brief Initialize a 4D array to `val`.
+      subroutine ARR_INIT_4D (arr, val)
+        MPP_TYPE_, dimension(:,:,:,:), intent(out) :: arr !< The array to be initialized
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
+
+        arr = val
+      end subroutine ARR_INIT_4D
+
+      !> @brief Initialize a 5D array to `val`.
+      subroutine ARR_INIT_5D (arr, val)
+        MPP_TYPE_, dimension(:,:,:,:,:), intent(out) :: arr !< The array to be initialized
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
+
+        arr = val
+      end subroutine ARR_INIT_5D

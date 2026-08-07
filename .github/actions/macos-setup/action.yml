@@ -1,0 +1,23 @@
+# This file is part of MOM6, the Modular Ocean Model version 6.
+# See the LICENSE file for licensing information.
+# SPDX-License-Identifier: Apache-2.
+
+name: 'install-macos-prerequisites'
+
+description: 'Install prerequisites for Mac OS compilation'
+
+runs:
+  using: 'composite'
+
+  steps:
+    - name: Install macOS packages
+      shell: bash
+      run: |
+        echo "::group::Install packages"
+        brew reinstall gcc
+        brew install automake
+        brew install netcdf
+        brew install netcdf-fortran
+        brew install openmpi
+        brew install libyaml
+        echo "::endgroup::"

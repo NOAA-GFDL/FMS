@@ -54,7 +54,11 @@ subroutine mpp_error_basic( errortype, errormsg )
      text_errortype = 'WARNING: non-existent errortype (must be NOTE|WARNING|FATAL)'
   end select
 
-  if( npes.GT.1 ) write( text,'(a,i6)' ) trim(text_errortype) // ' from PE', pe   !this is the mpp part
+  if( npes.GT.1 ) then
+     write( text,'(a,i6)' ) trim(text_errortype) // ' from PE', pe   !this is the mpp part
+  else
+     text = text_errortype
+  endif
   if( PRESENT(errormsg) )text = trim(text) // ': ' // trim(errormsg)
 !$OMP CRITICAL (MPP_ERROR_CRITICAL)
   select case( errortype )

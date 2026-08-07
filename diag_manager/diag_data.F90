@@ -566,6 +566,7 @@ CONTAINS
 
     integer :: natt !< the size of att_value
 
+#ifndef __NVCOMPILER
     natt = size(att_value)
     this%att_name = att_name
     select type (att_value)
@@ -588,6 +589,7 @@ CONTAINS
           aval = att_value
       end select
     end select
+#endif
   end subroutine fms_add_attribute
 
   !> @brief gets the type of a variable
