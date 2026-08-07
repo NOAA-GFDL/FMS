@@ -875,21 +875,33 @@ subroutine SET_ZERO_  (group, field_type, i0, j0, use_device_ptr)
       select case(nd)
         case (2)
           !$omp target teams distribute parallel do default(shared) &
-          !$omp   shared(lb,ub,zero_)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-            field2d(i1, i2) = zero_
+          !$omp   shared(lb,ub)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              field2d(i1, i2) = zero_
+            end do
           end do
         case (3)
           !$omp target teams distribute parallel do default(shared) &
-          !$omp   shared(lb,ub,zero_)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-            field3d(i1, i2, i3) = zero_
+          !$omp   shared(lb,ub)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                field3d(i1, i2, i3) = zero_
+              end do
+            end do
           end do
         case (4)
           !$omp target teams distribute parallel do default(shared) &
-          !$omp   shared(lb,ub,zero_)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-            field4d(i1, i2, i3, i4) = zero_
+          !$omp   shared(lb,ub)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                do i4=lb(4),ub(4)
+                  field4d(i1, i2, i3, i4) = zero_
+                end do
+              end do
+            end do
           end do
       end select
     else
@@ -977,20 +989,32 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie, use_device_ptr)
         case (2)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-            field2d(i1,i2) = -field2d(i1,i2)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              field2d(i1,i2) = -field2d(i1,i2)
+            end do
           end do
         case (3)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-            field3d(i1,i2,i3) = -field3d(i1,i2,i3)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                field3d(i1,i2,i3) = -field3d(i1,i2,i3)
+              end do
+            end do
           end do
         case (4)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-            field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
+          do i1=lb(1),ub(1)
+            do i2=lb(2),ub(2)
+              do i3=lb(3),ub(3)
+                do i4=lb(4),ub(4)
+                  field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
+                end do
+              end do
+            end do
           end do
       end select
     else
