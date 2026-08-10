@@ -900,7 +900,7 @@ contains
 
     select case (nd)
       case (2)
-        !$omp parallel loop
+        !$omp parallel do default(shared)
         do i1=lb(1),ub(1),stride(1)
           do i2=lb(2),ub(2),stride(2)
             block
@@ -915,7 +915,7 @@ contains
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        !$omp parallel loop
+        !$omp parallel do default(shared)
         do i1=lb(1),ub(1),stride(1)
           do i2=lb(2),ub(2),stride(2)
             do i3=lb(3),ub(3),stride(3)
@@ -933,7 +933,7 @@ contains
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
-        !$omp parallel loop
+        !$omp parallel do default(shared)
         do i1=lb(1),ub(1),stride(1)
           do i2=lb(2),ub(2),stride(2)
             do i3=lb(3),ub(3),stride(3)
