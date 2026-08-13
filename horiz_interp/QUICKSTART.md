@@ -14,8 +14,9 @@ as 1D arrays).  `Horiz_interp` will accept arguments with and without `Interp` (
 when `horiz_interp` is called with `Interp` as the first argument followed by the input and output data, `horiz_interp`
 will use the interpolation weights stored in `Interp` to interpolate the input data to the output data.  If `Interp`
 is not the first argument, but instead the input and output grids are provided as the first arguments followed by
-the input and output data, `horiz_interp` will take the "blackbox" route where weights are automatically generated
-before interpolation.  For the latter case, the weights will not be stored.  For clarity, see examples below:
+the input and output data, `horiz_interp` will take the "blackbox" approach:  weights will be computed
+on-the-fly followed by data interpolation.  For the "blackbox" approach, weights are not be stored and
+are re-computed for every call.
 
 ## 2-step interpolation
 
@@ -49,7 +50,7 @@ call fms_init()
 call horiz_interp_init()
 
 ! Populate Interp with interpolation weights and mapping indices
-! Interpolate (can be reused for many data fields on the same grid)
+! (Interp can be reused for data fields on the same grid)
 call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
 
 ! Interpolate data into data_dst
@@ -143,7 +144,7 @@ call fms_init()
 call horiz_interp_init()
 
 ! Compute interpolation weights and mapping indices
-! Interpolate (can be reused for many data fields on the same grid)
+! (Interp can be reused for data fields on the same grid)
 call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
 
 ! Interpolate data into data_dst
@@ -160,9 +161,9 @@ call fms_end()
 ```
 
 ## 3D data
-For example, if 3D data array is provided, horiz_interp_mod will conduct spatial
-interpolation, for example, for each vertical level using the same interpolation weights.
-Horiz_interp_mod does not support vertical interpolation.
+If 3D data array is provided, e.g data(i,j,k), horiz_interp_mod will conduct spatial
+interpolation for each horizontal slice along the k-axis.  Note, horiz_interp_mod does not
+support vertical interpolation.
 
 ```fortran
 use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, horiz_interp_end, &
@@ -189,9 +190,11 @@ call fms_init()
 call horiz_interp_init()
 
 ! Compute interpolation weights and mapping indices
+! (Interp can be reused for data fields on the same grid)
 call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
 
-! Interpolate (can be reused for many data fields on the same grid)
+! Compute interpolation weights and mapping indices
+! (Interp can be reused for data fields on the same grid)
 call horiz_interp(Interp, data_src, data_dst)
 
 ! Deallocate memory in Interp
