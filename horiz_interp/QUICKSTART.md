@@ -3,7 +3,7 @@
 `horiz_interp_mod` interpolates 2D and 3D data with `conservative order 1`,
 `bilinear`, `bicubic`, and `spherical` (inverse-distance weighted) methods.
 Not all methods support all input and output grids.  The source and destination
-grids, specified in longititude and latitude, must be in radians.
+grids, specified in longitude and latitude, must be in radians.
 
 # Basic usage
 
@@ -25,7 +25,7 @@ before interpolation.  For the latter case, the weights will not be stored.  For
 4. Free `Interp` with `horiz_interp_del` when done.
 
 ```fortran
-use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
+use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, horiz_interp_end, &
                             horiz_interp, horiz_interp_del, horiz_interp_type
 use platform_mod, only:  r8_kind ! 64-bit floating point precision
 
@@ -55,7 +55,7 @@ call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method=
 ! Interpolate data into data_dst
 call horiz_interp(Interp, data_src, data_dst)
 
-! deallocate memory stored in Inerp
+! deallocate memory stored in Interp
 call horiz_interp_del(Interp)
 
 ! finalize horiz_interp_mod
@@ -71,7 +71,7 @@ call fms_end()
 2. Pass in the data and grid to `horiz_interp`.  The weights will not be saved.
 
 ```fortran
-use horiz_interp_mod, only: horiz_interp_init, horiz_interp, horiz_interp_del
+use horiz_interp_mod, only: horiz_interp_init, horiz_interp, horiz_interp_del, horiz_interp_end
 use platform_mod, only:  r8_kind ! 64-bit floating point precision
 
 implicit none
@@ -110,7 +110,7 @@ along every line of longitude, can be represented as 1D arrays of longitude and
 latitude gridpoints, leading to a simpler and more efficient weight-generating algorithms.
 
 ```fortran
-use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
+use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, horiz_interp_end, &
                              horiz_interp, horiz_interp_del, horiz_interp_type
 use platform_mod, only:  r8_kind ! 64-bit floating point precision
 use constants_mod, only:  DEG_TO_RAD
@@ -124,6 +124,7 @@ type(horiz_interp_type) :: Interp
 real(r8_kind), allocatable :: lon_src(:, :), lat_src(:, :) ! source grid
 real(r8_kind), allocatable :: lon_dst(:), lat_dst(:) ! destination grid
 real(r8_kind), allocatable :: data_src(:,:), data_dst(:,:) ! data
+integer :: i
 
 ! ... allocate and define the source grid in lon_src and lat_src
 
@@ -164,7 +165,7 @@ interpolation, for example, for each vertical level using the same interpolation
 Horiz_interp_mod does not support vertical interpolation.
 
 ```fortran
-use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
+use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, horiz_interp_end, &
                              horiz_interp, horiz_interp_del, horiz_interp_type
 use platform_mod, only:  r8_kind ! 64-bit floating point precision
 
@@ -206,7 +207,7 @@ call fms_end()
 # Interpolation methods
 It is recommended to set the optional argument `interp_method` to one of the following:
 
-* `"conserve"` — order 1 conservative interpolation.  Supports all combination of 1D and 2D source and destination grids.
+* `"conservative"` — order 1 conservative interpolation.  Supports all combination of 1D and 2D source and destination grids.
 * `"bilinear"` — bilinear interpolation.  Only supports 1D source with 2D destination, or 2D source and destination grids.
 * `"bicubic"` — bicubic interpolation.  Only supports 1D source with 2D destination, or 1D source and destination grids.
 * `"spherical"` — inverse-distance weighting over nearest neighbors.  Only supports 2D source and destination grids.
@@ -254,7 +255,7 @@ method itself) are accepted by `horiz_interp_new` regardless of method and are n
 
 ## conservative
 
-* `mask_in`/ `mask_out`:  Used only when `Interp%version1 = .true.` (when weights were generated from 1D representation of both input and output grids.)
+* `mask_in`/ `mask_out`:  Used only when `Interp%version = 1` (when weights were generated from 1D representation of both input and output grids.)
 
 ## bilinear
 
@@ -273,6 +274,6 @@ method itself) are accepted by `horiz_interp_new` regardless of method and are n
 
 
 # Additional notes
-- Horiz_interp_mod supporst both 32-bit (`r4_kind`) and 64-bit (`r8_kind`) grids and data.
+- Horiz_interp_mod supports both 32-bit (`r4_kind`) and 64-bit (`r8_kind`) grids and data.
   If `Interp` was populated with weights computed from grids in 32-bit precision, data is expected to be in 32-bit precision.
   Likewise, if `Interp` was populated with weights computed from grids in 64-bit precision, data is expected to be in 64-bit precision.
