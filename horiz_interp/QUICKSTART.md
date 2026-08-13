@@ -2,20 +2,20 @@
 
 `horiz_interp_mod` interpolates 2D and 3D data with `conservative order 1`,
 `bilinear`, `bicubic`, and `spherical` (inverse-distance weighted) methods.
-Not all methods support all input and output grids.  The source and destination
-grids, specified in longitude and latitude, must be in radians.
+Not all methods support all input and output grids.  The units of source and destination
+grids must be in radians.
 
 # Basic usage
 
 `Horiz_interp_new` and `horiz_interp` are Fortran generic interfaces that accept
 varying lists of input arguments.  For example, `horiz_interp_new` will accept different combinations
-of grids represented as 1D and 2D arrays (Rectilinear grids such as lat/lon can be defined
-as 1D arrays).  `Horiz_interp` will accept arguments with and without `Interp` (an instance of `horiz_interp_type`):
+of grids represented as 1D and 2D arrays (Rectilinear grids such as lat-lon grid can be defined
+with 1D arrays).  `Horiz_interp` will accept arguments with and without `Interp` (an instance of `horiz_interp_type`):
 when `horiz_interp` is called with `Interp` as the first argument followed by the input and output data, `horiz_interp`
 will use the interpolation weights stored in `Interp` to interpolate the input data to the output data.  If `Interp`
 is not the first argument, but instead the input and output grids are provided as the first arguments followed by
 the input and output data, `horiz_interp` will take the "blackbox" approach:  weights will be computed
-on-the-fly followed by data interpolation.  For the "blackbox" approach, weights are not be stored and
+on-the-fly followed by data interpolation.  For the "blackbox" approach, weights are not stored and
 are re-computed for every call.
 
 ## 2-step interpolation
@@ -105,10 +105,10 @@ call fms_end()
 
 ## 1D destination grid example
 
-Rectilinear grids such as a lat/lon grid where the longitude coordinates are
+Rectilinear grids such as a lat-lon grids (the longitude coordinates are
 identical along every line of latitude and the latitude coordinates are identical
-along every line of longitude, can be represented as 1D arrays of longitude and
-latitude gridpoints, leading to a simpler and more efficient weight-generating algorithms.
+along every line of longitude) can be represented as 1D array of longitude gridpoints and
+1D array of latitude gridpoints, leading to simpler and more efficient weight-generating algorithms.
 
 ```fortran
 use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, horiz_interp_end, &
@@ -161,7 +161,7 @@ call fms_end()
 ```
 
 ## 3D data
-If 3D data array is provided, e.g data(i,j,k), horiz_interp_mod will conduct spatial
+If the data provided is a 3D array, e.g data(i,j,k), horiz_interp_mod will conduct spatial
 interpolation for each horizontal slice along the k-axis.  Note, horiz_interp_mod does not
 support vertical interpolation.
 
