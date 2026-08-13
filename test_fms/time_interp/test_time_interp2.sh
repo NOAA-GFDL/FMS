@@ -49,9 +49,16 @@ cal_type="julian"
 /
 _EOF
 
+test_expect_success "create input files for time_interp_external with r8_kind" '
+  mpirun -n 4 ./test_time_interp_external_create_input_r8
+'
 test_expect_success "test time interpolation external with r8_kind (julian)" '
   mpirun -n 4 ./test_time_interp_external_r8
 '
+test_expect_success "create input files for time_interp_external with r4_kind" '
+  mpirun -n 4 ./test_time_interp_external_create_input_r4
+'
+
 test_expect_success "test time interpolation external with r4_kind (julian)" '
   mpirun -n 4 ./test_time_interp_external_r4
 '
