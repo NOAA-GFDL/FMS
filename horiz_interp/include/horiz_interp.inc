@@ -171,7 +171,7 @@
 !#######################################################################
   !> @parblock
   !! Wrapper to compute weights for conservative, bilinear, bicubic, or spherical
-  !! interpolation for retangular input grids specified as 1D arrays and 2D output grids
+  !! interpolation for rectangular input grids specified as 1D arrays and 2D output grids
   !! of any kind.  The 1D array of input gridpoints will be used to construct
   !! 2D grids before calling either horiz_interp_conserve_new, horiz_interp_bilinear_new,
   !! horiz_interp_bicubic_new, or horiz_interp_spherical_new.
@@ -183,13 +183,13 @@
    type(horiz_interp_type), intent(inout) :: Interp
      !< is a derived type that will be populated with interpolation weights and indices
    real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_in
-     !< are the latitude coordinates [radians] for the rectangular input grid
-   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
      !< are the longitude coordinates [radians] for the rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
+     !< are the latitude coordinates [radians] for the rectangular input grid
    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out
-     !< are the 2D latitude coordinates [radians] for the output grid
+     !< are the 2D lontitude coordinates [radians] for the output grid
    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_out
-     !< are the 2D longitude coordinates [radians] for the output grid
+     !< are the 2D latitude coordinates [radians] for the output grid
    integer, intent(in), optional :: verbose
      !< sets the verbosity level
    character(len=*), intent(in), optional :: interp_method

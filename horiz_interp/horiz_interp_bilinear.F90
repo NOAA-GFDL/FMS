@@ -95,7 +95,7 @@ module horiz_interp_bilinear_mod
 
 contains
 
-  !> @parbock
+  !> @parblock
   !! Initializes horiz_interp_bilinear_mod.  Called from horiz_interp_init in horiz_interp_mod.
   !! @endparblock
   subroutine horiz_interp_bilinear_init
@@ -112,7 +112,7 @@ contains
 
   !> @parblock
   !! Deallocates arrays holding bilinear interpolation weights and mapping indices in Interp.
-  !! Resets %is_allocated to .false.  Caled from horiz_interp_del in horiz_interp_mod.
+  !! Resets %is_allocated to .false.  Called from horiz_interp_del in horiz_interp_mod.
   !! @endparblock
   subroutine horiz_interp_bilinear_del( Interp )
 

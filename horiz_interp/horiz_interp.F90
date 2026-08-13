@@ -263,7 +263,7 @@ contains
 
  !#####################################################################
 
- !> @parblcok
+ !> @parblock
  !! Dummy routine
  !! @endparblock
  subroutine horiz_interp_end

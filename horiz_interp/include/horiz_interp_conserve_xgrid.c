@@ -27,10 +27,9 @@
 #include <omp.h>
 #endif
 
-/** @file
- *  @ingroup horiz_interp_conserve_mod
+/** @ingroup horiz_interp_conserve_mod
  *  @brief Functions to compute the exchange grid
- * /
+ */
 
 /*******************************************************************************
   void create_xgrid_1dx2d_order1

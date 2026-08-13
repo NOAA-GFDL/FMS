@@ -176,9 +176,9 @@ end type horizInterpReals4_type
    integer, dimension(:), allocatable :: j_dst
      !< are the destination grid mapping indices in the y-direction for conservative interpolation, version 2.
    type(horizInterpReals8_type) :: horizInterpReals8_type
-     !< holds more 32-bit floating point data required for interpolation.
+     !< holds more 64-bit floating point data required for interpolation.
    type(horizInterpReals4_type) :: horizInterpReals4_type
-     !< holds more 64-bit floating pointer data required for interpolation.
+     !< holds more 32-bit floating point data required for interpolation.
  end type
 
 contains
@@ -188,7 +188,7 @@ contains
   !! Subroutine invoked when calling the "=" operator to copy all members of input horiz_interp_type
   !! into another instance of horiz_interp_type.  Do not call subroutine directly.  Instead, for copying,
   !! use the "=" operator:  Interp2 = Interp1.
-  !! @endparblock.
+  !! @endparblock
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
    type(horiz_interp_type), intent(inout) :: horiz_interp_out
      !< will contain the copied horiz_interp_type

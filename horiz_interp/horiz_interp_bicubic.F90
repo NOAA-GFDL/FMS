@@ -136,7 +136,7 @@ module horiz_interp_bicubic_mod
 
   end subroutine horiz_interp_bicubic_init
 
-  !> @parblcok
+  !> @parblock
   !! Deallocates arrays holding bicubic interpolation weights and mapping indices in Interp.
   !! Resets %is_allocated to .false.  Called from horiz_interp_del in horiz_interp_mod.
   !! @endparblock
