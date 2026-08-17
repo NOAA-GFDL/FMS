@@ -36,6 +36,7 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos, use_device_ptr)
 
   if (group%nscalar.gt.0 .and. (group%ix_s.ne.1 .or. group%iy_s.ne.2) .or. &
       group%nvector.gt.0 .and. (group%ix_v.ne.1 .or. group%iy_v.ne.2)) then
+    if (use_device_ptr) call mpp_error(FATAL, "Group update: GPU offloading with generalized indices is not supported")
     call GROUP_UPDATE_PACK_GENERAL_ (group, buffer, buffer_start_pos)
     return
   endif
