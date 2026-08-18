@@ -19,6 +19,7 @@
 !> @brief  This programs tests the public subroutines in test_fms_string_utils:
 !! fms_array_to_pointer, fms_pointer_to_array, fms_sort_this, fms_find_my_string
 program test_fms_string_utils
+#include <fms_platform.h>
   use fms_string_utils_mod
   use fms_mod, only: fms_init, fms_end
   use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
@@ -27,7 +28,7 @@ program test_fms_string_utils
 
   implicit none
 
-  character(len=10), allocatable :: my_array(:) !< Array of strings
+  character(len=FMS_MAX_FILE_LEN), allocatable :: my_array(:) !< Array of strings (#1895)
   character(len=:), allocatable :: my_sorted_array(:) !< Sorted array of strings
   type(c_ptr), allocatable :: my_pointer(:) !< Array of pointers
   integer, allocatable :: my_ids(:) !< Array of indices
