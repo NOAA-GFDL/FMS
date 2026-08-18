@@ -137,7 +137,7 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
         call error("unsupported variable type: "//trim(append_error_msg))
      end select
   else
-     select type(cdata)
+    select type(cdata)
       type is (integer(kind=i4_kind))
         allocate(buf_i4_kind(1))
       type is (integer(kind=i8_kind))
@@ -148,7 +148,7 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
         allocate(buf_r8_kind(1))
       class default
         call error("unsupported variable type: "//trim(append_error_msg))
-     end select
+    end select
   endif
 
   !Gather the data onto the I/O root and write it out.
@@ -253,6 +253,19 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
       class default
         call error("unsupported variable type: "//trim(append_error_msg))
      end select
+  else
+    select type(cdata)
+      type is (integer(kind=i4_kind))
+        allocate(buf_i4_kind(1, 1))
+      type is (integer(kind=i8_kind))
+        allocate(buf_i8_kind(1, 1))
+      type is (real(kind=r4_kind))
+        allocate(buf_r4_kind(1, 1))
+      type is (real(kind=r8_kind))
+        allocate(buf_r8_kind(1, 1))
+      class default
+        call error("unsupported variable type: "//trim(append_error_msg))
+    end select
   endif
 
   c(:) = 1
@@ -376,7 +389,20 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
         call allocate_array(buf_r8_kind, e)
       class default
         call error("unsupported variable type: "//trim(append_error_msg))
-     end select
+    end select
+  else
+    select type(cdata)
+      type is (integer(kind=i4_kind))
+        allocate(buf_i4_kind(1, 1, 1))
+      type is (integer(kind=i8_kind))
+        allocate(buf_i8_kind(1, 1, 1))
+      type is (real(kind=r4_kind))
+        allocate(buf_r4_kind(1, 1, 1))
+      type is (real(kind=r8_kind))
+        allocate(buf_r8_kind(1, 1, 1))
+      class default
+        call error("unsupported variable type: "//trim(append_error_msg))
+    end select
   endif
 
   c(:) = 1

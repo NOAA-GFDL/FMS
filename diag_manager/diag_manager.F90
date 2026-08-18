@@ -192,7 +192,7 @@ use platform_mod
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
-       & use_mpp_io, use_refactored_send, &
+       & use_refactored_send, &
        & use_modern_diag, use_clock_average, diag_null, pack_size_str
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
@@ -1643,12 +1643,12 @@ END FUNCTION register_static_field
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET,CONTIGUOUS :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: rmask
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1

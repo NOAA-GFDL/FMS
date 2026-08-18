@@ -71,7 +71,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_clock_begin_end_id \
   test_mpp_nesting \
   test_mpp_chksum \
-  test_stdlog
+  test_stdlog \
+  test_corner_mosaic
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -140,6 +141,7 @@ test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 test_super_grid_SOURCES = test_super_grid.F90
 test_mpp_chksum_SOURCES = test_mpp_chksum.F90
 test_stdlog_SOURCES = test_stdlog.F90
+test_corner_mosaic_SOURCES = test_corner_mosaic.F90
 
 test_mpp_global_field_r4_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r4_kind
 test_mpp_global_field_r8_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r8_kind

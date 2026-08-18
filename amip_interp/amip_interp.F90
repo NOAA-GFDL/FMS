@@ -347,7 +347,6 @@ end type amip_interp_type
                                    !!      during forecast:  use_ncep_sst = .T.;  no_anom_sst = .F.
  logical :: use_ncep_ice = .false. !< For seasonal forecast: use_ncep_ice = .F.
  logical :: interp_oi_sst = .false. !< changed to false for regular runs
- logical :: use_mpp_io = .false. !< Set to .true. to use mpp_io, otherwise fms2io is used
 
  namelist /amip_interp_nml/ use_ncep_sst, no_anom_sst, use_ncep_ice,  tice_crit, &
                             interp_oi_sst, data_set, date_out_of_range,          &
@@ -356,8 +355,7 @@ end type amip_interp_type
                             sst_pert, sst_pert_type, do_sst_pert,                &
                             use_daily,                                           &
                             ! end add by JHC
-                            verbose, i_sst, j_sst, forecast_mode,                &
-                            use_mpp_io
+                            verbose, i_sst, j_sst, forecast_mode
 
 !-----------------------------------------------------------------------
 
@@ -384,12 +382,6 @@ contains
         write (iunit,nml=amip_interp_nml)
     endif
 
-    if (use_mpp_io) then
-            !! USE_MPP_IO_WARNING
-            call mpp_error ('amip_interp_mod', &
-             'MPP_IO is no longer supported.  Please remove use_mpp_io from amip_interp_nml',&
-              FATAL)
-    endif
     if ( .not. use_ncep_sst ) interp_oi_sst = .false.
 
 !   ---- freezing point of sea water in deg K ---

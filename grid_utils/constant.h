@@ -15,7 +15,7 @@
  * PARTICULAR PURPOSE. See the License for the specific language
  * governing permissions and limitations under the License.
  ***********************************************************************/
-#define RADIUS   (6371000.)
+
 #define STRING   255
 
 #define EPSLN8   (1.e-8)
@@ -25,3 +25,11 @@
 #define R2D (180/M_PI)
 #define TPI (2.0*M_PI)
 #define HPI (0.5*M_PI)
+
+/*  This matches FMSconstants behavior, and sets Earth radius with gfs_constants.fh value,
+    or with gfdl_constants.fh == geos_constants.fh value */
+#ifdef GFS_CONSTANTS
+#define RADIUS   (6371200.)
+#else
+#define RADIUS   (6371000.)
+#endif

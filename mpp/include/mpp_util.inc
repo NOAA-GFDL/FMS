@@ -1562,4 +1562,38 @@ end function rarray_to_char
     call mpp_broadcast(Content, LENGTH, from_pe, PELIST=PELIST)
 
   end subroutine read_ascii_file
+
+  !> @brief Produce an inverse permutation. For example, transform [2, 3, 1, 4] to [3, 1, 2, 4].
+  !!
+  !! The purpose of this subroutine is to convert between (memory dimension) -> (logical dimension) and
+  !! (logical dimension) -> (memory dimension) maps.
+  !!
+  !! @param [in] <x> The original permutation vector
+  !! @param [out] <y> The inverted permutation vector
+  subroutine inverse_permutation(x, y)
+    integer, intent(in) :: x(:)
+    integer, intent(out) :: y(size(x))
+    integer :: i, n
+
+    y = 0
+
+    n = size(x)
+    do i=1,n
+      if (x(i).ge.1 .and. x(i).le.n) then
+        y(x(i)) = i
+      else
+        block
+          character(2) :: nstr
+
+          write (nstr, "(I0)") n
+          call mpp_error(FATAL, "inverse_permutation: Invalid dimension map. &
+                                 Values must be in the range from 1 to " // trim(nstr) // ".")
+        end block
+      endif
+    enddo
+
+    if (any(y.eq.0)) then
+      call mpp_error(FATAL, "inverse_permutation: Invalid dim_order. Values must be non-repeating.")
+    endif
+  end subroutine inverse_permutation
 !> @}

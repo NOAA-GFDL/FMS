@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # TODO: Enable this test once generalized indices work is complete
-SKIP_TESTS="test_mpp_domains2.12"
+SKIP_TESTS="test_mpp_domains2.17"
 
 # TODO edge update, fails on non-blocking with gnu
 #SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
@@ -66,6 +66,7 @@ mix_2D_3D = .false.
 test_get_nbr = .false.
 test_edge_update = .false.
 test_cubic_grid_redistribute = .false.
+test_cubic_grid_redistribute_generalized_indices = .false.
 ensemble_size = 1
 layout_cubic = 0,0
 layout_ensemble = 0,0
@@ -79,6 +80,7 @@ test_nonsym_edge = .false.
 test_halosize_performance = .false.
 test_adjoint = .false.
 wide_halo = .false.
+test_group_offload = .false.
 /
 _EOF
 
@@ -116,6 +118,14 @@ sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .tr
 test_expect_success "cubic grid redistribute" '
     mpirun -n 6 ../test_mpp_domains
 '
+sed "s/test_cubic_grid_redistribute_generalized_indices = .false./test_cubic_grid_redistribute_generalized_indices = .true./" input_base.nml > input.nml
+test_expect_success "cubic grid redistribute_generalized_indices" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_tripolar_grid_redistribute_generalized_indices = .false./test_tripolar_grid_redistribute_generalized_indices = .true./" input_base.nml > input.nml
+test_expect_success "tripolar grid redistribute_generalized_indices" '
+    mpirun -n 6 ../test_mpp_domains
+'
 sed "s/test_boundary = .false./test_boundary = .true./" input_base.nml > input.nml
 test_expect_success "boundary" '
     mpirun -n 6 ../test_mpp_domains
@@ -126,10 +136,6 @@ test_expect_success "adjoint" '
 '
 sed "s/test_unstruct = .false./test_unstruct = .true./" input_base.nml > input.nml
 test_expect_success "unstruct" '
-    mpirun -n 2 ../test_mpp_domains
-'
-sed "s/test_group = .false./test_group = .true./" input_base.nml > input.nml
-test_expect_success "group" '
     mpirun -n 2 ../test_mpp_domains
 '
 sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input.nml
@@ -143,6 +149,15 @@ test_expect_success "check_parallel" '
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
 test_expect_success "get nbr" '
     mpirun -n 8 ../test_mpp_domains
+'
+sed "s/test_group = .false./test_group = .true./" input_base.nml > input.nml
+test_expect_success "group" '
+    mpirun -n 2 ../test_mpp_domains
+'
+# do the group update again, but with openmp offload flag
+sed "s/test_group_offload = .false./test_group_offload = .true./" input_base.nml > input.nml
+test_expect_success "group update with OpenMP offload" '
+    mpirun -n 2 ../test_mpp_domains
 '
 
 test_done
