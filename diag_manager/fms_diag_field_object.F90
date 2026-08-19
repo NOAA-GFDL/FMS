@@ -28,11 +28,6 @@ module fms_diag_field_object_mod
 !! It provides helper methods for field registration, data buffering, metadata queries,
 !! and NetCDF I/O support used by the diag_manager.
 !!
-!! The diagnostic field object is the central representation of a variable in
-!! FMS diagnostics. Each instance stores YAML metadata, file IDs, axis associations,
-!! buffer allocation state, attributes, missing-value handling, and the input buffer
-!! used to assemble data before reduction or output.
-!!
 !! @file
 !! @brief File for @ref fms_diag_field_object_mod
 #ifdef use_yaml

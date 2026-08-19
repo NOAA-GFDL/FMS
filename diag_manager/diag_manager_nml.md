@@ -5,13 +5,15 @@
 
 The `diag_manager_nml` namelist contains runtime configuration options for the diagnostic manager.
 
-Although the namelist is defined in `diag_manager_mod`, all variables belong to the `diag_data_mod` module.
+Although the namelist is defined in `diag_manager_mod`, all variables belong to the `diag_data_mod` module. See
+diag_data_mod for more details.
 ## Variables
 
 ### `append_pelist_name`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: If true, appends the processor element list name to output filenames. Useful for distinguishing output files from different processor configurations.
+- Description: If true, appends the processor element list name to output filenames in the format: `<filename>.<pelist_name>.nc`. 
+  Useful for distinguishing output files from different processor configurations.
 
 ### `mix_snapshot_average_fields`
 - Type: `LOGICAL`
@@ -21,22 +23,22 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `max_files`
 - Type: `INTEGER`
 - Default: `31`
-- Description: Maximum number of output files that can be managed simultaneously by the diagnostic manager. This option is only applicable for the legacy diag manager.
+- Description: Maximum number of output files that can be managed by the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_output_fields`
 - Type: `INTEGER`
 - Default: `300`
-- Description: Maximum number of output fields that can be registered with the diagnostic manager. This option is only applicable for the legacy diag manager.
+- Description: Maximum number of output fields (ie. diagnostic variables as defined in the diag_table) that can be registered with the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_input_fields`
 - Type: `INTEGER`
 - Default: `300`
-- Description: Maximum number of input fields that can be processed by the diagnostic manager. This option is only applicable for the legacy diag manager.
+- Description: Maximum number of input fields (ie. fields registered at runtime) that can be processed by the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_axes`
 - Type: `INTEGER`
 - Default: `60`
-- Description: Maximum number of coordinate axes that can be defined for diagnostic fields.
+- Description: Maximum number of coordinate axes that can be registered for diagnostic fields.
 
 ### `do_diag_field_log`
 - Type: `LOGICAL`
@@ -47,7 +49,7 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `write_bytes_in_file`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: If true, writes the number of bytes written to each output file. Provides information about file sizes and I/O volume. This option is only applicable for the legacy diag manager.
+- Description: If true, writes the number of bytes written to each output file as metadata. Provides information about file sizes and I/O volume. This option is only applicable for the legacy diag manager.
 
 ### `debug_diag_manager`
 - Type: `LOGICAL`
@@ -57,12 +59,12 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `max_num_axis_sets`
 - Type: `INTEGER`
 - Default: `25`
-- Description: Maximum number of axis sets that can be defined for organizing coordinate systems. This option is only applicable for the legacy diag manager.
+- Description: Maximum number of axis sets that can be defined. This option is only applicable for the legacy diag manager.
 
 ### `use_cmor`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: Forces the use of CMOR (Climate Model Output Rewriter) standard missing values (`-1.0e20`) instead of user-specified missing values. Required for CMIP-compliant output.
+- Description: Overrides user-specified missing values and instead use CMOR (Climate Model Output Rewriter) standard missing values (`-1.0e20`). Required for CMIP-compliant output.
 
 ### `issue_oor_warnings`
 - Type: `LOGICAL`
@@ -87,18 +89,13 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `prepend_date`
 - Type: `LOGICAL`
 - Default: `.TRUE.`
-- Description: Controls whether the file start date is prepended to output filenames.
+- Description: Controls whether the file start date is prepended to output filenames. For example, "00010101.<filename>.nc"
 - Notes: Requires that `diag_manager_init` be called with the `time_init` parameter.
 
 ### `region_out_use_alt_value`
 - Type: `LOGICAL`
 - Default: `.TRUE.`
 - Description: Determines which sentinel value to use when checking regional output boundaries. Uses `GLO_REG_VAL_ALT` (`-1`) when true, and `GLO_REG_VAL` (`-999`) when false. This option is only applicable for the legacy diag manager. The modern diag manager can only accept -999 as an option"
-
-### `use_mpp_io`
-- Type: `LOGICAL`
-- Default: `.FALSE.`
-- Description: Selects the I/O backend: true uses `mpp_io`, false uses `fms2_io` (recommended).
 
 ### `use_modern_diag`
 - Type: `LOGICAL`
@@ -108,4 +105,4 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `use_clock_average`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-Description: Controls how averaging windows are defined. When true, averaging of variables is done based on the clock. For example, if doing daily averages and you start the simulation in day 1 hour 3, it will do the average between day 1 hour 3 to day 2 hour 0. The default behavior will do the average between day 1 hour 3 to day 2 hour 3. 
+Description: Controls how averaging windows are defined. When true, averaging of variables is done based on the clock. For example, if enabled and you start at day 1 hour 5, a 1 day freqency will only account for the rest of the hours in that day, so 19 hours total. Normally, the averaging would be done over the full 24 hour period regardless if it goes into the next day.

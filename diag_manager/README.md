@@ -1,23 +1,27 @@
-The purpose of this document is to document the differences between the old (legacy) diag manager and the new (modern) diag manager.
+Below outlines the differences between the legacy diag_manager and the modern diag_manager. Note, the public interfaces are the same between the legacy and modern diag_manager.
+
+## Table of Contents
+
+- [Module Organization and Naming Convention](#module-organization-and-naming-convention)
+- [Enabling the Modern Diag Manager](#enabling-the-modern-diag-manager)
+- [Diag Table Format](#diag-table-format)
+- [Scalar Axis](#scalar-axis)
+- [Average Time Variables](#average-time-variables)
+- [Subregional Files](#subregional-files)
+  - [`is_subregional` global attribute](#is_subregional-global-attribute)
+  - [Subregional dimension names](#subregional-dimension-names)
+  - [Corner and center diagnostics](#corner-and-center-diagnostics)
+- [Global attributes](#global-attributes)
+  - [Grid type and grid tile](#grid-type-and-grid-tile)
+  - [Associated_files global attribute](#associated_files-global-attribute)
+- [Real attributes from diag_field_add_attribute calls](#real-attributes-from-diag_field_add_attribute-calls)
+- [History files data output "changes"](#history-files-data-output-changes)
 
 
-## Contents
-- [1. Diag Manager Rewrite Overview](README.md#1-overview-of-the-diag-manager-rewrite)
-- [2. Diag Table Format](README.md#2-diag-table-format)
-- [3. Scalar Axis](README.md#3-scalar-axis)
-- [4. Average Time Variables](README.md#4-average-time-variables)
-- [5. Subregional Files](README.md#5-subregional-files)
-- [6. Global attributes](README.md#6-global-attributes)
-- [7. Real attributes from diag_field_add_attribute calls](README.md#7-real-attributes-from-diag_field_add_attribute-calls)
-- [8. History files data output "changes"](README.md#8-history-files-data-output-changes)
-
-### 1. Overview of the Diag Manager Rewrite
-
-The diag manager was completely rewritten to support YAML-formatted diagnostic tables and provide improved performance and maintainability. The rewrite maintains backward compatibility with the legacy ASCII-format diag tables through build-time configuration, but is only able to be used if FMS is built with libyaml support.
 
 #### Module Organization and Naming Convention
 
-The diag_manager is organized into functional modules, with new modules introduced in the rewrite using the `fms_diag_` prefix convention:
+The diag_manager is organized into separate modules, with new modules introduced in the rewrite using the `fms_diag_` prefix convention:
 
 **Legacy Modules (original diag manager):**
 - `diag_manager.F90` (top-level interface)
@@ -47,8 +51,7 @@ The diag_manager is organized into functional modules, with new modules introduc
 
 #### Enabling the Modern Diag Manager
 
-The modern diag manager is optionally enabled via the `use_modern_diag` flag in the `diag_manager_nml` namelist, as seen below. FMS must be compiled with the `-Duse_yaml flag`.
-By default, the legacy diag manager is used to maintain backward compatibility. When `use_modern_diag = .true.`, the modern implementation is invoked while maintaining the same public interface.
+FMS defaults to the legacy diag manager for backwards compatibility. Users must enable the modern diag manager via `use_modern_diag = .true.` in the diag_manager_nml, as seen below. FMS must also be compiled with the `-Duse_yaml` flag to enable and use the option.
 
 ```
 &diag_manager_nml
@@ -56,14 +59,13 @@ By default, the legacy diag manager is used to maintain backward compatibility. 
 /
 ```
 
-### 2. Diag Table Format
+### Diag Table Format
 The modern diag manager uses a YAML format instead of the legacy ascii table. A description of the YAML diag table can
 be found [here](diag_yaml_format.md). A formal specification, in the form of a JSON schema, can be found in the
 [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas) repository on Github.
 
-Options set in the file section will become the default for each variable in that file (ie. `kind: r8 below` will set all variables to use r8 kind),
-unless otherwise specified. Ordering of the key-value pairs in the yaml file does not matter, as long as the appropriate sections have
-matching indentation.
+Options can be added in the file section to set the default for each variable in that file. For example, `kind: r8` will set all variables to use r8 kind.
+Please ensure the YAML diag_table is indented correctly. The ordering of the key-value pairs does not matter.
 
 This barebones example creates a single netcdf file (per tile, if using a tiled domain):
 ```{yaml}
@@ -155,8 +157,8 @@ diag_files:
   - is_a_file: true
 ```
 
-### 3. Scalar Axis
-The old diag manager was adding a `scalar_axis` dimension of size 1 for scalar variables
+### Scalar Axis
+The old diag manager adds a `scalar_axis` dimension of size 1 for scalar variables
 
 ```
 dimensions:
@@ -166,9 +168,9 @@ variables:
             	p700:_FillValue = 1.e+20 ;
             	p700:missing_value = 1.e+20 ;
 ```
-The new diag manager will no longer have a dummy scalar axis dimension.
+The new diag manager no longer adds a dummy scalar axis dimension.
 
-### 4. Average Time Variables
+### Average Time Variables
 The old diag manager includes time bounds metadata in a non-standard convention (i.e. `average_T1`, `average_T2`, and `average_DT`)
 1. `average_T1` is the start time for the averaging period (in the same time units as time)
 2. `average_T2` is the end time for the averaging period
@@ -210,34 +212,34 @@ This time_bounds variable is refernced as a variable attribute of time:
 		time:bounds = "time_bnds" ;
 ```
 
-### 5. Subregional Files
+### Subregional Files
 
-#### A. `is_subregional` global attribute:
-Subregional files will have a global NetCDF attribute `is_subregional = True` set for non-global history files. This attribute will be used in PP tools.
+#### `is_subregional` global attribute
+Subregional files will have a global NetCDF attribute `is_subregional = True` set for non-global history files. This attribute will be used by the post-processing tools in FRE.
 
-#### B. Subregional dimension names:
+#### Subregional dimension names
 In some cases, the old diag manager was adding `sub0X` to the dimension names where X is a number greater than 1. This was causing problems in PP tools that were expecting the dimension to have `sub01` in the name. The new diag manager will not have this problem.
 
-#### C. Corner and center diagnostics:
+#### Corner and center diagnostics
 In the old diag manager, if mixing variables that are corner variables, such as velocities={uo,vo,umo,vmo} and center variables, such as tracers={thetao,so,volcello} you sometimes ended up with a different number of variables per file. The extra files had duplicate data for the corner velocities because the two PEs shared the point at the edge. This happened with some grid/layouts/masks/subregion combinations and it caused problems with the combiner. The new diag manager will not have this problem.
 
-### 6. Global attributes
-#### A. Grid type and grid tile:
+### Global attributes
+#### Grid type and grid tile
 The old diag manager was adding the global attributes grid_type = "regular" and grid_tile = "N/A" for all files regardless of what the grid_type and the grid_title actually were. The new diag manager will no longer be doing this as they are not correct and don’t seem to be used.
 
-#### B. Associated_files global attribute:
+#### Associated_files global attribute
 We were unable to reproduce the exact order of the associated_files global attribute, so users may see differences like
 
 ```
 lake_area: 19790101.land_static.nc soil_area: 19790101.land_static.nc land_area: 19790101.land_static.nc <> land_area: 19790101.land_static.nc soil_area: 19790101.land_static.nc lake_area: 19790101.land_static.nc
 ```
 
-### 7. Real attributes from diag_field_add_attribute calls
+### Real attributes from diag_field_add_attribute calls
 When real attributes were added to the file via a diag_field_add_attribute call, the old diag manager is always saving it as NF90_FLOAT regardless of the precision the data was [passed in](https://github.com/NOAA-GFDL/FMS/blob/ebb32649efa395ea14598f74c8d49e74d1408579/diag_manager/diag_manager.F90#L4532-L4543)
 
 The new diag manager is going to write the attribute as it is passed in. This will cause differences when the model component was compiled with r8 as it will write the attribute as r8 instead of r4.
 
-### 8. History files data output "changes"
+### History files data output "changes"
 When the model run time is less than then the output frequency (i.e if the module run time is 2 days and you are writing monthly diagnostics), the old diag manager was writing 9.96921e+36. The new diag manager is not going to write anything for this cases, so if you ncdump the output from the new diag manager, you will get:
 
 ```

@@ -17,14 +17,14 @@
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
 !> @ingroup diag_manager
-!! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
-!!   on distributed systems. It is geared toward the writing of data in netCDF
-!!   format. The diag_manager differs from the fms2_io module in that it reads in
-!!   a diag_table describing which fields are expected in the output file, and also
-!!   buffers the sent in data prior to writing. This allows users to send in data for a field multiple times for a
-!!   timestep and output the average,max/min, etc. based on the 'reduction' method specified in the table.
-!!   It also allows for setting custom frequencies for output and file creation, for example outputting every 2 hours
-!!   while creating a new file every 6 hours.
+!! @brief diag_manager_mod Diag_manager consists of tools for handling diagnostic variables in parallel on
+!! distributed systems. It uses fms2_io under the hood to write the data in NetCDF format.
+!! Diag_manager uses a 'diag_table' file to read in user-defined diagnostic specifications that correspond to output
+!! netcdf files. The diag_table specifies each file and it's variable names, along with additional information
+!! such as the starting date, unlimited dimension, units, and duration to span for each file. Each field in a file has
+!! a buffer of data that is recieves diagnostic data during a model run, along with the current model time. The
+!! diag_manager can write out the buffer directly or perform one of the available 'reduction' methods, such as averaging,
+!! min/max, or root mean squares.
 !!
 !!   <H3>Diag Manager Implementation</H3>
 !!   The diag_manager module provides a unified public interface that supports legacy (ASCII-based) and modern
@@ -36,6 +36,7 @@
 !!   The modern diag manager is enabled via the <TT>use_modern_diag</TT> flag in the <TT>diag_manager_nml</TT>
 !!   namelist. By default, the legacy diag manager is used to maintain backward compatibility. When
 !!   <TT>use_modern_diag = .true.</TT>, the modern implementation is used while maintaining the same public interfaces.
+!!   For example, @ref send_data remains the same in the modern and legacy diag_manager.
 !!   FMS must be built with libyaml support via the <TT>-Duse_yaml</TT> flag to use the modern diag manager.
 !!
 !! @author Matt Harrison, Giang Nong, Seth Underwood
@@ -309,8 +310,8 @@ use platform_mod
      MODULE PROCEDURE send_data_4d
   END INTERFACE
 
-  !> @brief Register a diagnostic field for a given module, this is equivalent to creating a
-  !! variable in the output netcdf file.
+  !> @brief Register a diagnostic field for a given module. This is equivalent to creating a variable in the output
+  !! netcdf file.
   !> @ingroup diag_manager_mod
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
