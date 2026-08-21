@@ -16,13 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_type_mod horiz_interp_type_mod
-!> @ingroup horiz_interp
-!> @brief define derived data type that contains indices and weights used for subsequent
-!! interpolations.
-!> @author Zhi Liang
+!! @ingroup horiz_interp
+!! @{
+!! @author Zhi Liang
+!!
+!! @parblock
+!! Defines horiz_interp_type
+!! @endparblock
 
-!> @addtogroup
-!> @{
 module horiz_interp_type_mod
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
@@ -35,129 +36,164 @@ private
 
 
 ! parameter to determine interpolation method
- integer, parameter :: CONSERVE = 1
- integer, parameter :: BILINEAR = 2
- integer, parameter :: SPHERICAL = 3
- integer, parameter :: BICUBIC  = 4
+ integer, parameter :: CONSERVE = 1 !< is an internally used parameter to mark conservative interpolation
+ integer, parameter :: BILINEAR = 2 !< is an internally used parameter to mark bilinear interpolation
+ integer, parameter :: SPHERICAL = 3 !< is an internally used parameter to mark spherical interpolation
+ integer, parameter :: BICUBIC  = 4 !< is an internally used parameter to mark bicubic interpolation
 
 public :: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
-!> @}
-
-!> @ingroup horiz_interp_type_mod
+!> Interface to override the "=" operator to a horiz_interp_eq that will
+!! copy the Interp instance of horiz_interp_type with Interp2 = Interp1
 interface assignment(=)
   module procedure horiz_interp_type_eq
 end interface
 
-!> @ingroup horiz_interp_type_mod
+!> Generic interfaces to compute statistics for bilinear and spherical interpolation
+!! Calls stats_r4 when the output data is in 32-bit precision.  Calls stats_r8 when
+!! the output data is in 64-bit precision.
 interface stats
   module procedure stats_r4
   module procedure stats_r8
 end interface
 
 
-!> real(8) pointers for use in horiz_interp_type
+!> Nested derived type in horiz_interp_type that holds 64-bit interpolation weights, and
+!! metadata.  If 64-bit grid and data arrays are provided to horiz_interp, Interp%horizInterpReals8_type
+!! will be initialized and populated with mapping weights.
 type horizInterpReals8_type
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
-                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
-                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
-   real(kind=r8_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated = .false. !< set to true upon field allocation
+   real(kind=r8_kind), dimension(:,:), allocatable   :: faci
+     !< holds weights for conservative interpolation version 1
+   real(kind=r8_kind), dimension(:,:), allocatable   :: facj
+     !< holds weights for conservative interpolation version 1
+   real(kind=r8_kind), dimension(:,:), allocatable   :: area_src
+     !< holds source grid area
+   real(kind=r8_kind), dimension(:,:), allocatable   :: area_dst
+     !< holds destination grid area.
+   real(kind=r8_kind), dimension(:,:,:), allocatable :: wti
+     !< holds interpolation weights for bilinear interpolation; x-derivatives for bicubic interpolation.
+   real(kind=r8_kind), dimension(:,:,:), allocatable :: wtj
+     !< holds interpolation weights for bilinear interpolation; y-derivatives for bicubic interpolation.
+   real(kind=r8_kind), dimension(:,:,:), allocatable :: src_dist
+     !< holds distance between destination grid and neighbor source grid in spherical interpolation.
+   real(kind=r8_kind), dimension(:,:), allocatable   :: rat_x
+     !< holds (x_dest -x_src_r)/(x_src_l -x_src_r) for bicubic interpolation
+   real(kind=r8_kind), dimension(:,:), allocatable   :: rat_y
+     !< holds (y_src_l -y_src_r)/(y_src_l -y_src_r) for bicubic interpolation
+   real(kind=r8_kind), dimension(:), allocatable     :: lon_in
+     !< holds the longitude coordinates on the source grid
+   real(kind=r8_kind), dimension(:), allocatable     :: lat_in
+     !< holds the latitude coordinates on the source grid
+   real(kind=r8_kind), dimension(:), allocatable     :: area_frac_dst
+     !< holds interpolation weights for conservative interpolation, version2
+   real(kind=r8_kind), dimension(:,:), allocatable   :: mask_in
+     !< masks the input grid to skip input cells when interpolation
+   real(kind=r8_kind) :: max_src_dist
+     !< sets to max_dist in spherical interpolation
+   logical :: is_allocated = .false.
+     !< is .true. if Interp is populated
 
 end type horizInterpReals8_type
 
-!> holds real(4) pointers for use in horiz_interp_type
+!> Nested derived type in horiz_interp_type that holds 32-bit interpolation weights, and
+!! metadata.  If 32-bit grid and data arrays are provided to horiz_interp, Interp%horizInterpReals4_type
+!! will be initialized and populated with mapping weights.
 type horizInterpReals4_type
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
-                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
-                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
-   real(kind=r4_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated = .false. !< set to true upon field allocation
+   real(kind=r4_kind), dimension(:,:), allocatable   :: faci
+     !< holds weights for conservative interpolation version 1
+   real(kind=r4_kind), dimension(:,:), allocatable   :: facj
+     !< holds weights for conservative interpolation version 1
+   real(kind=r4_kind), dimension(:,:), allocatable   :: area_src
+     !< holds source grid area.
+   real(kind=r4_kind), dimension(:,:), allocatable   :: area_dst
+     !< holds destination grid area.
+   real(kind=r4_kind), dimension(:,:,:), allocatable :: wti
+     !< holds interpolation weights for bilinear interpolation; x-derivatives for bicubic interpolation.
+   real(kind=r4_kind), dimension(:,:,:), allocatable :: wtj
+     !< holds interpolation weights for bilinear interpolation; y-derivatives for bicubic interpolation.
+   real(kind=r4_kind), dimension(:,:,:), allocatable :: src_dist
+     !< holds distance between destination grid and neighbor source grid in spherical interpolation.
+   real(kind=r4_kind), dimension(:,:), allocatable   :: rat_x
+     !< holds (x_dest -x_src_r)/(x_src_l -x_src_r) for bicubic interpolation
+   real(kind=r4_kind), dimension(:,:), allocatable   :: rat_y
+     !< holds (y_src_l -y_src_r)/(y_src_l -y_src_r) for bicubic interpolation
+   real(kind=r4_kind), dimension(:), allocatable     :: lon_in
+     !< holds the longitude coordinates on the source grid
+   real(kind=r4_kind), dimension(:), allocatable     :: lat_in
+     !< holds the latitude coordinates on the source grid
+   real(kind=r4_kind), dimension(:), allocatable     :: area_frac_dst
+     !< holds interpolation weights for conservative interpolation, version2
+   real(kind=r4_kind), dimension(:,:), allocatable   :: mask_in
+     !< masks the input grid to skip input cells when interpolation
+   real(kind=r4_kind) :: max_src_dist
+     !< sets to max_dist in spherical interpolation
+   logical :: is_allocated = .false.
+     !< is .true. if Interp is populated
 
 end type horizInterpReals4_type
 
-!> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
-!> @ingroup horiz_interp_type_mod
+!> Datatype holding interpolation weights, mapping indices, and metadata for horizontal interpolation.
+!! All real members are stored in horizInterpReals8_type if the grid and data are represented in 64-bit
+!! floating point precision or horizInterpReals4_type if the grid and data are represented in 32-bit
+!! floating point precision.  Only one type, horizInterpReals4_type or horizInterpReals8_type, is allocated
+!! and used for interpolation.
  type horiz_interp_type
-   integer, dimension(:,:), allocatable   :: ilon    !< indices for conservative scheme
-   integer, dimension(:,:), allocatable   :: jlat    !< indices for conservative scheme
-                                                           !! wti ist used for derivative "weights" in bicubic
-   integer, dimension(:,:,:), allocatable :: i_lon  !< indices for bilinear interpolation
-                                                        !! and spherical regrid
-   integer, dimension(:,:,:), allocatable :: j_lat  !< indices for bilinear interpolation
-                                                        !! and spherical regrid
-   logical, dimension(:,:), allocatable :: found_neighbors   !< indicate whether destination grid
-                                                            !! has some source grid around it.
+   integer, dimension(:,:), allocatable   :: ilon
+     !< contains the source grid mapping index in x-direction for conservative interpolation, version 1
+   integer, dimension(:,:), allocatable   :: jlat
+     !< contains the source grid mapping indices in y-direction for conservative interpolation, version 1
+   integer, dimension(:,:,:), allocatable :: i_lon
+   !< contains the source grid mapping indices in x-direction for bicubic and bilinear interpolation
+   integer, dimension(:,:,:), allocatable :: j_lat
+     !< contains the source grid cell indices in y-direction for bicubic and bilinear interpolation
+   logical, dimension(:,:), allocatable :: found_neighbors
+     !< is not used
    integer, dimension(:,:), allocatable :: num_found
-   integer                            :: nlon_src !< size of source grid
-   integer                            :: nlat_src !< size of source grid
-   integer                            :: nlon_dst !< size of destination grid
-   integer                            :: nlat_dst !< size of destination grid
-   integer                            :: interp_method      !< interpolation method.
-                                                            !! =1, conservative scheme
-                                                            !! =2, bilinear interpolation
-                                                            !! =3, spherical regrid
-                                                            !! =4, bicubic regrid
-   logical                            :: I_am_initialized=.false.
-   integer                            :: version                            !< indicate conservative
-                                                                            !! interpolation version with value 1 or 2
-   !--- The following are for conservative interpolation scheme version 2 ( through xgrid)
-   integer                            :: nxgrid                             !< number of exchange grid
-                                                                            !! between src and dst grid.
-   integer, dimension(:), allocatable     :: i_src       !< indices in source grid.
-   integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
-   integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
-   integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horizInterpReals8_type) :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
-                                                                    !! if compiled with r8_kind
-   type(horizInterpReals4_type) :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
-                                                                    !! if compiled with r8_kind
+     !< stores the number of neighbors found in spherical interpolation
+   integer :: nlon_src
+     !< is the size of source grid in the x direction
+   integer :: nlat_src
+     !< is the size of source grid in the y direction
+   integer :: nlon_dst
+     !< is the size of destination grid in the x direction
+   integer :: nlat_dst
+     !< is the size of destination grid in the y direction
+   integer :: interp_method
+     !< is the interpolation method set to 1 for conservative; 2 for bilinear; 3 for spherical; 4 for bicubic.
+   logical :: I_am_initialized=.false.
+     !< is set to .true. in horiz_interp_new.  Horiz_interp_base will fail if I_am_initialized = .false.
+   integer :: version
+     !< is set to 1 in horiz_interp_conserve_1dx1d_r4/8. Else set to 2; only used for conservative interpolation.
+   integer :: nxgrid
+     !< is the number of exchange grid cells for conservative interpolation, version 2.
+   integer, dimension(:), allocatable :: i_src
+     !< are the source grid mapping indices in the x-direction for conservative interpolation, version 2.
+   integer, dimension(:), allocatable :: j_src
+     !< are the source grid mapping indices in the y-direction for conservative interpolation, version 2.
+   integer, dimension(:), allocatable :: i_dst
+     !< are the destination grid mapping indices in the x-direction for conservative interpolation, version 2.
+   integer, dimension(:), allocatable :: j_dst
+     !< are the destination grid mapping indices in the y-direction for conservative interpolation, version 2.
+   type(horizInterpReals8_type) :: horizInterpReals8_type
+     !< holds more 64-bit floating point data required for interpolation.
+   type(horizInterpReals4_type) :: horizInterpReals4_type
+     !< holds more 32-bit floating point data required for interpolation.
  end type
 
-!> @addtogroup horiz_interp_type_mod
-!> @{
 contains
 
 !######################################################################################################################
-!> @brief horiz_interp_type_eq creates a copy of the horiz_interp_type object
+  !> @parblock
+  !! Subroutine invoked when calling the "=" operator to copy all members of input horiz_interp_type
+  !! into another instance of horiz_interp_type.  Do not call subroutine directly.  Instead, for copying,
+  !! use the "=" operator:  Interp2 = Interp1.
+  !! @endparblock
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
-    type(horiz_interp_type), intent(inout) :: horiz_interp_out !< Output object being set
-    type(horiz_interp_type), intent(in)    :: horiz_interp_in !< Input object being copied
+   type(horiz_interp_type), intent(inout) :: horiz_interp_out
+     !< will contain the copied horiz_interp_type
+   type(horiz_interp_type), intent(in) :: horiz_interp_in
+     !< is the horiz_interp_type to copy
 
     if(.not.horiz_interp_in%I_am_initialized) then
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
