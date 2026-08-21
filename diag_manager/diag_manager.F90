@@ -23,7 +23,8 @@
 !! netcdf files. The diag_table specifies each file and it's variable names, along with additional information
 !! such as the starting date, unlimited dimension, units, and duration to span for each file. Each field in a file has
 !! a buffer of data that is recieves diagnostic data during a model run, along with the current model time. The
-!! diag_manager can write out the buffer directly or perform one of the available 'reduction' methods, such as averaging,
+!! diag_manager can write out the buffer directly or perform one of the
+!! available 'reduction' methods, such as averaging,
 !! min/max, or root mean squares.
 !!
 !!   <H3>Diag Manager Implementation</H3>

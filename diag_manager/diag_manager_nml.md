@@ -12,7 +12,7 @@ diag_data_mod for more details.
 ### `append_pelist_name`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: If true, appends the processor element list name to output filenames in the format: `<filename>.<pelist_name>.nc`. 
+- Description: If true, appends the processor element list name to output filenames in the format: `<filename>.<pelist_name>.nc`.
   Useful for distinguishing output files from different processor configurations.
 
 ### `mix_snapshot_average_fields`
