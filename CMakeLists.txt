@@ -695,6 +695,7 @@ if(UNIT_TESTS)
     test_fms/diag_manager/check_new_file_freq.F90
     test_fms/diag_manager/test_zbounds_limits.F90
     test_fms/diag_manager/test_multiple_zbounds.F90
+    test_fms/diag_manager/test_wildcard_filename.F90
     test_fms/drifters/test_cloud_interpolator.F90
     test_fms/drifters/test_drifters_io.F90
     test_fms/drifters/test_drifters_input.F90
