@@ -15,10 +15,11 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup FMS FMS
-!> @ingroup libfms
-!> @brief A convenience module to use any FMS routines, functions, values
-!> @author Ryan Mulhall
+!> @defgroup libFMS libFMS
+!! @ingroup fms
+!! @{
+!! @brief A convenience module to use any FMS routines, functions, values
+!! @author Ryan Mulhall
 !!
 !! @date 2/2021
 !!
@@ -56,11 +57,6 @@
 !! this module is provided in the [supported_interfaces.md](../../supported_interfaces.md)
 !! file.
 
-!> @file
-!> @brief File for @ref FMS
-
-!> @ingroup FMS
-!> @{
 module fms
 
   !> import each FMS module's public routines/functions, interfaces, and variables

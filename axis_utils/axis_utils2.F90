@@ -50,7 +50,6 @@ module axis_utils2_mod
   !! @param data1 Data to interpolate
   !! @param [inout] data2 Interpolated data
   !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
-  !! @ingroup axis_utils2_mod
 
   interface axis_edges
     module procedure axis_edges_r4, axis_edges_r8

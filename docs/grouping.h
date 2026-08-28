@@ -20,81 +20,79 @@
 !! Additional doxygen pages can be added here as well
 
 !> @defgroup affinity Affinity
-!> @brief Modules and associated files in the affinity directory
+!! @brief Modules and associated files in the affinity directory
 
 !> @defgroup astronomy Astronomy
-!> @brief Modules and associated files in the astronomy directory
+!! @brief Modules and associated files in the astronomy directory
 
 !> @defgroup axis_utils2 Axis Utilities
-!> @brief Modules and associated files in the axis_utils2 directory
+!! @brief Modules and associated files in the axis_utils2 directory
 
 !> @defgroup amip_interp AMIP Interpolator
-!> @brief Modules and associated files in the amip_interp directory
+!! @brief Modules and associated files in the amip_interp directory
 
 !> @defgroup block_control Block Control
-!> @brief Modules and associated files in the block_control directory
+!! @brief Modules and associated files in the block_control directory
 
 !> @defgroup column_diagnostics Column Diagnostics
-!> @brief Modules and associated files in the column_diagnostics directory
+!! @brief Modules and associated files in the column_diagnostics directory
 
 !> @defgroup constants Constants
-!> @brief Modules and associated files in the constants directory
+!! @brief Modules and associated files in the constants directory
 
 !> @defgroup constants4 Constants4
-!> @brief Modules and associated files in the constants4 directory
+!! @brief Modules and associated files in the constants4 directory
 
 !> @defgroup coupler Coupler
-!> @brief Modules and associated files in the coupler directory
+!! @brief Modules and associated files in the coupler directory
 
 !> @defgroup data_override Data Override
-!> @brief Modules and associated files in the data_override directory
+!! @brief Modules and associated files in the data_override directory
 
 !> @defgroup diag_integral Diag Integral
-!> @brief Modules and associated files in the diag_integral directory
+!! @brief Modules and associated files in the diag_integral directory
 
 !> @defgroup diag_manager Diag Manager
-!> @brief Modules and associated files in the diag_manager directory.
+!! @brief Modules and associated files in the diag_manager directory.
 !! See below for additional information on diag_tables.
 
 !> @defgroup drifters Drifters
-!> @brief Modules and associated files in the drifters directory
+!! @brief Modules and associated files in the drifters directory
 
 !> @defgroup exchange Exchange
-!> @brief Modules and associated files in the exchange directory
+!! @brief Modules and associated files in the exchange directory
 
 !> @defgroup field_manager Field Manager
-!> @brief Modules and associated files in the field_manager directory
+!! @brief Modules and associated files in the field_manager directory
 
 !> @defgroup fms FMS
-!> @brief Modules and associated files in the fms directory
+!! @brief Modules and associated files in the fms directory
 
 !> @defgroup fms2_io FMS2 IO
-!> @brief Modules and associated files in the fms2_io directory
-!!
-!> Updated IO modules for parallel IO via netcdf files. Replaces the functionality of the IO
+!! @brief Modules and associated files in the fms2_io directory
+!! Updated IO modules for parallel IO via netcdf files. Replaces the functionality of the IO
 !! routines in mpp_io. fms2_io_mod is the main module for external usage and provides public
 !! interfaces for routines defined throughout this directory, dependent on the
 !! type of file.
 
 !> @defgroup horiz_interp Horizontal Interpolator
-!> @brief Modules and associated files in the horiz_interp directory
+!! @brief Modules and associated files in the horiz_interp directory
 
 !> @defgroup interpolator Interpolator
-!> @brief Modules and associated files in the interpolator directory
+!! @brief Modules and associated files in the interpolator directory
 
 !> @defgroup memutils Memory Utilities
-!> @brief Modules and associated files in the memutils directory
+!! @brief Modules and associated files in the memutils directory
 
 !> @defgroup monin_obukhov Monin Obukhov
-!> @brief Modules and associated files in the monin_obukhov directory
+!! @brief Modules and associated files in the monin_obukhov directory
 
 !> @defgroup grid_utils Grid Utils
-!> @brief Modules and associated files in the grid_utils directory
+!! @brief Modules and associated files in the grid_utils directory
 
 !> @defgroup mosaic2 Mosaic2
 !> @brief Modules and associated files in the mosaic2 directory
-!!
-!> Provides a fms2_io equivalent to the mpp_io dependent routines in mosaic
+!! Provides a fms2_io equivalent to the mpp_io dependent routines in mosaic
 
 !> @defgroup mpp MPP
 !> @brief Modules and associated files in the mpp directory
@@ -133,8 +131,8 @@
 !> @defgroup tridiagonal Tridiagonal
 !> @brief Modules and associated files in the tridiagonal directory
 
-!> @defgroup libfms FMS Global Module
-!> @brief Modules and associated files in the libfms directory
+! @defgroup libfms FMS Global Module
+! @brief Modules and associated files in the libfms directory
 
 !> @defgroup parser Parser
 !> @brief Modules and associated files for the yaml parser

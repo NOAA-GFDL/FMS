@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_axis_object_mod fms_diag_axis_object_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_axis_object_mod stores the diag axis object, a diag domain
 !! object, and a subaxis object.
