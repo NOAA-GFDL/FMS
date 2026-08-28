@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_conserve
-!> @{
 #undef HI_KIND_TYPE_
 #define HI_KIND_TYPE_ horizInterpReals4_type
 
@@ -51,4 +49,3 @@
 #define DATA_SUM_ data_sum_r4
 
 #include "horiz_interp_conserve.inc"
-!> @}

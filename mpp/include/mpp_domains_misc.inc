@@ -988,6 +988,8 @@ end subroutine init_nonblock_type
 #undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r8_5Dv
 #endif
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_r8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1010,6 +1012,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c8_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c8_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_c8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1031,6 +1035,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i8_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i8_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_i8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1062,6 +1068,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r4_4Dv
 #undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r4_5Dv
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_r4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r4_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1085,6 +1093,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c4_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c4_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_c4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c4_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1106,6 +1116,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i4_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i4_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_i4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i4_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1956,70 +1968,66 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#undef MPP_CREATE_GROUP_UPDATE_2D_
-#define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r8_2d
-#undef MPP_CREATE_GROUP_UPDATE_3D_
-#define MPP_CREATE_GROUP_UPDATE_3D_ mpp_create_group_update_r8_3d
-#undef MPP_CREATE_GROUP_UPDATE_4D_
-#define MPP_CREATE_GROUP_UPDATE_4D_ mpp_create_group_update_r8_4d
-#undef MPP_CREATE_GROUP_UPDATE_2D_V_
-#define MPP_CREATE_GROUP_UPDATE_2D_V_ mpp_create_group_update_r8_2dv
-#undef MPP_CREATE_GROUP_UPDATE_3D_V_
-#define MPP_CREATE_GROUP_UPDATE_3D_V_ mpp_create_group_update_r8_3dv
-#undef MPP_CREATE_GROUP_UPDATE_4D_V_
-#define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r8_4dv
+#undef MPP_CREATE_GROUP_UPDATE_
+#define MPP_CREATE_GROUP_UPDATE_ mpp_create_group_update_r8
+#undef MPP_CREATE_GROUP_UPDATE_V_
+#define MPP_CREATE_GROUP_UPDATE_V_ mpp_create_group_update_r8_v
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r8
 #undef MPP_START_GROUP_UPDATE_
 #define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r8
 #undef MPP_COMPLETE_GROUP_UPDATE_
 #define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r8
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r8_2d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r8_3d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r8_4d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r8_2dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r8_3dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r8_4dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_
+#define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r8
+#undef MPP_RESET_GROUP_UPDATE_FIELD_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r8_v
+#undef GROUP_UPDATE_PACK_
+#define GROUP_UPDATE_PACK_ group_update_pack_r8
+#undef GROUP_UPDATE_UNPACK_
+#define GROUP_UPDATE_UNPACK_ group_update_unpack_r8
+#undef GROUP_UPDATE_PACK_GENERAL_
+#define GROUP_UPDATE_PACK_GENERAL_ group_update_pack_general_r8
+#undef GROUP_UPDATE_UNPACK_GENERAL_
+#define GROUP_UPDATE_UNPACK_GENERAL_ group_update_unpack_general_r8
+#undef SET_ZERO_
+#define SET_ZERO_ set_zero_r8
+#undef NEGATE_HALO_
+#define NEGATE_HALO_ negate_halo_r8
+#undef FLIP_I_
+#define FLIP_I_ flip_i_r8
 #include <mpp_group_update.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#undef MPP_CREATE_GROUP_UPDATE_2D_
-#define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r4_2d
-#undef MPP_CREATE_GROUP_UPDATE_3D_
-#define MPP_CREATE_GROUP_UPDATE_3D_ mpp_create_group_update_r4_3d
-#undef MPP_CREATE_GROUP_UPDATE_4D_
-#define MPP_CREATE_GROUP_UPDATE_4D_ mpp_create_group_update_r4_4d
-#undef MPP_CREATE_GROUP_UPDATE_2D_V_
-#define MPP_CREATE_GROUP_UPDATE_2D_V_ mpp_create_group_update_r4_2dv
-#undef MPP_CREATE_GROUP_UPDATE_3D_V_
-#define MPP_CREATE_GROUP_UPDATE_3D_V_ mpp_create_group_update_r4_3dv
-#undef MPP_CREATE_GROUP_UPDATE_4D_V_
-#define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r4_4dv
+#undef MPP_CREATE_GROUP_UPDATE_
+#define MPP_CREATE_GROUP_UPDATE_ mpp_create_group_update_r4
+#undef MPP_CREATE_GROUP_UPDATE_V_
+#define MPP_CREATE_GROUP_UPDATE_V_ mpp_create_group_update_r4_v
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r4
 #undef MPP_START_GROUP_UPDATE_
 #define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r4
 #undef MPP_COMPLETE_GROUP_UPDATE_
 #define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r4
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r4_2d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r4_3d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r4_4d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r4_2dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r4_3dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r4_4dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_
+#define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r4
+#undef MPP_RESET_GROUP_UPDATE_FIELD_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r4_v
+#undef GROUP_UPDATE_PACK_
+#define GROUP_UPDATE_PACK_ group_update_pack_r4
+#undef GROUP_UPDATE_UNPACK_
+#define GROUP_UPDATE_UNPACK_ group_update_unpack_r4
+#undef GROUP_UPDATE_PACK_GENERAL_
+#define GROUP_UPDATE_PACK_GENERAL_ group_update_pack_general_r4
+#undef GROUP_UPDATE_UNPACK_GENERAL_
+#define GROUP_UPDATE_UNPACK_GENERAL_ group_update_unpack_general_r4
+#undef SET_ZERO_
+#define SET_ZERO_ set_zero_r4
+#undef NEGATE_HALO_
+#define NEGATE_HALO_ negate_halo_r4
+#undef FLIP_I_
+#define FLIP_I_ flip_i_r4
 #include <mpp_group_update.fh>
