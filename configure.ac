@@ -210,6 +210,16 @@ if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
 fi
 
+# check if netcdf/hdf5 was built with mpi
+if test $with_mpi = yes; then
+  AX_LIB_NETCDF4([parallel])
+  if test $with_netcdf4_parallel = yes; then
+    AM_CONDITIONAL([SKIP_NC_PARALLEL], true)
+  else
+    AM_CONDITIONAL([SKIP_NC_PARALLEL], false)
+  fi
+fi
+
 # Check if ncdump is avaiable
 AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
 if test $USE_NCDUMP = yes; then
