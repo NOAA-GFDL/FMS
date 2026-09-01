@@ -19,6 +19,8 @@
 !> @ingroup diag_manager
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
+!! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused,
+!! as all parsing and data storage will be handled by the fms_diag_object.F90 module and it's helpers.
 
 MODULE diag_util_mod
 
@@ -26,18 +28,6 @@ use platform_mod
 use,intrinsic :: iso_fortran_env, only: real128
 use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
                                       c_int32_t,c_int16_t,c_intptr_t
-
-  !   <FUTURE>
-  !     Make an interface <TT>check_bounds_are_exact</TT> for the subroutines <TT>check_bounds_are_exact_static</TT>
-  !     and
-  !     <TT>check_bounds_are_exact_dynamic</TT>.
-  !     <PRE>
-  !       INTERFACE check_bounds_are_exact
-  !         MODULE PROCEDURE check_bounds_are_exact_static
-  !         MODULE PROCEDURE check_bounds_are_exact_dynamic
-  !       END INTERFACE check_bounds_are_exact
-  !     </PRE>
-  !   </FUTURE>
 
   USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&

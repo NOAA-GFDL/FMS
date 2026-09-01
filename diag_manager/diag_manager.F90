@@ -17,9 +17,29 @@
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
 !> @ingroup diag_manager
-!! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
-!!   on distributed systems. It is geared toward the writing of data in netCDF
-!!   format. See @ref diag_manager for diag table information.
+!! @brief diag_manager_mod Diag_manager consists of tools for handling diagnostic variables in parallel on
+!! distributed systems. It uses fms2_io under the hood to write the data in NetCDF format.
+!! Diag_manager uses a 'diag_table' file to read in user-defined diagnostic specifications that correspond to output
+!! netcdf files. The diag_table specifies each file and it's variable names, along with additional information
+!! such as the starting date, unlimited dimension, units, and duration to span for each file. Each field in a file has
+!! a buffer of data that is recieves diagnostic data during a model run, along with the current model time. The
+!! diag_manager can write out the buffer directly or perform one of the
+!! available 'reduction' methods, such as averaging,
+!! min/max, or root mean squares.
+!!
+!!   <H3>Diag Manager Implementation</H3>
+!!   The diag_manager module provides a unified public interface that supports legacy (ASCII-based) and modern
+!!   (YAML-based) diagnostic table formats. The modern implementation was rewritten to improve performance,
+!!   maintainability, and support for YAML-formatted diag_tables. For more information, see the diag_manager/README.md
+!!   file and the documentation for the individual modern diag_manager modules.
+!!
+!!   <H4>Enabling the Modern Diag Manager</H4>
+!!   The modern diag manager is enabled via the <TT>use_modern_diag</TT> flag in the <TT>diag_manager_nml</TT>
+!!   namelist. By default, the legacy diag manager is used to maintain backward compatibility. When
+!!   <TT>use_modern_diag = .true.</TT>, the modern implementation is used while maintaining the same public interfaces.
+!!   For example, @ref send_data remains the same in the modern and legacy diag_manager.
+!!   FMS must be built with libyaml support via the <TT>-Duse_yaml</TT> flag to use the modern diag manager.
+!!
 !! @author Matt Harrison, Giang Nong, Seth Underwood
 !!
 !!   <TT>diag_manager_mod</TT> provides a convenient set of interfaces for
@@ -35,7 +55,7 @@
 !!   Use of <TT>diag_manager</TT> includes the following steps:
 !!   <OL>
 !!     <LI> Create diag_table as described in the @ref diag_table_mod
-!!          documentation.</LI>
+!!          documentation or use YAML format as described in diag_yaml_format.md.</LI>
 !!     <LI> Call @ref diag_manager_init to initialize
 !!          diag_manager_mod.</LI>
 !!     <LI> Call @ref register_diag_field to register the field to be
@@ -144,63 +164,7 @@
 
 MODULE diag_manager_mod
 use platform_mod
-  ! <NAMELIST NAME="diag_manager_nml">
-  !   <DATA NAME="append_pelist_name" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   </DATA>
-  !   <DATA NAME="mix_snapshot_average_fields" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     Set to .TRUE. to allow both time average and instantaneous fields in the same output file.
-  !   </DATA>
-  !   <DATA NAME="max_files" TYPE="INTEGER" DEFULT="31">
-  !   </DATA>
-  !   <DATA NAME="max_output_fields" TYPE="INTEGER" DEFAULT="300">
-  !   </DATA>
-  !   <DATA NAME="max_input_fields" TYPE="INTEGER" DEFAULT="300">
-  !   </DATA>
-  !   <DATA NAME="max_axes" TYPE="INTEGER" DEFAULT="60">
-  !   </DATA>
-  !   <DATA NAME="do_diag_field_log" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   </DATA>
-  !   <DATA NAME="write_bytes_in_files" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   </DATA>
-  !   <DATA NAME="debug_diag_manager" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !   </DATA>
-  !   <DATA NAME="max_num_axis_sets" TYPE="INTEGER" DEFAULT="25">
-  !   </DATA>
-  !   <DATA NAME="use_cmor" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     Let the <TT>diag_manager</TT> know if the missing value (if supplied) should be overridden to be the
-  !     CMOR standard value of -1.0e20.
-  !   </DATA>
-  !   <DATA NAME="issue_oor_warnings" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !     If <TT>.TRUE.</TT>, then the <TT>diag_manager</TT> will check for values outside the
-  !     valid range.  This range is defined in
-  !     the model, and passed to the <TT>diag_manager_mod</TT> via the OPTIONAL variable range
-  !     in the <TT>register_diag_field</TT>
-  !     function.
-  !   </DATA>
-  !   <DATA NAME="oor_warnings_fatal" TYPE="LOGICAL" DEFAULT=".FALSE.">
-  !     If <TT>.TRUE.</TT> then <TT>diag_manager_mod</TT> will issue a <TT>FATAL</TT> error
-  !     if any values for the output field are
-  !     outside the given range.
-  !   </DATA>
-  !   <DATA NAME="max_field_attributes" TYPE="INTEGER" DEFAULT="4">
-  !     Maximum number of user definable attributes per field.
-  !   </DATA>
-  !   <DATA NAME="max_file_attributes" TYPE="INTEGER" DEFAULT="2">
-  !     Maximum number of user definable global attributes per file.
-  !   </DATA>
-  !   <DATA NAME="prepend_date" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !     If <TT>.TRUE.</TT> then prepend the file start date to the output file.  <TT>.TRUE.</TT>
-  !     is only supported if the
-  !      diag_manager_init routine is called with the optional time_init parameter.  Note:
-  !      This was usually done by FRE after the
-  !     model run.
-  !   </DATA>
-  !   <DATA NAME="region_out_use_alt_value" TYPE="LOGICAL" DEFAULT=".TRUE.">
-  !     Will determine which value to use when checking a regional output if the region is the full axis or a sub-axis.
-  !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
-  !     (-1) in <TT>diag_data_mod</TT>.
-  !   </DATA>
-  ! </NAMELIST>
+
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -275,7 +239,7 @@ use platform_mod
 
   type(time_type) :: Time_end
 
-  !> @brief Send data over to output fields.
+  !> @brief Sends data over to output fields.
   !!
   !> <TT>send_data</TT> is overloaded for fields having zero dimension
   !! (scalars) to 3 dimension.  <TT>diag_field_id</TT> corresponds to the id
@@ -347,7 +311,8 @@ use platform_mod
      MODULE PROCEDURE send_data_4d
   END INTERFACE
 
-  !> @brief Register a diagnostic field for a given module
+  !> @brief Register a diagnostic field for a given module. This is equivalent to creating a variable in the output
+  !! netcdf file.
   !> @ingroup diag_manager_mod
   INTERFACE register_diag_field
      MODULE PROCEDURE register_diag_field_scalar
@@ -473,10 +438,10 @@ CONTAINS
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
        & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
        & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
-    endif
-end function register_diag_field_array
+     endif
+   end function register_diag_field_array
 
- !> @brief Return field index for subsequent call to send_data.
+  !> @brief Return field index for subsequent call to send_data.
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_static_field(module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
@@ -4578,7 +4543,7 @@ END FUNCTION register_static_field
   !! area/volume fields for the diagnostic field are defined in another module after
   !! the diag_field.
   SUBROUTINE diag_field_add_cell_measures(diag_field_id, area, volume)
-    INTEGER, INTENT(in) :: diag_field_id
+    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to, returned from register_diag_field
     INTEGER, INTENT(in), OPTIONAL :: area !< diag ids of area
     INTEGER, INTENT(in), OPTIONAL :: volume !< diag ids of volume
 

@@ -20,7 +20,12 @@
 !! @brief diag_output_mod is an integral part of
 !!   diag_manager_mod. Its function is to write axis-meta-data,
 !!   field-meta-data and field data.
+!!
 !! @author Seth Underwood
+!!
+!! @note This file is part of the legacy diag_manager.
+!! If use_modern_diag is enabled, this module will be unused, as all IO will be handled
+!! by the fms_diag_object.F90 module and it's helpers.
 
 !> @addtogroup diag_output_mod
 !> @{
