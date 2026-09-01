@@ -32,19 +32,16 @@ end module data_override_r8
 
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override
-!! @brief Routines to write data to a file whose path is described in a user-provided data_table
+!! @brief Routines to read data from a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
 !!
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
-!! This is typically used to convert data from a component's grid (ie. ocean, atmosphere, land, ice) to another
-!! component's grid and model time, while maintaining consistency and accurate approximations. To do this,
-!! it makes use of horiz_interp_mod and time_interp_external2_mod from FMS to perform spatial and temporal
-!! interpolation, respectively.
+!! This module provides routines to read data from external files and adjust it to match the model's grid and time.
+!! It performs spatial and temporal interpolation using horiz_interp_mod and time_interp_external2_mod from FMS.
 !!
-!! These routines are specifically designed for use with GFDL's input files, typically created by the make_*_mosaic
-!! tools available in fre-nctools. More specifically, a grid_spec.nc that defines paths/directories for the
-!! component's grid files is required during data_override_init.
+!! A grid_spec.nc file (typically created by fre-nctools) that defines paths/directories for the component's
+!! grid files is required during data_override_init.
 !!
 !! The operations performed are specified by the data_table. The data_table is a user-provided file that describes
 !! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table
@@ -80,42 +77,7 @@ private
 !! The optional "override" argument is intent(out) and will be set to true if the data was successfully read and
 !! interpolated, or false if the data was not found in the data_table.
 !!
-!! Typical calls to @ref data_override are shown below. The selected specific
-!! routine depends on argument rank and real kind.
-!! @code{.f90}
-!! use platform_mod, only: r4_kind, r8_kind
-!! use time_manager_mod, only: time_type
-!! use mpp_domains_mod, only: domain2d
-!!
-!! type(time_type) :: Time
-!! logical :: used
-!! real(r4_kind) :: scalar_r4
-!! real(r8_kind) :: scalar_r8
-!! real(r4_kind) :: field2d_r4(is:ie,js:je)
-!! real(r8_kind) :: field2d_r8(is:ie,js:je)
-!! real(r4_kind) :: field3d_r4(is:ie,js:je,nlev)
-!! real(r8_kind) :: field3d_r8(is:ie,js:je,nlev)
-!! type(domain2d) :: Domain
-!!
-!! ! Initializes both r4 and r8 implementations for this domain.
-!! call data_override_init(Ocean_domain_in=Domain)
-!!
-!! ! data_override_0d_r4 / data_override_0d_r8
-!! call data_override('OCN', 'co2_obs', scalar_r4, Time, override=used)
-!! call data_override('OCN', 'co2_obs', scalar_r8, Time, override=used)
-!!
-!! ! data_override_2d_r4 / data_override_2d_r8
-!! call data_override('OCN', 'sst_obs', field2d_r4, Time, override=used)
-!! call data_override('OCN', 'sst_obs', field2d_r8, Time, override=used)
-!!
-!! ! Optional compute-domain window (as used by threaded callers).
-!! call data_override('OCN', 'sst_obs', field2d_r4, Time, override=used, &
-!!                    is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-!!
-!! ! data_override_3d_r4 / data_override_3d_r8
-!! call data_override('LND', 'sst_obs', field3d_r4, Time, override=used)
-!! call data_override('LND', 'sst_obs', field3d_r8, Time, override=used)
-!! @endcode
+!! For typical calling patterns, see the QUICKSTART.md file in this directory.
 !!
 !> @ingroup data_override_mod
 interface data_override
@@ -131,32 +93,8 @@ end interface
 !! defined by mpp_domains_mod and contains
 !! a number of elements with custom defined axis.
 !!
-!! Typical calls to @ref data_override_UG are shown below. The selected
-!! specific routine depends on argument rank and real kind.
-!! @code{.f90}
-!! use platform_mod, only: r4_kind, r8_kind
-!! use time_manager_mod, only: time_type
-!! use mpp_domains_mod, only: domainUG
+!! For typical calling patterns, see the QUICKSTART.md file in this directory.
 !!
-!! type(time_type) :: Time
-!! logical :: used
-!! real(r4_kind) :: ug1d_r4(npts_local)
-!! real(r8_kind) :: ug1d_r8(npts_local)
-!! real(r4_kind) :: ug2d_r4(npts_local,nlev)
-!! real(r8_kind) :: ug2d_r8(npts_local,nlev)
-!! type(domainUG) :: UG_domain
-!!
-!! ! Initialize with an unstructured land domain.
-!! call data_override_init(Land_domainUG_in=UG_domain)
-!!
-!! ! data_override_UG_1d_r4 / data_override_UG_1d_r8
-!! call data_override_UG('LND', 'sst_obs', ug1d_r4, Time, override=used)
-!! call data_override_UG('LND', 'sst_obs', ug1d_r8, Time, override=used)
-!!
-!! ! data_override_UG_2d_r4 / data_override_UG_2d_r8
-!! call data_override_UG('LND', 'sst_obs', ug2d_r4, Time, override=used)
-!! call data_override_UG('LND', 'sst_obs', ug2d_r8, Time, override=used)
-!! @endcode
 !> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d_r4

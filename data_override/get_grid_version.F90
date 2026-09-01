@@ -37,7 +37,7 @@ use mosaic2_mod,     only : get_mosaic_tile_grid
 
 implicit none
 
-!> @brief get_grid_version_1 is intended to read in what is typically named "grid_spec.nc", as created by
+!> @brief get_grid_version_1 is intended to read in what is typically named "grid_spec.nc", typically created by
 !! make_mosaic/make_coupler_mosaic in fre-nctools
 interface get_grid_version_1
   module procedure get_grid_version_1_r4
@@ -45,7 +45,7 @@ interface get_grid_version_1
 end interface get_grid_version_1
 
 !> @brief get_grid_version_2 reads grid coordinate data from an already-opened grid_spec.nc or mosaic
-!! file object, as created by make_mosaic/make_coupler_mosaic in fre-nctools
+!! file object, typically created by make_mosaic/make_coupler_mosaic in fre-nctools
 interface get_grid_version_2
   module procedure get_grid_version_2_r4
   module procedure get_grid_version_2_r8

@@ -84,7 +84,7 @@ type override_type
    integer                          :: t_index            !< index for time interp
    integer                          :: pt_index           !< previous index for time interp
    integer                          :: nt_index           !< next index for time interp
-   type(horiz_interp_type), allocatable :: horz_interp(:) !< horizontal interpolation data, one entry per thread/window
+   type(horiz_interp_type), allocatable :: horz_interp(:) !< interpolation weights unique to each openmp thread 
    integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
@@ -128,10 +128,10 @@ integer :: num_fields = 0 !< number of fields in override_array already processe
 
 type(data_type), dimension(:), allocatable :: data_table !< user-provided data table
 
-type(data_type)                            :: default_table
-type(override_type), dimension(max_array)  :: override_array !< to store processed fields
-type(override_type)                        :: default_array
-logical                                    :: debug_data_override
+type(data_type)                            :: default_table !< Default data_table entries, module-level variable
+type(override_type), dimension(max_array)  :: override_array !< Processed fields, module-level variable
+type(override_type)                        :: default_array !< Default override_array entries, module-level variable
+logical                                    :: debug_data_override !< output debug information during operations
 logical                                    :: grid_center_bug = .false.
 logical                                    :: reproduce_null_char_bug = .false. !> Flag indicating
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
@@ -165,11 +165,11 @@ contains
 !! or data_table.yaml. Each line of data_table contains one data_entry. Items of data_entry
 !! are comma-separated.
 subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
-  type (domain2d), intent(in), optional :: Atm_domain_in    !< Atmosphere domain
-  type (domain2d), intent(in), optional :: Ocean_domain_in  !< Ocean domain
-  type (domain2d), intent(in), optional :: Ice_domain_in    !< Ice domain
-  type (domain2d), intent(in), optional :: Land_domain_in   !< Land domain
-  type(domainUG) , intent(in), optional :: Land_domainUG_in !< Land domain, unstructured grid
+  type (domain2d), intent(in), optional :: Atm_domain_in    !< mpp domain for atmosphere component
+  type (domain2d), intent(in), optional :: Ocean_domain_in  !< mpp domain for ocean component
+  type (domain2d), intent(in), optional :: Ice_domain_in    !< mpp domain for ice component
+  type (domain2d), intent(in), optional :: Land_domain_in   !< mpp domain for land component
+  type(domainUG) , intent(in), optional :: Land_domainUG_in !< mpp unstructured domain for land component
 
   character(len=18), parameter    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: i, iunit, io_status, ierr, use_get_grid_version
@@ -801,9 +801,10 @@ subroutine DATA_OVERRIDE_UNSET_ICE_
   if (allocated(lat_local_ice)) deallocate(lat_local_ice)
 end subroutine
 
-!> @brief Given a gridname, this routine returns the working domain associated with this gridname
+!> @brief Given a gridname, this routine returns the working domain associated with this gridname,
+!! which is the Domain stored as a module-level variable ([ocn/atm/land/ice]_domain) for the given grid
 subroutine get_domain(gridname, domain, comp_domain)
-  character(len=3), intent(in) :: gridname !< Grid name (OCN, ATM, LND, or ICE)
+  character(len=3), intent(in) :: gridname !< Grid name (OCN, ATM, LND, ICE)
   type(domain2D), intent(inout) :: domain !< Output structured-grid domain for gridname
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
 
@@ -825,7 +826,8 @@ subroutine get_domain(gridname, domain, comp_domain)
      call mpp_get_compute_domain(domain,comp_domain(1),comp_domain(2),comp_domain(3),comp_domain(4))
 end subroutine get_domain
 
-!> @brief Given a gridname, returns the unstructured grid (UG) domain associated with that gridname
+!> @brief Given a gridname, returns the unstructured grid (UG) domain associated with that gridname,
+!! which is the UGDomain stored as a module-level variable (land_domainUG) for the given grid name
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
   character(len=3), intent(in) :: gridname !< Grid name (currently LND only)
   type(domainUG), intent(inout) :: UGdomain !< Output unstructured-grid domain for gridname
@@ -848,7 +850,7 @@ end subroutine get_domainUG
 
 !> @brief Routine to perform data override for scalar fields
 subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data_index)
-  character(len=3), intent(in) :: gridname !< model grid ID string (ie. ocn,ice,atm,lnd)
+  character(len=3), intent(in) :: gridname !< model grid ID string (ie. OCN, ICE, ATM, LND)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
   logical, intent(out), optional :: override !< true if the field has been overridden successfully
@@ -1018,7 +1020,7 @@ subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in !< Window bounds relative to
                                                                          !! the compute domain when
-                                                                         !! using multi-window calls
+                                                                         !! using multi-window/OpenMP calls
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_3D
   integer       :: index1
   integer       :: i
@@ -1054,7 +1056,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: return_data !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in !< Window bounds relative to
                                                                           !! the compute domain when
-                                                                          !! using multi-window calls
+                                                                          !! using multi-window/OpenMP calls
   logical, dimension(:,:,:),   allocatable :: mask_out
 
   character(len=FMS_PATH_LEN) :: filename !< file containing source data

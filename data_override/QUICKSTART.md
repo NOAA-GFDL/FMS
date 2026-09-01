@@ -80,6 +80,7 @@ real(r4_kind) :: co2_r4
 real(r8_kind) :: co2_r8
 logical :: used
 
+! data_override will populate co2_r4 and co2_r8 with values from the data file
 call data_override('OCN', 'co2_obs', co2_r4, Time, override=used)
 call data_override('OCN', 'co2_obs', co2_r8, Time, override=used)
 ```
@@ -108,8 +109,8 @@ call data_override('LND', 'soil_temp_obs', fld3d_r8, Time, override=used)
 
 ### Windowed compute-domain calls
 
-When threading or splitting windows, pass bounds relative to compute-domain
-indices.
+When threading or splitting windows (for OpenMP parallelization), pass bounds relative to compute-domain
+indices. This allows multiple threads to safely call `data_override` on different regions of the same array.
 
 ```fortran
 call data_override('OCN', 'sst_obs', fld2d_r4(isw:iew, jsw:jew), Time, &
