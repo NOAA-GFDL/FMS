@@ -105,4 +105,4 @@ diag_data_mod for more details.
 ### `use_clock_average`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-Description: Controls how averaging windows are defined. When true, averaging of variables is done based on the clock. For example, if enabled and you start at day 1 hour 5, a 1 day freqency will only account for the rest of the hours in that day, so 19 hours total. Normally, the averaging would be done over the full 24 hour period regardless if it goes into the next day.
+Description: Controls whether to take the time units into account when calculating the end times. By default a frequency of 1 day will always result in data for 24 hours, regardless of the starting time. When this option is enabled, a 1 day frequency will always end at the 24th hour of the day instead of 24 hours after the start time.
