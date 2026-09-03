@@ -690,16 +690,16 @@
        pes = pelist
        if(from_mosaic) then
           allocate( pesall(0:mpp_npes()-1) )
-          call mpp_get_current_pelist(pesall, comm=cur_comm%mpi_val)
+          call mpp_get_current_pelist(pesall, commID=cur_comm%mpi_val)
        else
           allocate( pesall(0:size(pes(:))-1) )
           pesall = pes
-          call mpp_get_current_pelist(pesall, comm=cur_comm%mpi_val)
+          call mpp_get_current_pelist(pesall, commID=cur_comm%mpi_val)
        end if
     else
        allocate( pes(0:mpp_npes()-1) )
        allocate( pesall(0:mpp_npes()-1) )
-       call mpp_get_current_pelist(pes, comm=cur_comm%mpi_val)
+       call mpp_get_current_pelist(pes, commID=cur_comm%mpi_val)
        pesall = pes
     end if
 
@@ -1263,7 +1263,7 @@ end subroutine check_message_size
             'mpp_domains_define.inc: size of pelist is not equal mpp_npes')
        pes = pelist
     end if
-    call mpp_get_current_pelist(pes, comm=domain%comm%mpi_val)
+    call mpp_get_current_pelist(pes, commID=domain%comm%mpi_val)
     !--- pelist should be monotonic increasing by 1.
     do n = 1, nlist-1
        if(pes(n) - pes(n-1) .NE. 1) call mpp_error(FATAL, &
@@ -1396,7 +1396,7 @@ end subroutine check_message_size
        end do
        !--- set the tile communicator
        if (ANY(pelist_tile == pe)) then
-         call mpp_declare_pelist(pelist_tile, comm=domain%tile_comm%mpi_val)
+         call mpp_declare_pelist(pelist_tile, commID=domain%tile_comm%mpi_val)
        endif
        mask = .TRUE.
        if(present(maskmap))  mask = maskmap(1:layout(1,n), 1:layout(2,n), n)

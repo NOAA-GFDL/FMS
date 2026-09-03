@@ -483,7 +483,7 @@ contains
        my_pelist = pelist
        my_comm = comm
     else
-       call mpp_get_current_pelist(my_pelist, comm = my_comm%mpi_val)
+       call mpp_get_current_pelist(my_pelist, commID = my_comm%mpi_val)
     endif
     do i = 0,npes/npset-1
        root_pelist(i) = my_pelist(npset*i)
