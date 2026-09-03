@@ -417,24 +417,6 @@ private
      module procedure rarray_to_char
   end interface
 
-  !> Declare a pelist. The two flavors of this subroutine differ in the type
-  !! of their comm/commID argument: mpp_declare_pelist_f08 expects a type(mpi_comm)
-  !! as its comm argument, whereas mpp_declare_pelist_legacy expects an integer
-  !! as its commID argument.
-  interface mpp_declare_pelist
-    module procedure mpp_declare_pelist_f08
-    module procedure mpp_declare_pelist_legacy
-  end interface
-
-  !> Get the current pelist. The two flavors of this subroutine differ in the type
-  !! of their comm/commID argument: mpp_get_current_pelist_f08 expects a type(mpi_comm)
-  !! as its comm argument, whereas mpp_get_current_pelist_legacy expects an integer
-  !! as its commID argument.
-  interface mpp_get_current_pelist
-    module procedure mpp_get_current_pelist_f08
-    module procedure mpp_get_current_pelist_legacy
-  end interface
-
 !***********************************************************************
 !
 !    public interface from mpp_comm.h

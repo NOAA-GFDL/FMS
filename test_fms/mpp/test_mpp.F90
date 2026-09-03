@@ -123,7 +123,7 @@ contains
     ! Get commID for current pelist (should be global pelist) via and compare with mpp_commID
     allocate(pelist(npes))
     pelist = (/ (i, i=0, npes-1) /)
-    call mpp_declare_pelist(pelist, comm = comm)
+    call mpp_declare_pelist(pelist, comm = comm%mpi_val)
 
     if (mpp_comm().ne.comm) then
       call mpp_error('test_mpp_comm', 'Test failed: mpp_comm() returned an unexpected mpi_comm handle', FATAL)
