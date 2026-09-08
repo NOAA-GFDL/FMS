@@ -921,8 +921,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               dir = 3
               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
               ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
-              is_coarse = is_coarse - shalo
-              ie_coarse = ie_coarse + nhalo
+              is_coarse = is_coarse - whalo
+              ie_coarse = ie_coarse + ehalo
               js_coarse = jstart_coarse - shalo
               je_coarse = jstart_coarse
               !--- convert the index to coarse grid index.
@@ -994,8 +994,8 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               dir = 7
               is_coarse = istart_coarse + ( isl_fine(n) - isg_fine )/x_refine
               ie_coarse = istart_coarse + ( iel_fine(n) - isg_fine )/x_refine
-              is_coarse = is_coarse - shalo
-              ie_coarse = ie_coarse + nhalo
+              is_coarse = is_coarse - whalo
+              ie_coarse = ie_coarse + ehalo
               js_coarse = jend_coarse
               je_coarse = jend_coarse + nhalo
               !--- convert the index to coarse grid index.
