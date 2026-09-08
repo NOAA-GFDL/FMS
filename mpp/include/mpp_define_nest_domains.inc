@@ -1908,15 +1908,21 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end subroutine get_nnest
 
 
+!> @brief Transform the coordinates defining a region from one tile to another
+!!
+!! Given the coordinates defining a region on `tile_from`, transform those indices
+!! into the coordinate system of `tile_to`. Only adjacent tiles are supported.
+!!
+!! @return .true. if `tile_from` and `tile_to` are equal or adjacent; otherwise, .false.
   function convert_index(domain, tile_from, tile_to, ntiles, is_in, ie_in, js_in, je_in, &
                          is_out, ie_out, js_out, je_out, rot) result(consider_pe)
     type(domain2D), intent(in) :: domain !< Coarse grid's domain
-    integer, intent(in) :: tile_from, tile_to
-    integer, intent(in)  :: ntiles
-    integer, intent(in)  :: is_in, ie_in, js_in, je_in !< Compute domain of the particular (external) coarse-grid PE
-    integer, intent(out) :: is_out, ie_out, js_out, je_out
-    integer, intent(out) :: rot
-    logical              :: consider_pe
+    integer, intent(in) :: tile_from, tile_to !< Source and destination tiles for the coordinate transform
+    integer, intent(in)  :: ntiles !< Number of tiles on the coarse grid
+    integer, intent(in)  :: is_in, ie_in, js_in, je_in !< Indices defining a region on tile_from
+    integer, intent(out) :: is_out, ie_out, js_out, je_out !< Corresponding indices in tile_to's coordinate system
+    integer, intent(out) :: rot !< Angle by which vectors on `tile_from` must be rotated
+    logical              :: consider_pe !< This is true if tile_from and tile_to are adjacent, and false otherwise.
     integer :: isg, ieg, jsg, jeg
     integer :: delta, nx, ny, icross, jcross
     logical :: is_even
