@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2026.01.01
+  VERSION 2026.02
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
