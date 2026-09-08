@@ -620,13 +620,12 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
   integer              :: isc_coarse, iec_coarse, jsc_coarse, jec_coarse
   integer              :: is_coarse, ie_coarse, js_coarse, je_coarse
   integer              :: is_coarse2, ie_coarse2, js_coarse2, je_coarse2
-  integer              :: rotate
-  integer              :: is_convert2(2), ie_convert2(2), js_convert2(2), je_convert2(2), rotate2(2)
+  integer              :: is_convert2, ie_convert2, js_convert2, je_convert2, rotate2
   integer              :: isc_fine, iec_fine, jsc_fine, jec_fine
   integer              :: isd_fine, ied_fine, jsd_fine, jed_fine
   integer              :: x_refine, y_refine, ishift, jshift
-  integer              :: nsend, nrecv, dir, l, nn
-  integer              :: nconvert
+  integer              :: nsend, nrecv, dir, nn
+  logical              :: consider_pe
   integer, allocatable :: isl_coarse(:), iel_coarse(:), jsl_coarse(:), jel_coarse(:)
   integer, allocatable :: isl_fine(:), iel_fine(:), jsl_fine(:), jel_fine(:)
   integer, allocatable :: isgl_fine(:), iegl_fine(:), jsgl_fine(:), jegl_fine(:)
@@ -818,15 +817,15 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               end select
               if( je_coarse .GE. js_coarse .AND. ie_coarse .GE. is_coarse ) then
                  ! convert coarse grid index to the nested grid coarse grid index.
-                 nconvert = convert_index_to_nest(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%list(n-1)%tile_id(1), &
-                      isl_coarse(n), iel_coarse(n), jsl_coarse(n), jel_coarse(n), &
+                 consider_pe = convert_index(domain_coarse, domain_coarse%list(n-1)%tile_id(1), tile_coarse, &
+                      domain_coarse%ntiles, isl_coarse(n), iel_coarse(n), jsl_coarse(n), jel_coarse(n), &
                       is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-                 do l = 1, nconvert
-                    is_coarse2 = max( is_coarse, is_convert2(l) )
-                    ie_coarse2 = min( ie_coarse, ie_convert2(l) )
-                    js_coarse2 = max( js_coarse, js_convert2(l) )
-                    je_coarse2 = min( je_coarse, je_convert2(l) )
+
+                 if (consider_pe) then
+                    is_coarse2 = max( is_coarse, is_convert2 )
+                    ie_coarse2 = min( ie_coarse, ie_convert2 )
+                    js_coarse2 = max( js_coarse, js_convert2 )
+                    je_coarse2 = min( je_coarse, je_convert2 )
                     if( ie_coarse2 .GE. is_coarse2 .AND. je_coarse2 .GE. js_coarse2 ) then
                        select case (m)
                        case (1)          !--- east halo
@@ -848,11 +847,10 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                           call allocate_nest_overlap(overLaplist(nrecv), MAXOVERLAP)
                           is_first = .false.
                        endif
-                       rotate = -rotate2(l)
                        call insert_nest_overlap(overLaplist(nrecv), nest_domain%pelist_coarse(n), &
-                            is_coarse2, ie_coarse2, js_coarse2, je_coarse2 , dir,  rotate2(l))
+                            is_coarse2, ie_coarse2, js_coarse2, je_coarse2 , dir,  rotate2)
                     endif
-                 enddo
+                 endif
               endif
            enddo
         enddo
@@ -883,27 +881,28 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
               !--- convert the index to coarse grid index.
-              nconvert = convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                   & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, ie_coarse,&
-                   & js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-              do l = 1, nconvert
-                 is_coarse = max(isc_coarse, is_convert2(l))
-                 ie_coarse = min(iec_coarse, ie_convert2(l))
-                 js_coarse = max(jsc_coarse, js_convert2(l))
-                 je_coarse = min(jec_coarse, je_convert2(l))
+              consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
+                            domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                            is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+              if (consider_pe) then
+                 is_coarse = max(isc_coarse, is_convert2)
+                 ie_coarse = min(iec_coarse, ie_convert2)
+                 js_coarse = max(jsc_coarse, js_convert2)
+                 je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2(l)==ZERO) then
+                    if(rotate2==ZERO) then
                        is_coarse = is_coarse+ishift
                        ie_coarse = ie_coarse+ishift
-                       if( je_coarse == je_convert2(l) ) je_coarse = je_coarse+jshift
-                    else if(rotate2(l) == MINUS_NINETY) then
+                       if( je_coarse == je_convert2 ) je_coarse = je_coarse+jshift
+                    else if(rotate2 == MINUS_NINETY) then
                        js_coarse = js_coarse+ishift
                        je_coarse = je_coarse+ishift
-                       if(is_coarse==is_convert2(l)) is_coarse = is_coarse-jshift
+                       if(is_coarse==is_convert2) is_coarse = is_coarse-jshift
                        is_coarse = is_coarse+jshift
                        ie_coarse = ie_coarse+jshift
-                    else if(rotate2(l) == NINETY) then
-                       if(ie_coarse==ie_convert2(l)) ie_coarse = ie_coarse+jshift
+                    else if(rotate2 == NINETY) then
+                       if(ie_coarse==ie_convert2) ie_coarse = ie_coarse+jshift
                     endif
 
                     if(is_first) then
@@ -911,11 +910,10 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                        is_first = .false.
                     endif
-                    rotate = -rotate2(l)
                     call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_fine(n), &
-                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, rotate)
+                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, -rotate2)
                  endif
-              enddo
+              endif
            endif
 
            !--- to_pe's south
@@ -928,19 +926,20 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               js_coarse = jstart_coarse - shalo
               je_coarse = jstart_coarse
               !--- convert the index to coarse grid index.
-              nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                      & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
-                      & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-              do l = 1, nconvert
-                 is_coarse = max(isc_coarse, is_convert2(l))
-                 ie_coarse = min(iec_coarse, ie_convert2(l))
-                 js_coarse = max(jsc_coarse, js_convert2(l))
-                 je_coarse = min(jec_coarse, je_convert2(l))
+              consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
+                            domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                            is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+              if (consider_pe) then
+                 is_coarse = max(isc_coarse, is_convert2)
+                 ie_coarse = min(iec_coarse, ie_convert2)
+                 js_coarse = max(jsc_coarse, js_convert2)
+                 je_coarse = min(jec_coarse, je_convert2)
 
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2(l)==ZERO .AND. ie_coarse==ie_convert2(l)) then
+                    if(rotate2==ZERO .AND. ie_coarse==ie_convert2) then
                        ie_coarse = ie_coarse+ishift
-                    else if( rotate2(l) .NE. ZERO .AND. je_coarse == je_convert2(l) ) then
+                    else if( rotate2 .NE. ZERO .AND. je_coarse == je_convert2 ) then
                        je_coarse = je_coarse+ishift
                     endif
                     if(is_first) then
@@ -948,11 +947,10 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                        is_first = .false.
                     endif
-                    rotate = -rotate2(l)
                     call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_fine(n), &
-                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, rotate)
+                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, -rotate2)
                  endif
-              enddo
+              endif
            endif
 
            !--- to_pe's west
@@ -965,18 +963,19 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
               !--- convert the index to coarse grid index.
-              nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                       & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
-                       & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-              do l = 1, nconvert
-                 is_coarse = max(isc_coarse, is_convert2(l))
-                 ie_coarse = min(iec_coarse, ie_convert2(l))
-                 js_coarse = max(jsc_coarse, js_convert2(l))
-                 je_coarse = min(jec_coarse, je_convert2(l))
+              consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
+                            domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                            is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+              if (consider_pe) then
+                 is_coarse = max(isc_coarse, is_convert2)
+                 ie_coarse = min(iec_coarse, ie_convert2)
+                 js_coarse = max(jsc_coarse, js_convert2)
+                 je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2(l)==ZERO .and. je_coarse == je_convert2(l) ) then
+                    if(rotate2==ZERO .and. je_coarse == je_convert2 ) then
                        je_coarse = je_coarse+jshift
-                    else if(rotate2(l) .NE. ZERO .and. ie_coarse == ie_convert2(l) ) then
+                    else if(rotate2 .NE. ZERO .and. ie_coarse == ie_convert2 ) then
                        ie_coarse = ie_coarse+jshift
                     endif
                     if(is_first) then
@@ -984,11 +983,10 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                        is_first = .false.
                     endif
-                    rotate = -rotate2(l)
                     call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_fine(n), &
-                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, rotate)
+                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, -rotate2)
                  endif
-              enddo
+              endif
            endif
 
            !--- to_pe's north
@@ -1001,38 +999,38 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               js_coarse = jend_coarse
               je_coarse = jend_coarse + nhalo
               !--- convert the index to coarse grid index.
-              nconvert=convert_index_to_coarse(domain_coarse, 0, 0, tile_coarse, istart_coarse, iend_coarse, &
-                       & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_coarse, &
-                       & ie_coarse, js_coarse, je_coarse, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-              do l = 1, nconvert
-                 is_coarse = max(isc_coarse, is_convert2(l))
-                 ie_coarse = min(iec_coarse, ie_convert2(l))
-                 js_coarse = max(jsc_coarse, js_convert2(l))
-                 je_coarse = min(jec_coarse, je_convert2(l))
+              consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
+                            domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
+                            is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+              if (consider_pe) then
+                 is_coarse = max(isc_coarse, is_convert2)
+                 ie_coarse = min(iec_coarse, ie_convert2)
+                 js_coarse = max(jsc_coarse, js_convert2)
+                 je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2(l)==ZERO) then
-                       if(ie_coarse==ie_convert2(l)) ie_coarse = ie_coarse+ishift
+                    if(rotate2==ZERO) then
+                       if(ie_coarse==ie_convert2) ie_coarse = ie_coarse+ishift
                        js_coarse = js_coarse+jshift
                        je_coarse = je_coarse+jshift
-                    else if(rotate2(l) == NINETY) then
-                       if(js_coarse==js_convert2(l)) js_coarse = js_coarse-ishift
+                    else if(rotate2 == NINETY) then
+                       if(js_coarse==js_convert2) js_coarse = js_coarse-ishift
                        js_coarse = js_coarse+ishift
                        je_coarse = je_coarse+ishift
                        is_coarse = is_coarse+jshift
                        ie_coarse = ie_coarse+jshift
-                    else if(rotate2(l) == MINUS_NINETY ) then
-                       if(je_coarse==je_convert2(l)) je_coarse = je_coarse+ishift
+                    else if(rotate2 == MINUS_NINETY ) then
+                       if(je_coarse==je_convert2) je_coarse = je_coarse+ishift
                     endif
                     if(is_first) then
                        nsend = nsend + 1
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                        is_first = .false.
                     endif
-                    rotate = -rotate2(l)
                     call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_fine(n), &
-                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, rotate)
+                         is_coarse, ie_coarse, js_coarse, je_coarse , dir, -rotate2)
                  endif
-              enddo
+              endif
            endif
         enddo
      endif
@@ -1130,10 +1128,11 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
   integer              :: nsend, nrecv, dir
   integer, allocatable :: isl_coarse(:), iel_coarse(:), jsl_coarse(:), jel_coarse(:)
   integer, allocatable :: isl_fine(:), iel_fine(:), jsl_fine(:), jel_fine(:)
-  integer              :: is_convert2(2), ie_convert2(2), js_convert2(2), je_convert2(2), rotate2(2)
-  integer              :: is2, ie2, js2, je2, nconvert
+  integer              :: is_convert2, ie_convert2, js_convert2, je_convert2, rotate2
+  integer              :: is2, ie2, js2, je2
+  logical              :: consider_pe
   integer              :: xbegin_c, xend_c, ybegin_c, yend_c
-  integer              :: ishift, jshift, l, is3, ie3, js3, je3, nn
+  integer              :: ishift, jshift, is3, ie3, js3, je3, nn
 
   domain_fine   => nest_domain%domain_fine
   domain_coarse => nest_domain%domain_coarse
@@ -1239,33 +1238,41 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
         !    the internal of fine grid to coarse grid.
         !-----------------------------------------------------------------------------------------
         do n = 1, npes_coarse
-           nconvert = convert_index_to_nest(domain_coarse, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
-                jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%list(n-1)%tile_id(1), &
-                isl_coarse(n), iel_coarse(n), jsl_coarse(n), jel_coarse(n), &
-                is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+           consider_pe = convert_index(domain_coarse, domain_coarse%list(n-1)%tile_id(1), tile_coarse, &
+                         domain_coarse%ntiles, isl_coarse(n), iel_coarse(n), jsl_coarse(n), jel_coarse(n), &
+                         is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+           if (rotate2.eq.ZERO) then
+             ie_convert2 = ie_convert2 + ishift
+             je_convert2 = je_convert2 + jshift
+           else
+             ie_convert2 = ie_convert2 + jshift
+             je_convert2 = je_convert2 + ishift
+           endif
+
            is2 = xbegin_c; ie2 = xend_c
            js2 = ybegin_c; je2 = yend_c
            is3 = is2; js3 = js2
-           do l = 1, nconvert
-              if(rotate2(l) == NINETY .OR. rotate2(l) == MINUS_NINETY) then
+           if (consider_pe) then
+              if(rotate2 == NINETY .OR. rotate2 == MINUS_NINETY) then
                  ie3 = ie2 + jshift
                  je3 = je2 + ishift
               else
                  ie3 = ie2 + ishift
                  je3 = je2 + jshift
               endif
-              is_coarse = max( is3, is_convert2(l) )
-              ie_coarse = min( ie3,   ie_convert2(l) )
-              js_coarse = max( js3, js_convert2(l) )
-              je_coarse = min( je3,   je_convert2(l) )
+              is_coarse = max( is3, is_convert2 )
+              ie_coarse = min( ie3, ie_convert2 )
+              js_coarse = max( js3, js_convert2 )
+              je_coarse = min( je3, je_convert2 )
               if(ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
                  dir = 0
                  nsend = nsend + 1
                  call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                  call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_coarse(n), &
-                      is_coarse, ie_coarse, js_coarse, je_coarse, dir, rotate2(l))
+                      is_coarse, ie_coarse, js_coarse, je_coarse, dir, rotate2)
               endif
-           enddo
+           endif
         enddo
      enddo
      overlap%nsend = nsend
@@ -1311,22 +1318,26 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
            js_you = jstart_coarse + (jsl_fine(n)-jstart_fine)/y_refine
            je_you = jstart_coarse + (jel_fine(n)-jstart_fine)/y_refine
            if(mod(jsl_fine(n)-jstart_fine, y_refine) .NE. 0 ) js_you = js_you + 1
-           nconvert=convert_index_to_coarse(domain_coarse, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, &
-                      & jstart_coarse, jend_coarse, domain_coarse%ntiles, domain_coarse%tile_id(1), is_you, ie_you, &
-                      & js_you, je_you, is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
-           do l = 1, nconvert
-              is2 = max(is_convert2(l), isc_coarse)
-              ie2 = min(ie_convert2(l), iec_coarse+ishift)
-              js2 = max(js_convert2(l), jsc_coarse)
-              je2 = min(je_convert2(l), jec_coarse+jshift)
+           consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
+                         domain_coarse%ntiles, is_you, ie_you, js_you, je_you, &
+                         is_convert2, ie_convert2, js_convert2, je_convert2, rotate2)
+
+           ie_convert2 = ie_convert2 + ishift
+           je_convert2 = je_convert2 + jshift
+
+           if (consider_pe) then
+              is2 = max(is_convert2, isc_coarse)
+              ie2 = min(ie_convert2, iec_coarse+ishift)
+              js2 = max(js_convert2, jsc_coarse)
+              je2 = min(je_convert2, jec_coarse+jshift)
 
               if( ie2 .GE. is2 .AND. je2 .GE. js2 ) then
                  nrecv = nrecv + 1
                  call allocate_nest_overlap(overLaplist(nrecv), MAXOVERLAP)
                  call insert_nest_overlap(overLaplist(nrecv), nest_domain%pelist_fine(n), &
-                      is2, ie2, js2, je2, dir, rotate2(l))
+                      is2, ie2, js2, je2, dir, rotate2)
               endif
-           enddo
+           endif
         enddo
      enddo
      overlap%nrecv = nrecv
@@ -1933,344 +1944,115 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
   end subroutine get_nnest
 
 
-  !> This routine will convert the global coarse grid index to nest grid index.
-  function convert_index_to_nest(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, &
-                               & jend_coarse, ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out,&
-                               & js_out, je_out, rotate_out)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: ishift, jshift
-    integer, intent(in)  :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
-    integer, intent(in)  :: tile_coarse
-    integer, intent(in)  :: ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in
-    integer, intent(out) :: is_out(:), ie_out(:), js_out(:), je_out(:), rotate_out(:)
-    integer              :: convert_index_to_nest
-    integer :: is, ie, js, je, tile, isg, ieg, jsg, jeg
-    integer :: ncross, rotate, nout, diff, ntiles
-
-    ntiles = ntiles_coarse
-    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-    is = istart_coarse; ie = iend_coarse
-    js = jstart_coarse; je = jend_coarse
-    tile = tile_coarse
-
-    if(size(is_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_nest: size(is_out(:)) < 2")
-    if(size(ie_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_nest: size(ie_out(:)) < 2")
-    if(size(js_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_nest: size(js_out(:)) < 2")
-    if(size(je_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_nest: size(je_out(:)) < 2")
-    if(size(rotate_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_nest: size(rotate_out(:)) < 2")
-    if( ie > ieg .AND. je > jeg) then
-       call mpp_error(FATAL, "convert_index_to_nest: do not support cross the corner, contact developer")
-    endif
-    if( is > ieg .or. js > jeg) call mpp_error(FATAL,"convert_index_to_nest: is > ieg .or. js > jeg")
-
-
-    nout = 0
-
-    if(tile == tile_in) then
-       nout = nout+1
-       rotate_out(nout) = ZERO
-       is_out(nout) = is_in; ie_out(nout) = ie_in + ishift
-       js_out(nout) = js_in; je_out(nout) = je_in + jshift
-    endif
-
-    diff =  tile_in - tile
-    if(diff < 0) diff = diff + ntiles
-    ncross = -1
-    if( ie > ieg ) then
-       select case(diff)
-       case (0)
-          rotate = ZERO
-          ncross = 4
-       case (1)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = ZERO
-             ncross = 1
-          endif
-       case (2)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = MINUS_NINETY
-             ncross = 1
-          endif
-       case (3)
-          rotate = MINUS_NINETY
-          ncross = 2
-       case (4)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = MINUS_NINETY
-             ncross = 3
-          endif
-       case (5)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = ZERO
-             ncross = 3
-          endif
-       case default
-          call mpp_error(FATAL,"convert_index_to_nest: invalid value of diff")
-       end select
-
-       if(ncross > 0) then
-          nout =nout+1
-          rotate_out(nout) = rotate
-          if(rotate_out(nout) == ZERO) then
-             js_out(nout) = js_in
-             je_out(nout) = je_in + jshift
-             is_out(nout) = is_in+ncross*ieg
-             ie_out(nout) = ie_in+ncross*ieg + ishift
-          else if(rotate_out(nout) == MINUS_NINETY) then
-             js_out(nout) = ieg-ie_in + 1
-             je_out(nout) = ieg-is_in + 1 + ishift
-             is_out(nout) = js_in+ncross*jeg
-             ie_out(nout) = je_in+ncross*jeg + jshift
-          endif
-       endif
-    else if( je > jeg ) then
-       select case(diff)
-       case (0)
-          rotate = ZERO
-          ncross = 4
-       case (1)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = ZERO
-             ncross = 1
-          endif
-       case (2)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = NINETY
-             ncross = 1
-          endif
-       case (3)
-          rotate = NINETY
-          ncross = 2
-       case (4)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = NINETY
-             ncross = 3
-          endif
-       case (5)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = ZERO
-             ncross = 3
-          endif
-       end select
-
-       if(ncross > 0) then
-          nout =nout+1
-          rotate_out(nout) = rotate
-
-          if(rotate_out(nout) == ZERO) then
-             js_out(nout) = js_in
-             je_out(nout) = je_in + jshift
-             is_out(nout) = is_in+ncross*ieg
-             ie_out(nout) = ie_in+ncross*ieg + ishift
-          else if(rotate_out(nout) == NINETY) then
-             is_out(nout) = ieg-je_in + 1
-             ie_out(nout) = ieg-js_in+1 + jshift
-             js_out(nout) = is_in+ncross*jeg
-             je_out(nout) = ie_in+ncross*jeg + ishift
-          endif
-       endif
-    endif
-
-    convert_index_to_nest = nout
-
-  end function convert_index_to_nest
-
-  function convert_index_to_coarse(domain, ishift, jshift, tile_coarse, istart_coarse, iend_coarse, jstart_coarse, &
-                                 & jend_coarse, ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in, is_out, ie_out,&
-                                 & js_out, je_out, rotate_out)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: ishift, jshift
-    integer, intent(in)  :: istart_coarse, iend_coarse, jstart_coarse, jend_coarse
-    integer, intent(in)  :: tile_coarse
-    integer, intent(in)  :: ntiles_coarse, tile_in, is_in, ie_in, js_in, je_in
-    integer, intent(out) :: is_out(:), ie_out(:), js_out(:), je_out(:), rotate_out(:)
-    integer :: convert_index_to_coarse
-    integer :: is, ie, js, je, isg, ieg, jsg, jeg
-    integer :: ncross, rotate, ntiles, nout, diff, tile
-
-    ntiles = ntiles_coarse
-    call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-    is = istart_coarse; ie = iend_coarse
-    js = jstart_coarse; je = jend_coarse
-    tile = tile_coarse
-
-    if(size(is_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_coarse: size(is_out(:)) < 2")
-    if(size(ie_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_coarse: size(ie_out(:)) < 2")
-    if(size(js_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_coarse: size(js_out(:)) < 2")
-    if(size(je_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_coarse: size(je_out(:)) < 2")
-    if(size(rotate_out(:)) < 2) call mpp_error(FATAL,"convert_index_to_coarse: size(rotate_out(:)) < 2")
-    if( ie > ieg .AND. je > jeg) then
-       call mpp_error(FATAL, "convert_index_to_coarse: do not support cross the corner, contact developer")
-    endif
-    if( is > ieg .or. js > jeg) call mpp_error(FATAL,"convert_index_to_coarse: is > ieg .or. js > jeg")
-
-    nout = 0
-
-    if(tile_coarse == tile_in) then
-       nout = nout+1
-       rotate_out(nout) = ZERO
-       is_out(nout) = is_in; ie_out(nout) = ie_in + ishift
-       js_out(nout) = js_in; je_out(nout) = je_in + jshift
-    endif
-
-    diff =  tile_in - tile
-    if(diff < 0) diff = diff + ntiles
-    ncross = -1
-    if( ie > ieg ) then
-       select case(diff)
-       case (0)
-          rotate = ZERO
-          ncross = 4
-       case (1)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = ZERO
-             ncross = 1
-          endif
-       case (2)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = MINUS_NINETY
-             ncross = 1
-          endif
-       case (3)
-          rotate = MINUS_NINETY
-          ncross = 2
-       case (4)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = MINUS_NINETY
-             ncross = 3
-          endif
-       case (5)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = ZERO
-             ncross = 3
-          endif
-       case default
-          call mpp_error(FATAL,"convert_index_to_coarse: invalid value of diff")
-       end select
-
-       if(ncross > 0) then
-          nout =nout+1
-          rotate_out(nout) = rotate
-          if(rotate_out(nout) == ZERO) then
-             js_out(nout) = js_in
-             je_out(nout) = je_in + jshift
-             is_out(nout) = is_in-ncross*ieg
-             ie_out(nout) = ie_in-ncross*ieg + ishift
-          else if(rotate_out(nout) == MINUS_NINETY) then
-             is_out(nout) = ieg-je_in + 1
-             ie_out(nout) = ieg-js_in + 1 + ishift
-             js_out(nout) = is_in-ncross*jeg
-             je_out(nout) = ie_in-ncross*jeg + jshift
-          endif
-       endif
-    else if( je > jeg ) then
-       select case(diff)
-       case (0)
-          rotate = ZERO
-          ncross = 4
-       case (1)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = ZERO
-             ncross = 1
-          endif
-       case (2)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = NINETY
-             ncross = 1
-          endif
-       case (3)
-          rotate = NINETY
-          ncross = 2
-       case (4)
-          if(mod(tile,2) ==0) then ! tile 2 4 6
-             rotate = NINETY
-             ncross = 3
-          endif
-       case (5)
-          if(mod(tile,2) ==1) then ! tile 1 3 5
-             rotate = ZERO
-             ncross = 3
-          endif
-       end select
-
-       if(ncross > 0) then
-          nout =nout+1
-          rotate_out(nout) = rotate
-
-          if(rotate_out(nout) == ZERO) then
-             js_out(nout) = js_in
-             je_out(nout) = je_in + jshift
-             is_out(nout) = is_in-ncross*ieg
-             ie_out(nout) = ie_in-ncross*ieg + ishift
-          else if(rotate_out(nout) == NINETY) then
-             is_out(nout) = js_in - ncross*jeg
-             ie_out(nout) = je_in - ncross*jeg + ishift
-             js_out(nout) = jeg - ie_in + 1
-             je_out(nout) = jeg - is_in + 1 + jshift
-          endif
-       endif
-    endif
-
-    convert_index_to_coarse = nout
-
-
-  end function convert_index_to_coarse
-
-
-  subroutine convert_index_back(domain, ishift, jshift, rotate, is_in, ie_in, js_in, je_in, is_out, ie_out, &
-                               &  js_out, je_out)
-    type(domain2D), intent(in) :: domain
-    integer, intent(in)  :: ishift, jshift
-    integer, intent(in)  :: is_in, ie_in, js_in, je_in, rotate
+  function convert_index(domain, tile_from, tile_to, ntiles, is_in, ie_in, js_in, je_in, &
+                         is_out, ie_out, js_out, je_out, rot) result(consider_pe)
+    type(domain2D), intent(in) :: domain !< Coarse grid's domain
+    integer, intent(in) :: tile_from, tile_to
+    integer, intent(in)  :: ntiles
+    integer, intent(in)  :: is_in, ie_in, js_in, je_in !< Compute domain of the particular (external) coarse-grid PE
     integer, intent(out) :: is_out, ie_out, js_out, je_out
+    integer, intent(out) :: rot
+    logical              :: consider_pe
     integer :: isg, ieg, jsg, jeg
-    integer :: ncross
+    integer :: delta, nx, ny, icross, jcross
+    logical :: is_even
+
+    consider_pe = .true.
 
     call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
-    ncross = 0
-    if( je_in > jeg+jshift .and. ie_in > ieg+ishift ) then
-       call mpp_error(FATAL,"convert_index_back:  je_in > jeg .and. ie_in > ieg")
-    else if (je_in > jeg+jshift) then
-       ncross = je_in/jeg
-       select case(rotate)
-       case(0)
-          is_out = is_in
-          ie_out = ie_in
-          js_out = js_in - ncross*jeg
-          je_out = je_in - ncross*jeg
-       case(90)
-          is_out = js_in - ncross*jeg
-          ie_out = je_in - ncross*jeg
-          js_out = jeg - ie_in + 1
-          je_out = jeg - is_in + 1
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or 90 when je_in>jeg")
-       end select
-    else if (ie_in > ieg+ishift) then
-       ncross = ie_in/ieg
-       select case(rotate)
-       case(0)
-          is_out = is_in - ncross*ieg
-          ie_out = ie_in - ncross*ieg
-          js_out = js_in
-          je_out = je_in
-       case(-90)
-          js_out = is_in - ncross*ieg
-          je_out = ie_in - ncross*ieg
-          is_out = ieg - je_in + 1
-          ie_out = ieg - js_in + 1
-       case default
-          call mpp_error(FATAL, "convert_index_back: rotate should be 0 or -90 when ie_in>ieg")
-       end select
-    else
-       is_out = is_in
-       ie_out = ie_in
-       js_out = js_in
-       je_out = je_in
+
+    delta =  tile_from - tile_to
+    if (abs(delta).eq.3) then
+      consider_pe = .false.
+      return
     endif
 
-  end subroutine convert_index_back
+    if (delta.gt.3)  delta = delta - ntiles
+    if (delta.lt.-3) delta = delta + ntiles
 
+    ! At this stage, delta should be in the range from -2 to +2.
+    ! - A value of +/- 1 corresponds to a simple translation.
+    ! - A value of +/- 2 corresponds to a rotation followed by a translation.
+    ! - A value of +/- 3 corresponds to a tile on the opposite face of the cubed sphere (ignored here).
+
+    is_even = mod(tile_to,2).eq.0
+
+    rot = ZERO
+    if (is_even) then
+      select case (delta)
+        case (-2)
+          rot = MINUS_NINETY
+        case (2)
+          rot = NINETY
+      end select
+    else
+      select case (delta)
+        case (-2)
+          rot = NINETY
+        case (2)
+          rot = MINUS_NINETY
+      end select
+    endif
+
+    select case (rot)
+      case (ZERO)
+        is_out = is_in
+        ie_out = ie_in
+        js_out = js_in
+        je_out = je_in
+
+      case (NINETY)
+        is_out = js_in
+        ie_out = je_in
+        je_out = ieg - (is_in - isg)
+        js_out = ieg - (ie_in - isg)
+      case (MINUS_NINETY)
+        ie_out = jeg - (js_in - jsg)
+        is_out = jeg - (je_in - jsg)
+        js_out = is_in
+        je_out = ie_in
+    end select
+
+    if (rot.eq.ZERO) then
+      nx = ieg - isg + 1
+      ny = jeg - jsg + 1
+    else
+      nx = jeg - jsg + 1
+      ny = ieg - isg + 1
+    endif
+
+    icross = 0
+    jcross = 0
+
+    if (is_even) then
+      select case (delta)
+        case (-2)
+          jcross = -1
+        case (-1)
+          icross = -1
+        case (1)
+          jcross = 1
+        case (2)
+          icross = 1
+      end select
+    else
+      select case (delta)
+        case (-2)
+          icross = -1
+        case (-1)
+          jcross = -1
+        case (1)
+          icross = 1
+        case (2)
+          jcross = 1
+      end select
+    endif
+
+    is_out = is_out + icross*nx
+    ie_out = ie_out + icross*nx
+    js_out = js_out + jcross*ny
+    je_out = je_out + jcross*ny
+  end function convert_index
 
 
   function get_nest_vector_recv(nest_domain, update_x, update_y, ind_x, ind_y, start_pos, pelist)
