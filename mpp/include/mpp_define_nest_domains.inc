@@ -792,14 +792,14 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               select case (m)
               case (1)          !--- east halo receiving
                  dir = 1
-                 is_coarse = overlap%east%is_you
-                 ie_coarse = overlap%east%ie_you
+                 is_coarse = overlap%east%is_you + ishift
+                 ie_coarse = overlap%east%ie_you + ishift
                  js_coarse = overlap%east%js_you
-                 je_coarse = overlap%east%je_you
+                 je_coarse = overlap%east%je_you + jshift
               case (2)          !--- south halo receiving
                  dir = 3
                  is_coarse = overlap%south%is_you
-                 ie_coarse = overlap%south%ie_you
+                 ie_coarse = overlap%south%ie_you + ishift
                  js_coarse = overlap%south%js_you
                  je_coarse = overlap%south%je_you
               case (3)          !--- west halo receiving
@@ -807,13 +807,13 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                  is_coarse = overlap%west%is_you
                  ie_coarse = overlap%west%ie_you
                  js_coarse = overlap%west%js_you
-                 je_coarse = overlap%west%je_you
+                 je_coarse = overlap%west%je_you + jshift
               case (4)          !--- north halo receiving
                  dir = 7
                  is_coarse = overlap%north%is_you
-                 ie_coarse = overlap%north%ie_you
-                 js_coarse = overlap%north%js_you
-                 je_coarse = overlap%north%je_you
+                 ie_coarse = overlap%north%ie_you + ishift
+                 js_coarse = overlap%north%js_you + jshift
+                 je_coarse = overlap%north%je_you + jshift
               end select
               if( je_coarse .GE. js_coarse .AND. ie_coarse .GE. is_coarse ) then
                  ! convert coarse grid index to the nested grid coarse grid index.
@@ -827,21 +827,6 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                     js_coarse2 = max( js_coarse, js_convert2 )
                     je_coarse2 = min( je_coarse, je_convert2 )
                     if( ie_coarse2 .GE. is_coarse2 .AND. je_coarse2 .GE. js_coarse2 ) then
-                       select case (m)
-                       case (1)          !--- east halo
-                          is_coarse2 = is_coarse2+ishift
-                          ie_coarse2 = ie_coarse2+ishift
-                          if(je_coarse2 == overlap%east%je_you) je_coarse2 = je_coarse2+jshift
-                       case (2)          !--- south halo
-                          if(ie_coarse2 == overlap%south%ie_you) ie_coarse2 = ie_coarse2+ishift
-                       case (3)          !--- west halo
-                          if(je_coarse2 == overlap%west%je_you) je_coarse2 = je_coarse2+jshift
-                       case (4)          !--- north halo
-                          if(ie_coarse2 == overlap%north%ie_you) ie_coarse2 = ie_coarse2+ishift
-                          js_coarse2 = js_coarse2+jshift
-                          je_coarse2 = je_coarse2+jshift
-                       end select
-
                        if(is_first) then
                           nrecv = nrecv + 1
                           call allocate_nest_overlap(overLaplist(nrecv), MAXOVERLAP)
@@ -880,6 +865,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
+
+              is_coarse = is_coarse + ishift
+              ie_coarse = ie_coarse + ishift
+              je_coarse = je_coarse + jshift
+
               !--- convert the index to coarse grid index.
               consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
                             domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
@@ -891,20 +881,6 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                  js_coarse = max(jsc_coarse, js_convert2)
                  je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2==ZERO) then
-                       is_coarse = is_coarse+ishift
-                       ie_coarse = ie_coarse+ishift
-                       if( je_coarse == je_convert2 ) je_coarse = je_coarse+jshift
-                    else if(rotate2 == MINUS_NINETY) then
-                       js_coarse = js_coarse+ishift
-                       je_coarse = je_coarse+ishift
-                       if(is_coarse==is_convert2) is_coarse = is_coarse-jshift
-                       is_coarse = is_coarse+jshift
-                       ie_coarse = ie_coarse+jshift
-                    else if(rotate2 == NINETY) then
-                       if(ie_coarse==ie_convert2) ie_coarse = ie_coarse+jshift
-                    endif
-
                     if(is_first) then
                        nsend = nsend + 1
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
@@ -925,6 +901,9 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               ie_coarse = ie_coarse + ehalo
               js_coarse = jstart_coarse - shalo
               je_coarse = jstart_coarse
+
+              ie_coarse = ie_coarse + ishift
+
               !--- convert the index to coarse grid index.
               consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
                             domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
@@ -937,11 +916,6 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                  je_coarse = min(jec_coarse, je_convert2)
 
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2==ZERO .AND. ie_coarse==ie_convert2) then
-                       ie_coarse = ie_coarse+ishift
-                    else if( rotate2 .NE. ZERO .AND. je_coarse == je_convert2 ) then
-                       je_coarse = je_coarse+ishift
-                    endif
                     if(is_first) then
                        nsend = nsend + 1
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
@@ -962,6 +936,9 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               je_coarse = jstart_coarse + ( jel_fine(n) - jsg_fine )/y_refine
               js_coarse = js_coarse - shalo
               je_coarse = je_coarse + nhalo
+
+              je_coarse = je_coarse + jshift
+
               !--- convert the index to coarse grid index.
               consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
                             domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
@@ -973,11 +950,6 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                  js_coarse = max(jsc_coarse, js_convert2)
                  je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2==ZERO .and. je_coarse == je_convert2 ) then
-                       je_coarse = je_coarse+jshift
-                    else if(rotate2 .NE. ZERO .and. ie_coarse == ie_convert2 ) then
-                       ie_coarse = ie_coarse+jshift
-                    endif
                     if(is_first) then
                        nsend = nsend + 1
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
@@ -998,6 +970,11 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
               ie_coarse = ie_coarse + ehalo
               js_coarse = jend_coarse
               je_coarse = jend_coarse + nhalo
+
+              ie_coarse = ie_coarse + ishift
+              js_coarse = js_coarse + jshift
+              je_coarse = je_coarse + jshift
+
               !--- convert the index to coarse grid index.
               consider_pe = convert_index(domain_coarse, tile_coarse, domain_coarse%tile_id(1), &
                             domain_coarse%ntiles, is_coarse, ie_coarse, js_coarse, je_coarse, &
@@ -1009,19 +986,6 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
                  js_coarse = max(jsc_coarse, js_convert2)
                  je_coarse = min(jec_coarse, je_convert2)
                  if( ie_coarse .GE. is_coarse .AND. je_coarse .GE. js_coarse ) then
-                    if(rotate2==ZERO) then
-                       if(ie_coarse==ie_convert2) ie_coarse = ie_coarse+ishift
-                       js_coarse = js_coarse+jshift
-                       je_coarse = je_coarse+jshift
-                    else if(rotate2 == NINETY) then
-                       if(js_coarse==js_convert2) js_coarse = js_coarse-ishift
-                       js_coarse = js_coarse+ishift
-                       je_coarse = je_coarse+ishift
-                       is_coarse = is_coarse+jshift
-                       ie_coarse = ie_coarse+jshift
-                    else if(rotate2 == MINUS_NINETY ) then
-                       if(je_coarse==je_convert2) je_coarse = je_coarse+ishift
-                    endif
                     if(is_first) then
                        nsend = nsend + 1
                        call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
