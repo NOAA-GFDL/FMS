@@ -386,6 +386,12 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  CHARACTER(len=16) :: wildcard_filename_prefix = '_' !< String inserted immediately before the first
+                                                      !! substituted time field when using a wildcard (%)
+                                                      !! file name.
+  CHARACTER(len=16) :: wildcard_filename_separator = '_' !< String inserted between each subsequent
+                                                         !! substituted time field when using a wildcard (%)
+                                                         !! file name.
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
