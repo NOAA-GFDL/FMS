@@ -60,7 +60,7 @@ num_nest = 3
 tile_coarse =    1,  3,  7
 tile_fine   =    7 , 8,  9
 istart_coarse =  3,  3,  5
-icount_coarse = 40,  5,  6
+icount_coarse = 30,  5,  6
 jstart_coarse =  3,  3,  6
 jcount_coarse = 14,  6,  8
 extra_halo = 0
@@ -88,7 +88,7 @@ test_expect_success "update nest domain" '
 sed "s/tile_coarse =    1,  3,  7/tile_coarse =    1,  1,  2/" input_base.nml > input.nml
 sed -i "s/tile_fine   =    7 , 8,  9/tile_fine   =    2 , 3,  4/" input.nml
 sed -i "s/istart_coarse =  3,  3,  5/istart_coarse =  4,  3,  5/" input.nml
-sed -i "s/icount_coarse = 40,  5,  6/icount_coarse = 12,  5,  6/" input.nml
+sed -i "s/icount_coarse = 30,  5,  6/icount_coarse = 12,  5,  6/" input.nml
 sed -i "s/jstart_coarse =  3,  3,  6/jstart_coarse =  4,  3,  6/" input.nml
 sed -i "s/jcount_coarse = 14,  6,  8/jcount_coarse = 12,  6,  8/" input.nml
 sed -i "s/ntiles_nest_all = 9/ntiles_nest_all = 4/" input.nml
