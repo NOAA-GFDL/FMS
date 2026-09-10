@@ -160,7 +160,7 @@ module metadata_transfer_mod
     end if
 
     allocate(broadcasting_pes(mpp_npes()))
-    call mpp_get_current_pelist(broadcasting_pes, comm=curr_comm)
+    call mpp_get_current_pelist(broadcasting_pes, commID=curr_comm%mpi_val)
 
     ! Broadcast the metadata transfer type to all processes
     select type(this)
