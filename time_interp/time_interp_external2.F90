@@ -80,6 +80,9 @@ module time_interp_external2_mod
   integer, private :: num_io_buffers = 2 ! set -1 to read all records from disk into memory
   logical, private :: module_initialized = .false.
   logical, private :: debug_this_module = .false.
+  logical, private :: check_uniform_times=.false. !< If true, check for uniform time axis
+                                          !! in all files in order to speedup initialization for
+                                          !! large files.
 
   public init_external_field, time_interp_external, time_interp_external_init, &
        time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
@@ -187,7 +190,7 @@ module time_interp_external2_mod
       integer :: io_status, logunit, ierr
 
       namelist /time_interp_external_nml/ num_io_buffers, debug_this_module, &
-                                          max_fields, max_files
+                                          max_fields, max_files, check_uniform_times
 
       ! open and read namelist
 
@@ -289,11 +292,10 @@ module time_interp_external2_mod
       logical, optional                       :: ongrid !< Optional flag indicating if the data is ongrid
 
       logical :: ongrid_local !< Flag indicating if the data is ongrid
-
       integer :: init_external_field
 
-      real(r8_kind) :: slope, intercept
-      integer :: ndim,ntime,i,j
+      real(r8_kind) :: slope, intercept, dtime
+      integer :: ndim,ntime,i,j,n
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -327,7 +329,6 @@ module time_interp_external2_mod
       if (debug_this_module) verb = .true.
       numwindows = 1
       if(present(nwindows)) numwindows = nwindows
-
       units = 'same'
       if (PRESENT(desired_units)) then
           units = desired_units
@@ -388,11 +389,37 @@ module time_interp_external2_mod
       allocate(pes(mpp_npes()))
       call mpp_get_current_pelist(pes)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
-
-      !< Only root reads the unlimited dimension and broadcasts it to the other ranks
-      if (mpp_root_pe() .eq. mpp_pe()) call read_data(fileobj, timename, tstamp)
-      call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
-      deallocate(pes)
+      if (check_uniform_times .and. ntime .gt. 4) then
+         if (mpp_root_pe() .eq. mpp_pe()) &
+           call read_data(fileobj,timename,tstamp,corner=(/1/),edge_lengths=(/3/))
+         call mpp_broadcast(tstamp(1:3), 3, mpp_root_pe(), pelist=pes)
+         if((tstamp(3)-tstamp(2)).eq.(tstamp(2)-tstamp(1))) then
+           if (mpp_root_pe() .eq. mpp_pe()) &
+                call read_data(fileobj,timename,tstamp(ntime),unlim_dim_level=ntime)
+           call mpp_broadcast(tstamp(ntime:ntime), 1, mpp_root_pe(), pelist=pes)
+           dtime=tstamp(2)-tstamp(1)
+           do n=2,ntime-1
+             tstamp(n)=tstamp(n-1)+dtime
+           enddo
+           if (abs(tstamp(ntime)-tstamp(ntime-1)-dtime).gt.0.01*dtime) then
+             call mpp_error(WARNING,"init_external_field:"//&
+                  " Uniform time check failed. Reverting to slow initialization ")
+             if (mpp_root_pe() .eq. mpp_pe()) &
+                  call read_data(fileobj,timename,tstamp)
+             call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
+           endif
+           deallocate(pes)
+         else
+           if (mpp_root_pe() .eq. mpp_pe()) call read_data(fileobj, timename, tstamp)
+           call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
+           deallocate(pes)
+         endif
+      else
+        !< Only root reads the unlimited dimension and broadcasts it to the other ranks
+        if (mpp_root_pe() .eq. mpp_pe()) call read_data(fileobj, timename, tstamp)
+        call mpp_broadcast(tstamp, size(tstamp), mpp_root_pe(), pelist=pes)
+        deallocate(pes)
+      endif
 
       transpose_xy = .false.
       isdata=1; iedata=1; jsdata=1; jedata=1
