@@ -16,38 +16,48 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-! data_override_r4 and data_override_r8 are not intended to be used directly -
-! they should be used through the data_override_mod API. The body of
-! data_override_r4 and data_override_r8 is contained in data_override.inc.
-
+!> @brief Data_override_r4 is a helper module for @ref data_override_mod, and is not intended to be used
+!! directly. It provides the real(kind=4) routines that are made public through the data_override and
+!! data_override_UG interfaces.
 module data_override_r4
 #include "data_override_r4.fh"
 end module data_override_r4
 
+!> @brief Data_override_r8 is a helper module for @ref data_override_mod, and is not intended to be used
+!! directly. It provides the real(kind=8) routines that are made public through the data_override and
+!! data_override_UG interfaces.
 module data_override_r8
 #include "data_override_r8.fh"
 end module data_override_r8
 
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override
-!! @brief Routines to get data in a file whose path is described in a user-provided data_table
+!! @brief Routines to read data from a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
+!!
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
-!! Before using @ref data_override a data_table must be created with the following entries:
-!! gridname, fieldname_code, fieldname_file, file_name, ongrid, factor.
+!! This module provides routines to read data from external files and adjust it to match the model's grid and time.
+!! It performs spatial and temporal interpolation using horiz_interp_mod and time_interp_external2_mod from FMS.
 !!
-!! More explainations about data_table entries can be found in the source code (defining data_type)
+!! A grid_spec.nc file (typically created by fre-nctools) that defines paths/directories for the component's
+!! grid files is required during data_override_init.
 !!
-!! If user wants to override fieldname_code with a const, set fieldname_file in data_table = ""
-!! and factor = const
+!! The operations performed are specified by the data_table. The data_table is a user-provided file that describes
+!! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table
+!! can be specified in either the legacy ASCII format (data_table) or the YAML format (data_table.yaml).
+!! See the README.md in this directory for more information about the data_table yaml format.
 !!
-!! If user wants to override fieldname_code with data from a file, set fieldname_file = name in
-!! the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
+!! To give a brief overview of possible operations performed by data_override, here are some common use cases:
+!! - If a user wants to override fieldname_code with a constant value, set fieldname_file in data_table = ""
+!!   and factor = that constant value
+!! - If a user wants to override fieldname_code with data from a file, set fieldname_file = name in
+!!   the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
+!! - Fields will be overridden globally by default; users can also specify one or two regions in which
+!!   data_override will take place, in which case field values outside the region will not be affected.
 !!
-!! A field can be overridden globally (by default) or users can specify one or two regions in which
-!! data_override will take place, field values outside the region will not be affected.
-
+!! Data override also supports the use of nested domains and ensembles. See the README.md in this directory for more
+!! information about how to specify nested domains and ensembles.
 module data_override_mod
   use data_override_r4
   use data_override_r8
@@ -59,10 +69,16 @@ module data_override_mod
 implicit none
 private
 
-!> Interface for inserting and interpolating data into a file
-!! for a model's grid and time. Data path must be described in
-!! a user-provided data_table, see @ref data_override_mod "module description"
-!! for more information.
+!> Interface for reading and interpolating data from a file
+!! into the model's grid and time. Data path must be described in
+!! a user-provided data_table, see data_override/README.md for more
+!! information on specifying the data_table or data_table.yaml file.
+!!
+!! The optional "override" argument is intent(out) and will be set to true if the data was successfully read and
+!! interpolated, or false if the data was not found in the data_table.
+!!
+!! For typical calling patterns, see the QUICKSTART.md file in this directory.
+!!
 !> @ingroup data_override_mod
 interface data_override
      module procedure data_override_0d_r4
@@ -73,7 +89,12 @@ interface data_override
      module procedure data_override_3d_r8
 end interface
 
-!> Version of @ref data_override for unstructured grids
+!> Version of @ref data_override for unstructured grids. An unstructured grid is
+!! defined by mpp_domains_mod and contains
+!! a number of elements with custom defined axis.
+!!
+!! For typical calling patterns, see the QUICKSTART.md file in this directory.
+!!
 !> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d_r4
