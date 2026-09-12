@@ -76,8 +76,6 @@ For more information on building with autotools and build options please see
 
 To build using CMake, follow the instructions in
 [CMAKE_INSTRUCTIONS.mk](https://github.com/NOAA-GFDL/FMS/blob/main/CMAKE_INSTRUCTIONS.md).
-Currently the CMake configuration is the most restrictive build option as the
-compiler flags are immutable.
 
 ### GFDL MKMF
 
