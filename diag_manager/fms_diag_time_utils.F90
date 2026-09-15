@@ -28,7 +28,7 @@ module fms_diag_time_utils_mod
 use time_manager_mod, only: time_type, increment_date, increment_time, get_calendar_type, NO_CALENDAR, leap_year, &
                             get_date, get_time,  operator(>), operator(<), operator(-), set_date, set_time
 use diag_data_mod,    only: END_OF_RUN, EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
-                            DIAG_YEARS, use_clock_average
+                            DIAG_YEARS, use_clock_average, wildcard_filename_prefix, wildcard_filename_separator
 USE constants_mod,    ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
 use fms_mod,          only: fms_error_handler
 use mpp_mod,          only: mpp_error, FATAL
@@ -235,17 +235,19 @@ contains
     INTEGER :: abs_sec              !< component of current_time
     INTEGER :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
     INTEGER :: julian_day, i, position, len, first_percent
+    LOGICAL :: field_written !< has a field already been appended to get_time_string
     CHARACTER(len=1) :: width  !< width of the field in format write
-    CHARACTER(len=10) :: format
+    CHARACTER(len=6) :: format
     CHARACTER(len=20) :: yr !< string of current time (output)
     CHARACTER(len=20) :: mo !< string of current time (output)
     CHARACTER(len=20) :: dy !< string of current time (output)
     CHARACTER(len=20) :: hr !< string of current time (output)
     CHARACTER(len=20) :: mi !< string of current time (output)
     CHARACTER(len=20) :: sc !< string of current time (output)
+    CHARACTER(len=20) :: fields(6) !< yr, mo, dy, hr, mi, sc, in order
     CHARACTER(len=128) :: filetail
 
-    format = '("_",i*.*)'
+    format = '(i*.*)'
     CALL get_date(current_time, yr1, mo1, dy1, hr1, mi1, sc1)
     len = LEN_TRIM(filename)
     first_percent = INDEX(filename, '%')
@@ -255,7 +257,7 @@ contains
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        yr1_s = yr1
-       format(7:9) = width//'.'//width
+       format(3:5) = width//'.'//width
        WRITE(yr, format) yr1_s
        yr2 = 0
     ELSE
@@ -267,7 +269,7 @@ contains
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
        mo1_s = yr2*12 + mo1
-       format(7:9) = width//'.'//width
+       format(3:5) = width//'.'//width
        WRITE(mo, format) mo1_s
     ELSE
        mo = ' '
@@ -298,7 +300,7 @@ contains
     position = INDEX(filetail, 'dy')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       FORMAT(7:9) = width//'.'//width
+       FORMAT(3:5) = width//'.'//width
        WRITE(dy, FORMAT) dy1_s
     ELSE
        dy = ' '
@@ -313,7 +315,7 @@ contains
     position = INDEX(filetail, 'hr')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
+       format(3:5) = width//'.'//width
        WRITE(hr, format) hr1_s
     ELSE
        hr = ' '
@@ -328,7 +330,7 @@ contains
     position = INDEX(filetail, 'mi')
     IF(position>0) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
+       format(3:5) = width//'.'//width
        WRITE(mi, format) mi1_s
     ELSE
        mi = ' '
@@ -342,12 +344,26 @@ contains
     position = INDEX(filetail, 'sc')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
+       format(3:5) = width//'.'//width
        WRITE(sc, format) sc1_s
     ELSE
        sc = ' '
     ENDIF
-    get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
+    ! join the present fields, using wildcard_filename_prefix before the first one and
+    ! wildcard_filename_separator between each subsequent one (both default to "_")
+    fields(1) = yr; fields(2) = mo; fields(3) = dy
+    fields(4) = hr; fields(5) = mi; fields(6) = sc
+    get_time_string = ''
+    field_written = .FALSE.
+    DO i = 1, SIZE(fields)
+       IF ( LEN_TRIM(fields(i)) == 0 ) CYCLE
+       IF ( field_written ) THEN
+          get_time_string = TRIM(get_time_string)//TRIM(wildcard_filename_separator)//TRIM(fields(i))
+       ELSE
+          get_time_string = TRIM(get_time_string)//TRIM(wildcard_filename_prefix)//TRIM(fields(i))
+          field_written = .TRUE.
+       END IF
+    END DO
   END FUNCTION get_time_string
 
   !> @brief Return the difference between two times in units.

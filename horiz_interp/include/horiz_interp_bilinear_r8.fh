@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bilinear
-!> @{
 #undef FMS_HI_KIND_
 #define FMS_HI_KIND_ r8_kind
 
@@ -48,4 +46,3 @@
 #define HORIZ_INTERP_READ_WEIGHTS_BILINEAR_ horiz_interp_read_weights_bilinear_r8
 
 #include "horiz_interp_bilinear.inc"
-!> @}

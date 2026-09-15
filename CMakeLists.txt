@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2026.01.01
+  VERSION 2026.02
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -695,6 +695,7 @@ if(UNIT_TESTS)
     test_fms/diag_manager/check_new_file_freq.F90
     test_fms/diag_manager/test_zbounds_limits.F90
     test_fms/diag_manager/test_multiple_zbounds.F90
+    test_fms/diag_manager/test_wildcard_filename.F90
     test_fms/drifters/test_cloud_interpolator.F90
     test_fms/drifters/test_drifters_io.F90
     test_fms/drifters/test_drifters_input.F90

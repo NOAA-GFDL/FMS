@@ -6,6 +6,58 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2026.02] - 2026-09-04
+
+### Known Issues
+- MPP: `mpp_get_current_pelist_legacy`  interface change triggers segfault in MOM6 (#1912)
+- INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+
+* BUILD: Added support for openacc in both build systems (#1826)
+* BUILD: Add nvhpc compiler flags to cmake (#1743)
+* CMAKE: Making unit tests optional during CMake install method (#1850)
+* CI: Add workflow for Mac OS builds (#1884)
+* MPP: Add corner mosaic tests to mpp suite (#1868)
+* DIAG_MANAGER: General Indices: Diag Manager Test (#1833)
+* MPP: Add starting_ensemble_id namelist option (#1838)
+* OFFLOAD: Implement OpenMP offload for do group update (#1782)
+
+### Changed
+
+* CI: Update CI workflows to gnu 15 image (#1849)
+* DOCS: Update fms2_io docs (#1840)
+* DOCS: Updated documentation for horiz_interp (#1900)
+* FMS2_IO: Generalized indices support in fms2_io (#1871)
+* GRID_UTILS: Grid utils radius changes with GFS_CONSTANTS (#1867)
+* INTERPOLATOR: Generalized indices: interpolator_mod (#1878)
+* MPP: Update to mpi_f08 (#1828)
+* MPP: Generalized indices updates for mpp_group_update (#1853), feature/general indices gatscat (#1832), mpp global field updates (#1806), and MPP_REDISTRIBUTE (#1886)
+* MPP: Generalized indices: Refactor group_update for improved performance (#1885)
+* MPP: Move inverse_permutation to mpp_mod (#1894)
+
+### Fixed
+
+* CI: Fix identifier of job in Intel OneAPI CI (#1831) and remove skipped tests from intel CI (#1848)
+* DIAG_MANAGER: DIAG MANAGER: Fixes to zbounds (#1880)
+* DIAG_MANAGER: diag_manager: reword error message to make it more useful (#1888)
+* DIAG_MANAGER: Implement workarounds for modern diag manager with NVHPC (#1897)
+* GRID: Cell measures final fix (#1854)
+* MPP: Fix mpp gatherv nonroot alloc (#1839)
+* MPP: Allocate dummy arrays to pass to mpp_gather calls (#1863)
+* MPP: Fix mpp_gather/scatter memory leak (#1892)
+* MPP: mpp_define_mosaic: Support Case where tile_id(1)>1 (#1856)
+* MPP: Update mpp_do_redistribute.fh (#1902)
+* TIME_MANAGER: Fix divide by zero in time_manager (#1898)
+* SANITIZER: Fix some errors find by Address Sanitizer (#1795)
+
+### Removed
+
+* MPP_IO: Remove use_mpp_io namelist from FMS source code (#1882)
+
 ## [2026.01.01] - 2026-03-03
 
 ### Fixed

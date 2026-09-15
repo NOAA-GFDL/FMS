@@ -261,10 +261,14 @@ program test_mpp_domains
   endif
 
   if( test_group_offload) then
-      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
+#ifdef __NVCOMPILER_OPENMP_GPU
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
      call test_group_update( 'Folded-north', use_omp_offload=test_group_offload )
      call test_group_update( 'Cubic-Grid', use_omp_offload=test_group_offload )
-      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_group <-------------------'
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_group <-------------------'
+#else
+     if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Skipping GPU offload test <-------------------'
+#endif
   endif
 
   if( test_interface ) then

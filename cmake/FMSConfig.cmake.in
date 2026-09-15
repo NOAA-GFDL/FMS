@@ -7,8 +7,9 @@
 #  * R8 - 64-bit library
 #
 # Imported interface targets provided:
-#  * FMS::fms_r4 - real32 library target
-#  * FMS::fms_r8 - real64 library target
+#  * FMS::fms    - default mixed-precision library target
+#  * FMS::fms_r4 - real32 library target when built with 32BIT
+#  * FMS::fms_r8 - real64 library target when built with 64BIT
 
 # Include targets file.  This will create IMPORTED target fms
 include("${CMAKE_CURRENT_LIST_DIR}/fms-targets.cmake")
@@ -39,10 +40,6 @@ foreach(_comp ${_possible_fms_components})
   set(_name_${_comp} ${_comp})
 endforeach()
 
-#R4 is the default component
-if(NOT FMS_FIND_COMPONENTS)
-  list(APPEND _search_fms_components "R4")
-endif()
 foreach(_comp ${FMS_FIND_COMPONENTS})
   list(APPEND _search_fms_components ${_comp})
   if(NOT _name_${_comp})
@@ -72,6 +69,9 @@ check_required_components("FMS")
 
 message(STATUS "Found FMS: \"${FMS_INSTALL_PREFIX}\" (Version: \"${FMSVersion}\")")
 message( STATUS "FMS targets:" )
+if(TARGET FMS::fms)
+  message(STATUS "  - FMS::fms")
+endif()
 foreach(component ${_search_fms_components})
   string( TOLOWER "${component}" _component )
   if(FMS_${component}_FOUND)

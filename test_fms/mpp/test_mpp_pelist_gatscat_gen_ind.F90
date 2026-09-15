@@ -131,8 +131,6 @@ contains
          allocate(field(dims(storage_to_axis(1)), &
                         dims(storage_to_axis(2)), &
                         dims(storage_to_axis(3))))
-       else
-         allocate(field(1,1,1))
        endif
      else
        dims = dims_logical
