@@ -1,6 +1,9 @@
 name: CMake build with NVHPC
 
-on: pull_request
+on:
+  pull_request:
+  push:
+    branches: main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,14 +32,20 @@ jobs:
         buildcache: true
         spack_ref: v1.2.0 # spack branch to use
     - name: Set up OCI build cache
+      if: github.event_name != 'pull_request'
       run: |
         spack mirror add \
-            --autopush \
-            --unsigned \
-            --oci-username-variable REGISTRY_USER \
-            --oci-password-variable REGISTRY_TOKEN \
-            gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
+          --autopush \
+          --unsigned \
+          --oci-username-variable REGISTRY_USER \
+          --oci-password-variable REGISTRY_TOKEN \
+          gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
         spack buildcache update-index gfdl-gh-cache
+    - name: Set up OCI build cache (read-only for PRs)
+      if: github.event_name == 'pull_request'
+      run: |
+        spack mirror add --unsigned \
+          gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
     - name: Install NVHPC compilers
       run: |
         spack compiler find
