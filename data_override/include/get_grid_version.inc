@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> Get global lon and lat of three model (target) grids, with a given file name
+!> Get global lon and lat of three model (target) grids, with a given grid_spec file name
 subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, max_lon)
   integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
@@ -142,7 +142,7 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, m
   call mpp_max(max_lon)
 end subroutine GET_GRID_VERSION_1_
 
-!> Get global lon and lat of three model (target) grids from mosaic.nc.
+!> Get global lon and lat of three model (target) grids from a mosaic grid.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max_lon, use_center_grid_points)
   integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
