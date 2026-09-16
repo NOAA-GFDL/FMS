@@ -70,7 +70,7 @@ jobs:
         cd /home/runner/work/FMS/FMS && sudo rm -rf *
       env:
         CC: /opt/intel/oneapi/compiler/2023.2.1/linux/bin/intel64/icc
-        FCC: /opt/intel/oneapi/compiler/2023.2.1/linux/bin/intel64/ifort
+        FC: /opt/intel/oneapi/compiler/2023.2.1/linux/bin/intel64/ifort
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
