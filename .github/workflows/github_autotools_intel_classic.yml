@@ -51,6 +51,8 @@ jobs:
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
+        set -eux
+        run: source /opt/intel/oneapi/setvars.sh
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         sudo mkdir /libs
         wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz
@@ -75,10 +77,24 @@ jobs:
       uses: actions/checkout@v4.2.2
     - name: Configure
       run: |
-        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        set -eux
+        source /opt/intel/oneapi/setvars.sh
+        export LD_LIBRARY_PATH="/libs/lib:/opt/intel/oneapi/compiler/2023.2.1/linux/compiler/lib/intel64_lin:${LD_LIBRARY_PATH}"
+        export CPPFLAGS="-I/libs/include"
+        export CFLAGS="-I/libs/include"
+        export FCFLAGS="-I/libs/include -g -traceback"
+        export LDFLAGS="-L/libs/lib -Wl,-rpath,/libs/lib"
         autoreconf -if ./configure.ac
         ./configure --with-yaml
     - name: Compile
-      run: make -j || make
+      run:
+        set -eux
+        source /opt/intel/oneapi/setvars.sh
+        export LD_LIBRARY_PATH="/libs/lib:/opt/intel/oneapi/compiler/2023.2.1/linux/compiler/lib/intel64_lin:${LD_LIBRARY_PATH}"
+        make -j || make
     - name: Run test suite
-      run: make check
+      run: 
+        set -eux
+        source /opt/intel/oneapi/setvars.sh
+        export LD_LIBRARY_PATH="/libs/lib:/opt/intel/oneapi/compiler/2023.2.1/linux/compiler/lib/intel64_lin:${LD_LIBRARY_PATH}"
+        make check TEST_VERBOSE=1
