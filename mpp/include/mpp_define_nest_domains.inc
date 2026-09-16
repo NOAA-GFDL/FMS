@@ -1234,7 +1234,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
                  nsend = nsend + 1
                  call allocate_nest_overlap(overLaplist(nsend), MAXOVERLAP)
                  call insert_nest_overlap(overLaplist(nsend), nest_domain%pelist_coarse(n), &
-                      is_coarse, ie_coarse, js_coarse, je_coarse, dir, rotate2)
+                      is_coarse, ie_coarse, js_coarse, je_coarse, dir, -rotate2)
               endif
            endif
         enddo
