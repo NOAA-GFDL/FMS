@@ -52,7 +52,7 @@ jobs:
       name: Build netcdf
       run: |
         set -eux
-        run: source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/oneapi/setvars.sh
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         sudo mkdir /libs
         wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz
@@ -93,7 +93,7 @@ jobs:
         export LD_LIBRARY_PATH="/libs/lib:/opt/intel/oneapi/compiler/2023.2.1/linux/compiler/lib/intel64_lin:${LD_LIBRARY_PATH}"
         make -j || make
     - name: Run test suite
-      run: 
+      run:
         set -eux
         source /opt/intel/oneapi/setvars.sh
         export LD_LIBRARY_PATH="/libs/lib:/opt/intel/oneapi/compiler/2023.2.1/linux/compiler/lib/intel64_lin:${LD_LIBRARY_PATH}"
