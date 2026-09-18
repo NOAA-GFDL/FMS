@@ -69,8 +69,6 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
   set(ENABLE_QUAD_PRECISION OFF)
   message(WARNING "NVHPC does not support building FMS with QUAD_PRECISION!")
 endif()
-# Testing-specific options
-set(OVERSUBSCRIBE_FLAG " --oversubscribe " CACHE STRING "Flag for mpirun to use more cores than available")
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -595,26 +593,50 @@ install(
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-### Unit Testing
-include(CTest)
-
-# TODO autotools also checks if srun is available
-set(MPI_LAUNCHER "mpirun")
-# used in the test-lib.sh.in to make it behave differently when parsed by cmake
-set(USING_CMAKE "true")
-set(OVERSUBSCRIBE "${OVERSUBSCRIBE_FLAG}")
-message(STATUS "Using '${OVERSUBSCRIBE}' flag to oversubscribe ranks in test scripts")
-
-# set the fms library to link tests with based on whats built
-if(NOT kinds)
-  set(fmsLibraryName FMS::fms)
-elseif(64BIT)
-  set(fmsLibraryName FMS::fms_r8)
-elseif(32BIT)
-  set(fmsLibraryName FMS::fms_r4)
-endif()
 
 if(UNIT_TESTS)
+
+  # Testing-specific options
+  set(OVERSUBSCRIBE_FLAG "--oversubscribe" CACHE STRING "Flag for mpirun to use more cores than available")
+
+  ### Unit Testing
+  include(CTest)
+
+  set(MPI_LAUNCHER "${MPIEXEC_EXECUTABLE}")
+  if(NOT MPI_LAUNCHER)
+    set(MPI_LAUNCHER "mpirun")
+  endif()
+
+  # Open MPI requires an oversubscribe flag when tests launch more ranks than
+  # available slots; other launchers (e.g., MPICH Hydra) generally do not.
+  set(OVERSUBSCRIBE "")
+  execute_process(
+    COMMAND ${MPI_LAUNCHER} --version
+    OUTPUT_VARIABLE _mpi_version_out
+    ERROR_VARIABLE _mpi_version_err
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE _mpi_version_rc)
+  string(CONCAT _mpi_version_text "${_mpi_version_out}" "\n" "${_mpi_version_err}")
+  if(_mpi_version_rc EQUAL 0 AND _mpi_version_text MATCHES "(Open[ ]*MPI|OpenRTE)")
+    set(OVERSUBSCRIBE "${OVERSUBSCRIBE_FLAG}")
+    message(STATUS "Detected MPI launcher '${MPI_LAUNCHER}'; using oversubscribe flag '${OVERSUBSCRIBE}' for tests")
+  else()
+    message(STATUS "MPI launcher '${MPI_LAUNCHER}' does not require oversubscribe flag; leaving it unset for tests")
+  endif()
+
+  # used in the test-lib.sh.in to make it behave differently when parsed by cmake
+  set(USING_CMAKE "true")
+
+  # set the fms library to link tests with based on whats built
+  if(NOT kinds)
+    set(fmsLibraryName FMS::fms)
+  elseif(64BIT)
+    set(fmsLibraryName FMS::fms_r8)
+  elseif(32BIT)
+    set(fmsLibraryName FMS::fms_r4)
+  endif()
+
   # parse and add build info to test script util file
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test-lib.sh
                 @ONLY)
@@ -805,6 +827,7 @@ if(UNIT_TESTS)
     test_fms/random_numbers/test_random_numbers.F90
     test_fms/sat_vapor_pres/test_sat_vapor_pres.F90
     test_fms/time_interp/test_time_interp.F90
+    test_fms/time_interp/test_time_interp_external_create_input.F90
     test_fms/time_interp/test_time_interp_external.F90
     test_fms/time_interp/test_time_interp_conservative_hi.F90
     test_fms/topography/test_topography.F90

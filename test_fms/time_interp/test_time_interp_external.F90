@@ -22,7 +22,7 @@ program test_time_interp_external
 use constants_mod,             only : constants_init
 use fms_mod,                   only : check_nml_error
 use mpp_mod,                   only : mpp_init, mpp_exit, mpp_npes, stdout, stdlog, FATAL, mpp_error
-use mpp_mod,                   only : input_nml_file, mpp_pe, mpp_root_pe, mpp_sync
+use mpp_mod,                   only : input_nml_file
 use mpp_domains_mod,           only : mpp_domains_init, domain2d, mpp_define_layout, mpp_define_domains
 use mpp_domains_mod, only : mpp_global_sum, mpp_global_max, mpp_global_min, BITWISE_EXACT_SUM, mpp_get_compute_domain
 use mpp_domains_mod,           only : mpp_domains_set_stack_size
@@ -35,8 +35,7 @@ use time_manager_mod,          only : NOLEAP
 use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_del, &
                                     & horiz_interp_type
 use axis_utils2_mod,           only : axis_edges
-use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init, open_file, close_file, write_data, register_axis
-use fms2_io_mod,               only : register_field, unlimited, register_variable_attribute
+use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init
 use platform_mod
 
 implicit none
@@ -68,8 +67,6 @@ real(TEST_FMS_KIND_)               :: lat_out(180,89) !< lon grid to interpolate
 integer            :: outunit !< stdout unit number
 type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) = (/ "lon ", "lat ", "time", "none"/) !< axis_names
-real(TEST_FMS_KIND_), allocatable  :: data_in(:,:)  !< data added to file
-real(TEST_FMS_KIND_), allocatable  :: data_in_1d(:)  !< data added to file
 
 namelist /test_time_interp_external_nml/ cal_type
 
@@ -83,9 +80,6 @@ call horiz_interp_init
 
 read (input_nml_file, test_time_interp_external_nml, iostat=ierr)
 ierr = check_nml_error (ierr, 'test_time_interp_external_nml')
-
-call create_input_files
-call create_input_files_1d
 
 select case (trim(cal_type))
 case ('julian')
@@ -106,91 +100,6 @@ call mpp_exit
 
 
  contains
-
-    !> Writes netcdf input files with fields to interpolate
-    subroutine create_input_files
-        !< Create a file to test with:
-        if (mpp_pe() .eq. mpp_root_pe()) then
-            if (open_file(fileobj, filename, "overwrite")) then
-                call register_axis(fileobj, "lon", 179)
-                call register_axis(fileobj, "lat", 89)
-                call register_axis(fileobj, "time", unlimited)
-
-                call register_field(fileobj, "lon", "double", dimensions=(/"lon"/))
-                call register_field(fileobj, "lat", "double", dimensions=(/"lat"/))
-                call register_field(fileobj, "time", "double", dimensions=(/"time"/))
-
-                call register_field(fileobj, fieldname, "double", dimensions=(/"lon ", "lat ", "time"/))
-                call register_field(fileobj, trim(fieldname)//"_random", "double", dimensions=(/"lon ","lat ","time"/))
-
-                call register_variable_attribute(fileobj, "lon", "cartesian_axis", "X", str_len=1)
-                call register_variable_attribute(fileobj, "lat", "cartesian_axis", "Y", str_len=1)
-
-                call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
-                call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00",str_len=30)
-                call register_variable_attribute(fileobj, "time", "calendar", "julian", str_len=6)
-
-                !call register_global_attribute(fileobj, "global_scalar", 1024.0_r8_kind)
-
-                call write_data(fileobj, "lat", (/(-90.0_kindl+i*2.0_kindl,i=1,89)/))
-                call write_data(fileobj, "lon", (/(-180.0_kindl+i*2.0_kindl,i=1,179)/))
-                call write_data(fileobj, "time", (/(1+i*2, i=0,2)/))
-
-                allocate(data_in(179, 89))
-                do i=0, 2
-                    data_in = real((1+i*2), TEST_FMS_KIND_)
-                    call write_data(fileobj, fieldname, data_in, unlim_dim_level=i+1)
-                    call random_number(data_in)
-                    call write_data(fileobj, trim(fieldname)//"_random", data_in, unlim_dim_level=i+1)
-                enddo
-                call close_file(fileobj)
-                deallocate(data_in)
-            endif
-        endif
-        !< Wait for the root pe to catch up
-        call mpp_sync()
-    end subroutine
-
-
-    !> Writes netcdf input files with fields to interpolate
-    subroutine create_input_files_1d
-        !< Create a file to test with:
-        if (mpp_pe() .eq. mpp_root_pe()) then
-            if (open_file(fileobj, filename_1d, "overwrite")) then
-                call register_axis(fileobj, "lon", 179)
-                call register_axis(fileobj, "time", unlimited)
-
-                call register_field(fileobj, "lon", "double", dimensions=(/"lon"/))
-                call register_field(fileobj, "time", "double", dimensions=(/"time"/))
-
-                call register_field(fileobj, fieldname_1d_band, "double", dimensions=(/"lon ", "time"/))
-                call register_field(fileobj, trim(fieldname_1d_band2), "double", dimensions=(/"lon ","time"/))
-
-                call register_variable_attribute(fileobj, "lon", "cartesian_axis", "X", str_len=1)
-
-                call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
-                call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00",str_len=30)
-                call register_variable_attribute(fileobj, "time", "calendar", "julian", str_len=6)
-
-                !call register_global_attribute(fileobj, "global_scalar", 1024.0_r8_kind)
-
-                call write_data(fileobj, "lon", (/(-180.0_kindl+i*2.0_kindl,i=1,179)/))
-                call write_data(fileobj, "time", (/(1+i*2, i=0,2)/))
-
-                allocate(data_in_1d(179))
-                do i=0, 2
-                    data_in_1d = real((1+i*2), TEST_FMS_KIND_)
-                    call write_data(fileobj, fieldname_1d_band, data_in_1d, unlim_dim_level=i+1)
-                    data_in_1d = - data_in_1d
-                    call write_data(fileobj, trim(fieldname_1d_band2), data_in_1d, unlim_dim_level=i+1)
-                enddo
-                call close_file(fileobj)
-                deallocate(data_in_1d)
-            endif
-        endif
-        !< Wait for the root pe to catch up
-        call mpp_sync()
-    end subroutine create_input_files_1d
 
     subroutine time_interpolate_3d_data
         real(TEST_FMS_KIND_), allocatable  :: data_d_3d(:,:,:) !< interpolated data in compute domain
