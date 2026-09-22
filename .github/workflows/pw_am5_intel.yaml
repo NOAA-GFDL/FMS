@@ -1,6 +1,8 @@
 name: AM5 test
 on:
   push:
+    branches:
+      - main
     tags:
       - '*alpha*'
       - '*beta*'
