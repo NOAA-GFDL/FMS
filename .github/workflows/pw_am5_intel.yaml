@@ -49,6 +49,7 @@ jobs:
     strategy:
       fail-fast: false
     needs: [compile_AM5]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Create run directory
         run: |
