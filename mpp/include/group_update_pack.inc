@@ -903,8 +903,8 @@ contains
     select case (nd)
       case (2)
         !$omp parallel do default(shared) private(i, idx)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
+            do i2=lb(2),ub(2),stride(2)
+               do i1=lb(1),ub(1),stride(1)
             i(1) = i1
             i(2) = i2
             idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
@@ -915,37 +915,37 @@ contains
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
         !$omp parallel do default(shared) private(i, idx)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
             do i3=lb(3),ub(3),stride(3)
-              i(1) = i1
-              i(2) = i2
-              i(3) = i3
-              idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                    stride(ij1)*(i(ij1)-lb(ij1)) + 1
-              buf(idx) = sgn * field3d(i1,i2,i3)
+               do i2=lb(2),ub(2),stride(2)
+                  do i1=lb(1),ub(1),stride(1)
+                     i(1) = i1
+                     i(2) = i2
+                     i(3) = i3
+                     idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                           stride(ij1)*(i(ij1)-lb(ij1)) + 1
+                     buf(idx) = sgn * field3d(i1,i2,i3)
+                  end do
+               end do
             end do
-          end do
-        end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
         !$omp parallel do default(shared) private(i, idx)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
+         do i4=lb(4),ub(4),stride(4)
             do i3=lb(3),ub(3),stride(3)
-              do i4=lb(4),ub(4),stride(4)
-                i(1) = i1
-                i(2) = i2
-                i(3) = i3
-                i(4) = i4
-                idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                      stride(ij1)*(i(ij1)-lb(ij1)) + 1
-                buf(idx) = sgn * field4d(i1,i2,i3,i4)
-              end do
+               do i2=lb(2),ub(2),stride(2)
+                  do i1=lb(1),ub(1),stride(1)
+                     i(1) = i1
+                     i(2) = i2
+                     i(3) = i3
+                     i(4) = i4
+                     idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                        stride(ij1)*(i(ij1)-lb(ij1)) + 1
+                     buf(idx) = sgn * field4d(i1,i2,i3,i4)
+                  end do
+               end do
             end do
-          end do
-        end do
+         end do
     end select
   end subroutine pack_inner_loop
 end subroutine GROUP_UPDATE_PACK_GENERAL_
