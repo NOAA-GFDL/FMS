@@ -18,7 +18,7 @@
 
 program test_get_ascii_lines
   use mpp_mod, only: mpp_init, mpp_init_test_logfile_init, get_ascii_file_num_lines, read_ascii_file
-  use mpp_mod, only: input_nml_file
+  use mpp_mod, only: input_nml_file, mpp_exit
   use, intrinsic ::  iso_fortran_env, only: INT8
 
   implicit none
@@ -54,7 +54,7 @@ program test_get_ascii_lines
   my_num_lines(test_number) = my_num_lines(test_number)+1 !!!!! Please See Note At End of File
   f_num_lines = get_ascii_file_num_lines(trim(file_name(test_number)), str_length)
   call assertEquals(f_num_lines, my_num_lines(test_number), trim(test_name(test_number)))
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 contains
 

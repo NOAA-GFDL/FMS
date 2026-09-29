@@ -23,7 +23,7 @@
 
 program test_stdout
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, stdlog
-  use mpp_mod, only : stdout, mpp_pe, mpp_root_pe
+  use mpp_mod, only : stdout, mpp_pe, mpp_root_pe, mpp_exit
   use iso_fortran_env, only : OUTPUT_UNIT
 
   integer :: out_unit !< Stores the returned standard output unit number
@@ -51,6 +51,6 @@ program test_stdout
     end if
   end if
 
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 end program test_stdout

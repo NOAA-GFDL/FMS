@@ -213,11 +213,6 @@ fi
 # check if netcdf/hdf5 was built with mpi
 if test $with_mpi = yes; then
   AX_LIB_NETCDF4([parallel])
-  if test $with_netcdf4_parallel = yes; then
-    AM_CONDITIONAL([SKIP_NC_PARALLEL], true)
-  else
-    AM_CONDITIONAL([SKIP_NC_PARALLEL], false)
-  fi
 fi
 
 # Check if ncdump is avaiable
@@ -485,9 +480,9 @@ AC_MSG_RESULT([$nc_has_parallel4])
 if test $nc_has_parallel4 = no; then
   AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
   AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
+  AM_CONDITIONAL([TEST_NC_PARALLEL], false)
 else
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
+  AM_CONDITIONAL([TEST_NC_PARALLEL], true)
 fi
 
 #####

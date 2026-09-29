@@ -24,7 +24,7 @@
 program test_mpp_transmit
 
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe
-  use mpp_mod, only : mpp_sync, mpp_sync_self
+  use mpp_mod, only : mpp_sync, mpp_sync_self, mpp_exit
   use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
   use mpp_mod, only : mpp_transmit, ALL_PES, NULL_PE
   use mpp_mod, only : mpp_error, FATAL
@@ -50,7 +50,7 @@ program test_mpp_transmit
     call test_mpp_transmit_4D(npes,pe,root)
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_transmit <------------------'
 
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 contains
 

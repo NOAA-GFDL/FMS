@@ -96,7 +96,7 @@ program test_global_arrays
   call mpp_sync()
 
   call mpp_domains_exit()
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
   contains
 

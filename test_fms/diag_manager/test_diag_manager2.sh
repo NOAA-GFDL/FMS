@@ -1337,7 +1337,7 @@ diag_files:
 _EOF
 
 # skip if mpi is disabled, previous test is parallel so no output to check
-if [ -z "${parallel_skip}" ]; then
+if [ -z "${nc_parallel_skip}" ]; then
   my_test_count=`expr $my_test_count + 1`
   test_expect_success "check modern diag manager yaml output (test $my_test_count)" '
       mpirun -n 1 ../test_diag_out_yaml

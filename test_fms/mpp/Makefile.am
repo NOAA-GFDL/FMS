@@ -200,9 +200,10 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # if doing a mpi-less build, single core tests will run automagically
-# this test checks output for a parallel test, so it needs to be skipped explicitly
+# test_stdlog.3 checks output from a skipped test, so is also skipped
+# test_mpp_clock_begin_end_id.10 is a expected fail that passes, but that is to be expected when running without mpi 
 if SERIAL_BUILD
-  TESTS_ENVIRONMENT = SKIP_TESTS="test_stdlog.3 test_mpp.1 ${SKIP_TESTS}"
+  TESTS_ENVIRONMENT = SKIP_TESTS="test_stdlog.3 test_mpp_clock_begin_end_id.10 ${SKIP_TESTS}"
 endif
 
 # These files will also be included in the distribution.
