@@ -16,16 +16,15 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
-!> This module can interpolate data from rectangular/tripolar grid
-!! to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
-!! scheme.    There is an optional mask field for missing input data.
-!! An optional output mask field may be used in conjunction with
-!! the input mask to show where output data exists.
-
-!> @addtogroup horiz_interp_spherical_mod
-!> @{
+!! @ingroup horiz_interp
+!! @{
+!! @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
+!! @parblock
+!! Horiz_interp_spherical_mod contains methods called from horiz_interp_mod to interpolate data
+!! from rectangular/tripolar grid to rectangular/tripolar grid using the inverse-distance-weighted
+!! interpolation.  Users are recommended to use the top-level horiz_interp_mod with "interp" set to
+!! "spherical" for the inverse-distance-weighted interpolation.
+!! @endparblock
 module horiz_interp_spherical_mod
 
   use platform_mod,          only : r4_kind, r8_kind
@@ -40,16 +39,23 @@ module horiz_interp_spherical_mod
   implicit none
   private
 
+  !> Generic interface to interpolate data from source grid to target grid from the weights stored in Interp.
+  !! Calls horiz_interp_spherical_r4 if input and output data are 2D arrays in 32-bit precision.
+  !! Calls horiz_interp_spherical_r8 if input and output data are 2D arrays in 64-bit precision.
   interface horiz_interp_spherical
     module procedure horiz_interp_spherical_r4
     module procedure horiz_interp_spherical_r8
   end interface
 
+  !> Generic interface to compute interpolation weights and mapping indices.
+  !! Calls horiz_interp_spherical_new_r4 when input and output 2D grid arrays are in 32-bit precision.
+  !! Calls horiz_interp_spherical_new_r8 when input and output 2D grid arrays are in 64-bit precision.
   interface horiz_interp_spherical_new
     module procedure horiz_interp_spherical_new_r4
     module procedure horiz_interp_spherical_new_r8
   end interface
 
+  !> Unused interface
   interface horiz_interp_spherical_wght
     module procedure horiz_interp_spherical_wght_r4
     module procedure horiz_interp_spherical_wght_r8
@@ -58,48 +64,55 @@ module horiz_interp_spherical_mod
   public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
 
- !> private helper routines
+
+  !> Generic interface used internally when search_method = "full_search" to search
+  !! for nearest neighbors. Calls full_search_r4 when the input and output grids are in 32-bit
+  !! precision.  Calls full_search_r8 when the input and output grids are in 64-bit precision.
   interface full_search
     module procedure full_search_r4
     module procedure full_search_r8
   end interface
 
+  !> Generic interface used internally when search_method = "radial_search" to search
+  !! for nearest neighbors. Calls radial_search_r4 when the input and output grids are
+  !! in 32-bit precision.  Calls radial_search_r8 when the input and output grids are in
+  !! 64-bit precision.
   interface radial_search
     module procedure radial_search_r4
     module procedure radial_search_r8
   end interface
 
+  !> Generic inteface used internally in full_search and radial_search.
+  !! Calls spherical_distance_r4 when the lon and lat values are in 32-bit precision.
+  !! Calls spherical_distance_r8 when the lon and lat values are in 64-bit precision.
   interface spherical_distance
     module procedure spherical_distance_r4
     module procedure spherical_distance_r8
   end interface
 
   integer, parameter :: max_neighbors = 400
-  real(R8_KIND),    parameter :: max_dist_default = 0.1_r8_kind  ! radians
+    !< is the maximum number of neighboring input grid cells around output grid cell.
+  real(R8_KIND), parameter :: max_dist_default = 0.1_r8_kind
+    !< is the maximum angular distance in radians for input and output grid cells to neighbor.
   integer, parameter :: num_nbrs_default = 4
-  real(R8_KIND),    parameter :: large=1.e20_r8_kind
-  real(R8_KIND),    parameter :: epsln=1.e-10_r8_kind
+    !< is the minimum number of neighbors to compute for each output grid cell.
+  real(R8_KIND), parameter :: large=1.e20_r8_kind !< is a large number
+  real(R8_KIND),  parameter :: epsln=1.e-10_r8_kind !< is a small number
 
   integer            :: pe, root_pe
 
 
-  character(len=32) :: search_method = "radial_search" !< Namelist variable to indicate the searching
-                    !! method to find the
-                    !! nearest neighbor points. Its value can be "radial_search" and "full_search",
-                    !! with default value "radial_search". when search_method is "radial_search",
-                    !! the search may be not quite accurate for some cases. Normally the search will
-                    !! be ok if you chose suitable max_dist. When search_method is "full_search",
-                    !! it will be always accurate, but will be slower comparing to "radial_search".
-                    !! Normally these two search algorithm will produce same results other than
-                    !! order of operation. "radial_search" are recommended to use. The purpose to
-                    !! add "full_search" is in case you think you interpolation results is
-                    !! not right, you have other option to verify.
+  character(len=32) :: search_method = "radial_search"
+    !< is a namelist flag to set the nearest neighbor searching method to either "radial_search" (default)
+    !! or "full_search".  When set to "radial_search", the search may not be as accurate for some cases.
+    !! Normally the search will be ok if you chose suitable max_dist. When search_method is "full_search",
+    !! it will be always accurate, but will be slower comparing to "radial_search".  Normally these two search
+    !! algorithm will produce same results other than order of operation. "radial_search" are recommended to use.
+    !! The purpose to add "full_search" is in case you think you interpolation results is not right,
+    !! you have other option to verify.
 
-!or "full_search"
   namelist /horiz_interp_spherical_nml/ search_method
 
-  !-----------------------------------------------------------------------
-  ! Include variable "version" to be written to log file.
 #include<file_version.h>
   logical            :: module_is_initialized = .FALSE.
 
@@ -107,7 +120,9 @@ contains
 
   !#######################################################################
 
-  !> Initializes module and writes version number to logfile.out
+  !> @parblock
+  !! Initializes horiz_interp_spherical_mod.  Called from horiz_interp_init in horiz_interp_mod
+  !! @endparblock
   subroutine horiz_interp_spherical_init
     integer :: ierr, io
 
@@ -123,14 +138,13 @@ contains
 
   !#######################################################################
 
-  !> Deallocates memory used by "HI_KIND_TYPE" variables.
-  !! Must be called before reinitializing with horiz_interp_spherical_new.
+  !> @parblock
+  !! Deallocates arrays holding spherical interpolation weights and mapping indices
+  !! in Interp.  Resets %is_allocated to .false.  Called from horiz_interp_del in horiz_interp_mod.
+  !! @endparblock
   subroutine horiz_interp_spherical_del( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by previous
-                                           !! call to horiz_interp_spherical_new. The input variable
-                                           !! must have allocated arrays. The returned variable will
-                                           !! contain deallocated arrays.
+    type (horiz_interp_type), intent(inout) :: Interp !< will be reset with deallocated memory
 
     if(Interp%horizInterpReals4_type%is_allocated) then
       if(allocated(Interp%horizInterpReals4_type%src_dist)) deallocate(Interp%horizInterpReals4_type%src_dist)

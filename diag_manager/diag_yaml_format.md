@@ -134,6 +134,11 @@ ocn_2020_01_01_21.nc for time_bnds [18,24]
 
 **NOTE** If using the new_file_freq, there must be a way to distinguish each file, as it was done in the example above.
 
+**NOTE** The `_` shown before and between the substituted date/time fields above is the default,
+and can be changed via the `diag_manager_nml` namelist options `wildcard_filename_prefix` (inserted
+before the first substituted field) and `wildcard_filename_separator` (inserted between each
+subsequent field).
+
 - **file_duration** is a string that defines how long the file should receive data after start time in “file_duration_units”.  This optional field can only be used if the start_time field is present.  If this field is absent, then the file duration will be equal to the frequency for creating new files.
 - **global_meta** is a subsection that lists any additional global metadata to add to the file. This is a new feature that is not supported by the legacy ascii data_table.
 - **sub_region** is a subsection that defines the four corners of a subregional section to capture.

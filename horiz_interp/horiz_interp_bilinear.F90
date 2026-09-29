@@ -16,15 +16,15 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using bilinear interpolation
-!!
-!> @author Zhi Liang <Zhi.Liang@noaa.gov>
-!> This module can interpolate data from regular rectangular grid
-!! to rectangular/tripolar grid. The interpolation scheme is bilinear interpolation.
-!! There is an optional mask field for missing input data.
-!! An optional output mask field may be used in conjunction with
-!! the input mask to show where output data exists.
+!! @ingroup horiz_interp
+!! @{
+!! @author Zhi Liang <Zhi.Liang@noaa.gov>
+!! @parblock
+!! Horiz_interp_bilinear_mod contains methods called from horiz_interp_mod to
+!! interpolate data on a regular rectangular grid to a rectangular/tripolar grid.
+!! Users are recommened to use the top-level module horiz_interp_mod with "interp"
+!! set to "bilinear" for bilinear interpolation.
+!! @endparblock
 
 module horiz_interp_bilinear_mod
 
@@ -44,8 +44,16 @@ module horiz_interp_bilinear_mod
   public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
   public :: horiz_interp_bilinear_init, horiz_interp_read_weights_bilinear
 
-  !> Creates a @ref horiz_interp_type for bilinear interpolation.
-  !> @ingroup horiz_interp_bilinear_mod
+  !> Generic interface to compute interpolation weights and mapping indices.
+  !! Member subroutines and their main arguments are:
+  !! horiz_interp_bilinear_new_1d_r4:
+  !!   input grids provided as 1D arrays, output grids as 2D arrays, both in 32-bit precision.
+  !! horiz_interp_bilinear_new_1d_r8:
+  !!   input grids provided as 1D arrays, output grids as 2D arrays, both in 64-bit precision.
+  !! horiz_interp_bilinear_new_2d_r4:
+  !!   input and output grids provided as 2D arrays in 32-bit precision.
+  !! horiz_interp_bilinear__new_2d_r8:
+  !!   input and output grids provided as 2D arrays in 64-bit precision.
   interface horiz_interp_bilinear_new
     module procedure horiz_interp_bilinear_new_1d_r4
     module procedure horiz_interp_bilinear_new_1d_r8
@@ -53,40 +61,43 @@ module horiz_interp_bilinear_mod
     module procedure horiz_interp_bilinear_new_2d_r8
   end interface
 
-  !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
-  !! calculating it
-  !> @ingroup horiz_interp_bilinear_mod
+  !> Generic interface to populate Interp from a weight file generated from fregrid.
+  !! Calls horiz_interp_read_weights_bilinear_r4 if grid arguments are provided as 32-bit precision.
+  !! Calls horiz_interp_read_weights_bilienar_r8 if grid arguments are provided as 64-bit precision.
   interface horiz_interp_read_weights_bilinear
     module procedure horiz_interp_read_weights_bilinear_r4
     module procedure horiz_interp_read_weights_bilinear_r8
   end interface
 
+  !> Generic interface to interpolate data from a source grid to target grid using the weights
+  !! stored in Interp.  Calls horiz_interp_bilinear_r4 if input and output data are 2D arrays
+  !! in 32-bit precision.  Calls horiz_interp_bilinear_r8 if input and output data are 2D arrays
+  !! in 64-bit precision.
   interface horiz_interp_bilinear
     module procedure horiz_interp_bilinear_r4
     module procedure horiz_interp_bilinear_r8
   end interface
 
-!> @addtogroup horiz_interp_bilinear_mod
-!> @{
+  real(r8_kind), parameter :: epsln=1.e-10_r8_kind !< is a really small number
+  real(r4_kind), parameter :: epsln_r4=1.e-4_r4_kind !< is 0.0001
+  integer, parameter :: DUMMY = -999 !< is -999
 
-  real(r8_kind), parameter :: epsln=1.e-10_r8_kind
-  real(r4_kind), parameter :: epsln_r4=1.e-4_r4_kind
-  integer, parameter :: DUMMY = -999
-
-!! Private helper routines, interfaces for mixed real precision support
+  !> Generic interface used internally when finding nearest neighboring input cells
+  !! for an output cell.  Calls intersect_r4 when grid points are in 32-bit precision.
+  !! Calls intersect_r8 when grid points are in 64-bit precision.
   interface intersect
     module procedure intersect_r4
     module procedure intersect_r8
   end interface
 
-  !-----------------------------------------------------------------------
-! Include variable "version" to be written to log file.
 #include<file_version.h>
-  logical            :: module_is_initialized = .FALSE.
+  logical :: module_is_initialized = .FALSE. !< is a flag to prevent re-initialization
 
 contains
 
-  !> Initialize this module and writes version number to logfile.
+  !> @parblock
+  !! Initializes horiz_interp_bilinear_mod.  Called from horiz_interp_init in horiz_interp_mod.
+  !! @endparblock
   subroutine horiz_interp_bilinear_init
 
     if(module_is_initialized) return
@@ -98,12 +109,14 @@ contains
   !> @brief Deallocates memory used by "horiz_interp_type" variables.
   !!
   !> Must be called before reinitializing with horiz_interp_bilinear_new.
+
+  !> @parblock
+  !! Deallocates arrays holding bilinear interpolation weights and mapping indices in Interp.
+  !! Resets %is_allocated to .false.  Called from horiz_interp_del in horiz_interp_mod.
+  !! @endparblock
   subroutine horiz_interp_bilinear_del( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp!< A derived-type variable returned by previous
-                                   !! call to horiz_interp_bilinear_new. The input variable must
-                                   !! have allocated arrays. The returned variable will contain
-                                   !! deallocated arrays
+    type (horiz_interp_type), intent(inout) :: Interp !< will be reset with deallocated memory.
 
     if( Interp%horizInterpReals4_type%is_allocated) then
       if(allocated(Interp%horizInterpReals4_type%wti))   deallocate(Interp%horizInterpReals4_type%wti)
@@ -125,4 +138,3 @@ contains
 
 end module horiz_interp_bilinear_mod
 !> @}
-! close documentation grouping

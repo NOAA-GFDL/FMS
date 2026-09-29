@@ -16,23 +16,18 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_conserve_mod horiz_interp_conserve_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using conservative interpolation
+!! @ingroup horiz_interp
+!! @{
 !!
-!> @author Bruce Wyman, Zhi Liang
+!! @author Bruce Wyman, Zhi Liang
 !!
-!> This module can conservatively interpolate data from any logically rectangular grid
-!! to any rectangular grid. The interpolation scheme is area-averaging
-!! conservative scheme. There is an optional mask field for missing input data in both
-!! horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be
-!! kept in horiz_interp_init (will remove the mask in horiz_interp in the future).
-!! There are 1-D and 2-D version of horiz_interp_conserve_init for 1-D and 2-D grid.
-!! There is a optional argument mask in horiz_interp_conserve_init_2d and no mask should
-!! to passed into horiz_interp_conserv. optional argument mask will not be passed into
-!! horiz_interp_conserve_init_1d and optional argument mask may be passed into
-!! horiz_interp_conserve (For the purpose of reproduce Memphis??? results).
-!! An optional output mask field may be used in conjunction with the input mask to show
-!! where output data exists.
+!! @parblock
+!! Horiz_interp_conserve_mod contains methods called from horiz_interp_mod to
+!! interpolate data on any logically rectangular grid to any rectangular grid
+!! with order 1 conservative method.  Users are recommended to use the top-level
+!! module horiz_interp_mod with "interp" set to "conservative for conservative
+!! interpolation.
+!! @endparblock
 
 module horiz_interp_conserve_mod
 
@@ -49,45 +44,25 @@ module horiz_interp_conserve_mod
   implicit none
   private
 
-  ! public interface
 
-
-  !> @brief Allocates space and initializes a derived-type variable
-  !! that contains pre-computed interpolation indices and weights.
-  !!
-  !> Allocates space and initializes a derived-type variable
-  !! that contains pre-computed interpolation indices and weights
-  !! for improved performance of multiple interpolations between
-  !! the same grids.
-  !! @param lon_in
-  !!      Longitude (in radians) for source data grid.
-  !!
-  !! @param lat_in
-  !!      Latitude (in radians) for source data grid.
-  !!
-  !! @param lon_out
-  !!      Longitude (in radians) for destination data grid.
-  !!
-  !! @param lat_out
-  !!      Latitude (in radians) for destination data grid.
-  !!
-  !! @param verbose
-  !!      flag for the amount of print output.
-  !!
-  !! @param mask_in
-  !!      Input mask.  must be the size (size(lon_in)-1, size(lon. The real value of
-  !!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-  !!      that should not be used or have missing data.
-  !!
-  !! @param mask_out
-  !!      Output mask that specifies whether data was computed.
-  !!
-  !! @param Interp
-  !!      A derived-type variable containing indices and weights used for subsequent
-  !!      interpolations. To reinitialize this variable for a different grid-to-grid
-  !!      interpolation you must first use the "horiz_interp_del" interface.
-  !!
-  !> @ingroup horiz_interp_conserve_mod
+  !> Generic interface to compute interpolation weights and mapping indices.
+  !! Member subroutines and their main arguments are:
+  !! horiz_interp_conserve_new_1dx1d_r4:
+  !!  input and output grids are provided as 1D arrays in 32-bit precision.
+  !! horiz_interp_conserve_new_1dx1d_r8:
+  !!  input and output grids are provided as 1D arrays in 64-bit precision.
+  !! horiz_interp_conserve_new_2dx1d_r4:
+  !!  input grid is provided as 2D arrays, output grid as 1D arrays, both in 32-bit precision.
+  !! horiz_interp_conserve_new_2dx1d_r8:
+  !!  input grid is provided as 2D arrays, output grid as 1D arrays, both in 64-bit precision.
+  !! horiz_interp_conserve_new_1dx2d_r4:
+  !!   input grid is provided as 1D arrays, output grid as 2D arrays, both in 32-bit precision.
+  !! horiz_interp_conserve_new_1dx2d_r8:
+  !!   input grid is provided as 1D arrays, output grid as 2D arrays, both in 64-bit precision.
+  !! horiz_interp_conserve_new_2dx2d_r4:
+  !!   input and output grids are provided as 2D arrays in 32-bit precision.
+  !! horiz_interp_conserve_new_2dx2d_r8:
+  !!   input and output grids are provided as 2D arrays in 64-bit precision.
   interface horiz_interp_conserve_new
      module procedure horiz_interp_conserve_new_1dx1d_r4
      module procedure horiz_interp_conserve_new_1dx2d_r4
@@ -99,50 +74,64 @@ module horiz_interp_conserve_mod
      module procedure horiz_interp_conserve_new_2dx2d_r8
   end interface
 
+  !> Generic interface to interpolate data from source grid to target grid from the weights
+  !! stored in Interp.  Calls horiz_interp_conserve_r4 if input and output data are 2D arrays
+  !! in 32-bit precision.  Calls horiz_interp_conserve_r8 if input and output data are 2D
+  !! arrays in 64-bit precision.  Horiz_interp_conserve_r* will subsequently call
+  !! horiz_interp_conserve_version1 or horiz_interp_conserve_version2 depending on value of
+  !! Interp%version.
   interface horiz_interp_conserve
     module procedure horiz_interp_conserve_r4
     module procedure horiz_interp_conserve_r8
   end interface
 
-!> private helper routines
+  !> Internally used generic interface when interpolating data with Interp
+  !! generated from horiz_interp_new_1dx1d_r*.  Not frequently used.
   interface data_sum
     module procedure data_sum_r4
     module procedure data_sum_r8
   end interface
 
+  !> Internally used generic interface when interpolating data with Interp
+  !! generated from horiz_interp_new_1dx1d_r*.  Not frequently used.
   interface stats
     module procedure stats_r4
     module procedure stats_r8
   end interface
 
+  !> Generic inteface called from horiz_interp_conserve to interpolate
+  !! data using Interp populated from horiz_interp_new_1dx1d_r*.
   interface horiz_interp_conserve_version1
     module procedure horiz_interp_conserve_version1_r8
     module procedure horiz_interp_conserve_version1_r4
   end interface
 
+  !> Generic interface called from horiz_interp_conserve to interpolate
+  !! 2d data.  Calls horiz_interp_conserve_version2_r4 when data are 2D
+  !! arrays in 32-bit precision.  Calls horiz_interp_conserve_version2_r8 when
+  !! data are 2D arrays in 64-bit precision.
   interface horiz_interp_conserve_version2
     module procedure horiz_interp_conserve_version2_r8
     module procedure horiz_interp_conserve_version2_r4
   end interface
 
-
-
-  !> @addtogroup horiz_interp_conserve_mod
-  !> @{
   public :: horiz_interp_conserve_init
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
-  integer :: pe, root_pe
-  !-----------------------------------------------------------------------
-  ! Include variable "version" to be written to log file.
-#include<file_version.h>
-  logical            :: module_is_initialized = .FALSE.
+  integer :: pe !< is the current pe
+  integer :: root_pe !< is the root_pe
 
-  logical         :: great_circle_algorithm = .false.
+#include<file_version.h>
+
+  !! TODO:  how to set great_circle_algorithm
+  logical :: module_is_initialized = .FALSE. !< is a flag to prevent module re-initialization.
+  logical :: great_circle_algorithm = .false. !< turns on the great_circle_algorithm to compute grid cell areas.
 
 contains
 
-  !> Writes version number to logfile.
+  !> @parblock
+  !! Initializes horiz_interp_conserve_mod.  Called from horiz_interp_init in horiz_interp_mod.
+  !! @endparblock
   subroutine horiz_interp_conserve_init
 
     if(module_is_initialized) return
@@ -154,13 +143,13 @@ contains
 
   end subroutine horiz_interp_conserve_init
 
-  !> Deallocates memory used by "HI_KIND_TYPE" variables.
-  !! Must be called before reinitializing with horiz_interp_new.
+  !> @parblock
+  !! Deallocates arrays holding conservative order 1 interpolation weights and mapping indices
+  !! in Interp.  Resets %is_allocated to .false.  Called from horiz_interp_del in horiz_interp_mod.
+  !! @endparblock
   subroutine horiz_interp_conserve_del ( Interp )
 
-    type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by
-                         !! previous call to horiz_interp_new. The input variable must have
-                         !! allocated arrays. The returned variable will contain deallocated arrays.
+    type (horiz_interp_type), intent(inout) :: Interp !< will be reset with deallocated memory
 
     select case(Interp%version)
     case (1)

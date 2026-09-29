@@ -16,23 +16,17 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_mod horiz_interp_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids.
+!! @ingroup horiz_interp
+!! @{
+!! @author Zhi Liang, Bruce Wyman
 !!
-!> @author Zhi Liang, Bruce Wyman
-!!
-!! This module can interpolate data from any logically rectangular grid
-!! to any logically rectangular grid. Four interpolation schems are used here:
-!! conservative, bilinear, bicubic and inverse of square distance weighted.
-!! The four interpolation schemes are implemented separately in
-!! horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
-!! and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
-!! is regular lon/lat grid. User can choose the interpolation method in the
-!! public interface horiz_interp_new through optional argument interp_method,
-!! with acceptable value "conservative", "bilinear", "bicubic" and "spherical".
-!! The default value is "conservative". There is an optional mask field for
-!! missing input data. An optional output mask field may be used in conjunction with
-!! the input mask to show where output data exists.
+!! @parblock
+!! Horiz_interp_mod contains subroutines and derived types to interpolate
+!! data from  any logically rectangular grid to any logically rectangular grid with
+!! the following interpolation schemes:  conservative in horiz_interp_conserve_mod,
+!! bilinear in horiz_interp_bilinear_mod, bicubic in horiz_interp_bicubic_mod, and
+!! inverse of square distance weighted in horiz_interp_spherical.mod.
+!! @endparblock
 
 module horiz_interp_mod
 
@@ -68,60 +62,27 @@ use platform_mod,               only: r4_kind, r8_kind
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
           horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
 
-!> Allocates space and initializes a derived-type variable
-!! that contains pre-computed interpolation indices and weights.
-!!
-!> Allocates space and initializes a derived-type variable
-!! that contains pre-computed interpolation indices and weights
-!! for improved performance of multiple interpolations between
-!! the same grids. This routine does not need to be called if you
-!! are doing a single grid-to-grid interpolation.
-!!
-!! @param lon_in
-!!      Longitude (in radians) for source data grid. You can pass 1-D lon_in to
-!!      represent the geographical longitude of regular lon/lat grid, or just
-!!      pass geographical longitude(lon_in is 2-D). The grid location may be
-!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!!
-!! @param lat_in
-!!      Latitude (in radians) for source data grid. You can pass 1-D lat_in to
-!!      represent the geographical latitude of regular lon/lat grid, or just
-!!      pass geographical latitude(lat_in is 2-D). The grid location may be
-!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!!
-!! @param lon_out
-!!      Longitude (in radians) for destination data grid. You can pass 1-D lon_out to
-!!      represent the geographical longitude of regular lon/lat grid, or just
-!!      pass geographical longitude(lon_out is 2-D). The grid location may be
-!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!!
-!! @param lat_out
-!!      Latitude (in radians) for destination data grid. You can pass 1-D lat_out to
-!!      represent the geographical latitude of regular lon/lat grid, or just
-!!      pass geographical latitude(lat_out is 2-D). The grid location may be
-!!      located at grid cell edge or center, decided by optional argument "grid_at_center".
-!!
-!! @param verbose
-!!      Integer flag that controls the amount of printed output.
-!!      verbose = 0, no output; = 1, min,max,means; = 2, still more
-!!
-!! @param interp_method
-!!      interpolation method, = "conservative", using conservation scheme,
-!!      = "bilinear", using bilinear interpolation, = "spherical",using spherical regrid.
-!!      = "bicubic", using bicubic interpolation. The default value is "convervative".
-!!
-!! @param src_modulo
-!!      Indicate the source data grid is cyclic or not.
-!!
-!! @param grid_at_center
-!!      Indicate the data is on the center of grid box or the edge of grid box.
-!!      When true, the data is on the center of grid box. default vaule is false.
-!!      This option is only available when interp_method = "bilinear" or "bicubic".
-!!
-!! @param Interp
-!!      A derived-type variable containing indices and weights used for subsequent
-!!      interpolations. To reinitialize this variable for a different grid-to-grid
-!!      interpolation you must first use the "horiz_interp_del" interface.
+ !> @parblock
+ !! Generic interface to horiz_interp_new procedures to compute interpolation
+ !! weights and mapping indices. Following captures the main input arguemnts for each
+ !! member subroutine:
+ !! horiz_interp_new_1d_r4:
+ !!   input and output grids are provided as 1D arrays in 32-bit floating point precision.
+ !! horiz_interp_new_1d_r8:
+ !!   input and output grids are provided as 1D arrays in 64-bit floating point precision.
+ !! horiz_interp_new_1d_src_r4:
+ !!   input grid is provided as 1D arrays, output grid as 2D arrays, both in 32-bit precision.
+ !! horiz_interp_new_1d_src_r8:
+ !!   input grid is provided as 1D arrays, output grid as 2D arrays, both in 64-bit precision.
+ !! horiz_interp_new_2d_r4:
+ !!   input and output grids are provided as 2D arrays in 32-bit precision.
+ !! horiz_interp_new_2d_r8:
+ !!   input and output grids are provided as 2D arrays in 64-bit precision.
+ !! horiz_interp_new_1d_dst_r4:
+ !!   input grid is provided as 2D arrays, output grid as 1D arrays, both in 32-bit precision.
+ !! horiz_interp_new_1d_dst_r8:
+ !!   input grid is provided as 2D arrays, output grid as 1D arrays, both in 64-bit precision.
+ !! @endparblock
  interface horiz_interp_new
     ! Source grid is 1d, destination grid is 1d
     module procedure horiz_interp_new_1d_r4
@@ -137,69 +98,55 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_new_1d_dst_r8
  end interface
 
- !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
- !! calculating it
+ !> Generic interface to horiz_interp_read_weights_r4 and horiz_interp_read_weights_r8
+ !! to read in weight files generated from fregrid for bilinear interpolation.
+ !! Calls horiz_interp_read_weights_r4 if lat_out, lon_out, lat_in, and lon_in are
+ !! 32-bit floating point representation.  Calls horiz_interp_read_weights_r8 if
+ !! the gridpoints are in 64-bit floating point representation.
  interface horiz_interp_read_weights
    module procedure horiz_interp_read_weights_r4
    module procedure horiz_interp_read_weights_r8
  end interface horiz_interp_read_weights
 
-!> Subroutine for performing the horizontal interpolation between two grids.
-!!
-!> Subroutine for performing the horizontal interpolation between
-!! two grids. There are two forms of this interface.
-!! Form A requires first calling horiz_interp_new, while Form B
-!! requires no initialization.
-!!
-!! @param Interp
-!!     Derived-type variable containing interpolation indices and weights.
-!!     Returned by a previous call to horiz_interp_new.
-!!
-!! @param data_in
-!!      Input data on source grid.
-!!
-!! @param verbose
-!!      flag for the amount of print output.
-!!               verbose = 0, no output; = 1, min,max,means; = 2, still more
-!!
-!! @param mask_in
-!!      Input mask, must be the same size as the input data. The real value of
-!!      mask_in must be in the range (0.,1.). Set mask_in=0.0 for data points
-!!      that should not be used or have missing data. It is Not needed for
-!!      spherical regrid.
-!!
-!! @param missing_value
-!!      Use the missing_value to indicate missing data.
-!!
-!! @param missing_permit
-!!      numbers of points allowed to miss for the bilinear interpolation. The value
-!!      should be between 0 and 3.
-!!
-!! @param lon_in, lat_in
-!!      longitude and latitude (in radians) of source grid. More explanation can
-!!      be found in the documentation of horiz_interp_new.
-!!
-!! @param lon_out, lat_out
-!!      longitude and latitude (in radians) of destination grid. More explanation can
-!!      be found in the documentation of horiz_interp_new.
-!!
-!! @param data_out
-!!      Output data on destination grid.
-!!
-!! @param mask_out
-!!      Output mask that specifies whether data was computed.
-!!
-!!
-!! @throws FATAL, size of input array incorrect
-!!      The input data array does not match the size of the input grid edges
-!!      specified. If you are using the initialization interface make sure you
-!!      have the correct grid size.
-!!
-!! @throws FATAL, size of output array incorrect
-!!      The output data array does not match the size of the input grid
-!!      edges specified. If you are using the initialization interface make
-!!      sure you have the correct grid size.
-!> @ingroup horiz_interp_mod
+ !> @parblock
+ !! Generic interface to interpolate data on input (source) grid to output (target) grid.
+ !! Calls horiz_interp_base_2d_r4, horiz_interp_base_2d_r8, horiz_interp_base_3d_r4, or
+ !! horiz_interp_base_3d_r8 are if Interp (populated from horiz_interp_new) is the
+ !! first argument.  Else, if Interp is not provided, calls horiz_interp_solo_* blackbox methods:
+ !! Following captures the main input arguments for each subroutine:
+ !! horiz_interp_base_2d_r4:
+ !!   2d input data to 2d output data in 32-bit floating point precision.  Takes Interp as first argument.
+ !! horiz_interp_base_2d_r8:
+ !!   2d input data to 2d output data in 64-bit floating point precision.  Takes Interp as first argument.
+ !! horiz_interp_base_3d_r4:
+ !!   3d input data to 3d output data in 32-bit floating point precision.  Takes Interp as first argument.
+ !! horiz_interp_base_3d_r8:
+ !!   3d input data to 3d output data in 64-bit floating point precision.  Takes Interp as first argument.
+ !! horiz_interp_solo_1d_r4:
+ !!   input and output grids provided as 1D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_1d_r8:
+ !!   input and output grids provided as 1D arrays to interpolate 64-bit 2D data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_1d_src_r4:
+ !!   input grid provided as 32-bit 1D arrays, output as 2D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Inerp as argument.
+ !! horiz_interp_solo_1d_src_r8:
+ !!   input grid provided as 64-bit 1D arrays, output as 2D arrays to interpolate  32-bit 2D data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_2d_r4:
+ !!   input and output grids provided as 32-bit 2D arrays to interpolate 32-bit 2d data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_2d_r8:
+ !!   input and output grids provided as 64-bit 2D arrays to interpolate 64-bit 2d data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_1d_dst_r4:
+ !!   input grid provided as 32-bit 2D arrays, input as 1D arrays to interpolate 32-bit 2D data.
+ !!   Does not take Interp as argument.
+ !! horiz_interp_solo_1d_dst_r8
+ !!   input grid provided as 64-bit 2D arrays, input as 1D arrays to interpolate 64-bit 2D data.
+ !!   Does not take Interp as argument.
+ !! @endparblock
  interface horiz_interp
     module procedure horiz_interp_base_2d_r4
     module procedure horiz_interp_base_2d_r8
@@ -217,26 +164,27 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_solo_old_r8
  end interface
 
-!> Private helper routines
-interface is_lat_lon
+
+ !> Internally used subroutine to determine if the grid is a lat-lon grid.
+ !! Calls is_lat_lon_r4 if grids are in 32-bit floating point precision.
+ !! Calls is_lat_lon_r8 if grids are in 64-bit floating point precision.
+ interface is_lat_lon
     module procedure is_lat_lon_r4
     module procedure is_lat_lon_r8
-end interface
+  end interface is_lat_lon
 
-interface horiz_interp_solo_1d
-  module procedure horiz_interp_solo_1d_r4
-  module procedure horiz_interp_solo_1d_r8
-end interface
+ !> Old interfaces, not recommended.
+ interface horiz_interp_solo_1d
+   module procedure horiz_interp_solo_1d_r4
+   module procedure horiz_interp_solo_1d_r8
+ end interface horiz_interp_solo_1d
 
 
-!> @addtogroup horiz_interp_mod
-!> @{
-
- logical :: reproduce_siena = .false. !< Set reproduce_siena = .true. to reproduce siena results.
-                 !! Set reproduce_siena = .false. to decrease truncation error
-                 !! in routine poly_area in file mosaic_util.c. The truncation error of
-                 !! second order conservative remapping might be big for high resolution
-                 !! grid.
+ logical :: reproduce_siena = .false.
+   !< is a namelist flag to reproduces siena results if set to .true.  Else, defaults
+   !! to false to decrease truncation error in function poly_area in file mosaic_util.c.
+   !! The truncation error of second order conservative remapping might be big for high resolution grid.
+   !! This namelist flag will be removed soon.
 
  namelist /horiz_interp_nml/ reproduce_siena
 
@@ -244,13 +192,16 @@ end interface
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
  logical            :: module_is_initialized = .FALSE.
+    !< is an internally used flag to prevent module re-initialization
 !-----------------------------------------------------------------------
 
 contains
 
 !#######################################################################
 
-  !> Initialize module and writes version number to logfile.out
+  !> @parblock
+  !! Initializes horiz_interp_mod and writes version number to the logfile
+  !! @endparblock
   subroutine horiz_interp_init
   integer :: iunit, ierr, io
 
@@ -280,14 +231,15 @@ contains
 
   end subroutine horiz_interp_init
 
-!> Deallocates memory used by "horiz_interp_type" variables.
-!! Must be called before reinitializing with horiz_interp_new.
- subroutine horiz_interp_del ( Interp )
+  !> @parblock
+  !! Deallocates memory in Interp holding the weights and mapping indices for the interpolation
+  !! method in Interp%interp_method.
+  !! @endparblock
+  subroutine horiz_interp_del ( Interp )
 
-   type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by previous
-                                           !! call to horiz_interp_new. The input variable must have
-                                           !! allocated arrays. The returned variable will contain
-                                           !! deallocated arrays
+   type (horiz_interp_type), intent(inout) :: Interp
+     !< will be reset after arrays holding interpolation weights and mapping indices are
+     !! deallocated and %is_allocated is set to .false.
 
 !-----------------------------------------------------------------------
 !  releases space used by horiz_interp_type variables
@@ -311,7 +263,9 @@ contains
 
  !#####################################################################
 
- !> Dummy routine
+ !> @parblock
+ !! Dummy routine
+ !! @endparblock
  subroutine horiz_interp_end
  return
  end subroutine horiz_interp_end

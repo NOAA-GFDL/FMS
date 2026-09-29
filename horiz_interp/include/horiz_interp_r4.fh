@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp
-!> @{
 #undef FMS_HI_KIND_
 #define FMS_HI_KIND_ r4_kind
 
@@ -63,4 +61,3 @@
 #define HORIZ_INTERP_READ_WEIGHTS_ horiz_interp_read_weights_r4
 
 #include "horiz_interp.inc"
-!> @}
