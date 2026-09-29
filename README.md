@@ -1,11 +1,3 @@
-# License Announcement
-
-FMS will switch to the
-[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
-with the 2025.04 release scheduled for September 2025. Please refer to
-[issue 1683 on changing the license](https://github.com/NOAA-GFDL/FMS/issues/1683)
-to participate in or follow any discussion on the topic.
-
 # Modeling Framework: Flexible Modeling System (FMS)
 
 Today’s climate models simulate highly complex systems. In response to
@@ -97,13 +89,13 @@ Compilers used in our Github continuous integration testing are in bold.
 
 |Compiler                | Version |Builds Successfully        | Unit Testing        |
 |------------------------|---------|---------------------------|---------------------|
-|**intel classic(ifort)**| 2021.6.0| yes                       | passes              |
-|**GNU (gfortran)**      | 9.3.0   | yes                       | passes              |
-|intel oneapi (ifx)      | 2021.6.0| yes                       | passes              |
-|GNU (gfortran)          | 11.2.0  | yes                       | passes              |
-|HP/Cray (cce)           | 9.1.1   | yes                       | not passing         |
-|Nvidia/PGI(nvfortran)   | 22.9    | no                        | not passing         |
-|AMD (aocc)              | 3.2.0   | no(compiles,fails to link)| not passing         |
+|**intel oneapi(ifx)**   | 2025.3.0| yes                       | passes              |
+|**intel classic(ifort)**| 2023.2.0| yes                       | passes              |
+|**GNU (gfortran)**      | 13.2.0  | yes                       | passes              |
+|GNU (gfortran)          | 15.3.0  | yes                       | not all passing     |
+|HP/Cray (cce)           | 9.1.1   | yes                       | not all passing     |
+|Nvidia(nvfortran)       | 24.9    | no                        | n/a                 |
+|AMD (aocc)              | 3.2.0   | no(compiles,fails to link)| n/a                 |
 
 ## Documentation
 
