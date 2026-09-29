@@ -60,7 +60,7 @@ program test_mpp_redistribute
   call mpp_error(NOTE, "----------Tests Complete----------")
 
   call mpp_domains_exit()
-  call mpi_finalize(ierr)
+  call mpp_exit()
 
 contains
 

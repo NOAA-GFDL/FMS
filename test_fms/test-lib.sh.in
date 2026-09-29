@@ -28,6 +28,9 @@
 top_srcdir='@abs_top_srcdir@@CMAKE_CURRENT_SOURCE_DIR@'
 top_buildir='@abs_top_builddir@@CMAKE_CURRENT_SOURCE_DIR@'
 
+# Serial build flag - when true, skip tests that run with more than 1 MPI process
+SERIAL_BUILD='@SERIAL_BUILD@'
+
 TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"
 TEST_NUMBER="${TEST_NUMBER#t}"
@@ -92,6 +95,29 @@ mpirun () {
   local oversubscribe='@OVERSUBSCRIBE@'
   # need to strip off any args that may be included with MPI_LAUNCHER arg for check below to work
   local mpi_cmd="`echo $mpi_launcher | awk '{print $1;}'`"
+
+  # Check if we should skip parallel tests (SERIAL_BUILD and -n >1)
+  if [ "$SERIAL_BUILD" = "true" ]; then
+    local num_procs=1
+    local i=0
+    # Parse arguments to find -n value
+    for arg in "$@"; do
+      if [ $i -eq 1 ]; then
+        num_procs="$arg"
+        break
+      fi
+      if [ "$arg" = "-n" ]; then
+        i=1
+      fi
+    done
+
+    # If requesting more than 1 process, skip this test with exit code 77
+    if [ "$num_procs" -gt 1 ] 2>/dev/null; then
+      say_color info "SKIPPING parallel test (SERIAL_BUILD=true): requested $num_procs processes"
+      return 77
+    fi
+  fi
+
   # Check if running with MPI: if so, the mpi_launcher will point to a command
   command -v "$mpi_cmd" 2>&1 > /dev/null
   if test $? -eq 0
@@ -286,7 +312,14 @@ test_expect_failure () {
     BUG "not 2 or 3 parameters to test-expect-failure"
   if ! test_skip_ "$@"
   then
-    if test_run_ "$2" expecting_failure
+    test_run_ "$2" expecting_failure
+    test_ret=$?
+
+    # Handle skipped parallel tests (exit code 77)
+    if test $test_ret = 77
+    then
+      say_color skip "ok $test_count - $1 # skip (parallel test with mpi disabled)"
+    elif test $test_ret = 0
     then
       test_known_broken_ok_ "$1"
     else
@@ -302,7 +335,14 @@ test_expect_success () {
   if ! test_skip_ "$@"
   then
     say "expecting success of $TEST_NAME.$test_count '$1': $2"
-    if test_run_ "$2"
+    test_run_ "$2"
+    test_ret=$?
+
+    # Handle skipped parallel tests (exit code 77)
+    if test $test_ret = 77
+    then
+      say_color skip "ok $test_count - $1 # skip (parallel test with mpi disabled)"
+    elif test $test_ret = 0
     then
       test_ok_ "$1"
     else
