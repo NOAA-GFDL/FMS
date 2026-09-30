@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   intel-autotools:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       CC: mpiicc
       FC: mpiifort
@@ -28,7 +28,7 @@ jobs:
       uses: actions/cache@v4.2.0
       with:
         path: /libs
-        key: intel-classic-ubuntu22-hdf5-1.14.6-netcdf-4.8.1-yaml-0.2.5-v1
+        key: intel-classic-ubuntu22-hdf5-1.14.6-netcdf-4.8.1-yaml-0.2.5-v2
     - name: Install Intel Classic compilers & MPI
       uses: NOAA-EMC/ci-install-intel-toolkit@develop
       with:
@@ -112,7 +112,7 @@ jobs:
       run:
         set -eux
         export PATH="/libs/bin:$PATH"
-        export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}" 
+        export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}"
         make -j || make
     - name: Run test suite
       run:
