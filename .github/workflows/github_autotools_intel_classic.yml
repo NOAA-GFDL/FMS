@@ -57,8 +57,8 @@ jobs:
       name: Build netcdf
       run: |
         set -eux
-        sudo mkdir -p /libs/include /libs/lib /libs/bin
-        sudo chown -R $USER:$USER /libs
+        mkdir -p /libs/include /libs/lib /libs/bin
+        chown -R $USER:$USER /libs
         export PATH="/libs/bin:$PATH"
         export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}"
         export CPPFLAGS="-I/libs/include"
@@ -75,7 +75,7 @@ jobs:
           --prefix=/libs \
           --enable-shared \
           --enable-hl
-        sudo make -j install && cd ..
+        make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
         CC="$CC" \
@@ -86,13 +86,13 @@ jobs:
         LDFLAGS="-L/libs/lib -Wl,-rpath,/libs/lib" \
         LIBS="-lhdf5_hl -lhdf5 -lz -ldl -lm" \
         ./configure --enable-remote-fortran-bootstrap --prefix=/libs
-        sudo make -j install
-        sudo make -j -k build-netcdf-fortran
-        sudo make -j install-netcdf-fortran
+        make -j install
+        make -j -k build-netcdf-fortran
+        make -j install-netcdf-fortran
         wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
         ./configure --prefix=/libs
-        sudo make -j install
+        make -j install
         cd /home/runner/work/FMS/FMS && sudo rm -rf *
     - name: checkout
       uses: actions/checkout@v4.2.2
