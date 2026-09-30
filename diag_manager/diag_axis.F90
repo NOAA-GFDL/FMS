@@ -24,6 +24,10 @@
 !!
 !! Users first create axis ID by calling diag_axis_init, then use this axis ID in
 !! register_diag_field.
+!!
+!! @note This file is part of the legacy diag_manager.
+!! If use_modern_diag is enabled, diag_axis_init will route all axis data storage through
+!! the fms_diag_axis_object.F90 module instead.
 
 !> @addtogroup diag_axis_mod
 !> @{
