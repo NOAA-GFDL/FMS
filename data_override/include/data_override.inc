@@ -84,7 +84,7 @@ type override_type
    integer                          :: t_index            !< index for time interp
    integer                          :: pt_index           !< previous index for time interp
    integer                          :: nt_index           !< next index for time interp
-   type(horiz_interp_type), allocatable :: horz_interp(:) !< interpolation weights unique to each openmp thread 
+   type(horiz_interp_type), allocatable :: horz_interp(:) !< interpolation weights unique to each openmp thread
    integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
@@ -773,28 +773,32 @@ subroutine check_valid_lat_lon(lon_start, lon_end, lat_start, lat_end)
 end subroutine check_valid_lat_lon
 #endif
 
-!> Deallocate the local lon/lat arrays and reset the atmosphere domain to NULL_DOMAIN2D
+!> Deallocates the module-level lon_local_atm and lat_local_atm arrays
+!! and sets the atm_domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_ATM_
   atm_domain = NULL_DOMAIN2D
   if (allocated(lon_local_atm)) deallocate(lon_local_atm)
   if (allocated(lat_local_atm)) deallocate(lat_local_atm)
 end subroutine
 
-!> Deallocate the local lon/lat arrays and reset the ocean domain to NULL_DOMAIN2D
+!> Deallocates the module-level lon_local_ocn and lat_local_ocn arrays
+!! and sets the ocn_domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_OCN_
   ocn_domain = NULL_DOMAIN2D
   if (allocated(lon_local_ocn)) deallocate(lon_local_ocn)
   if (allocated(lat_local_ocn)) deallocate(lat_local_ocn)
 end subroutine
 
-!> Deallocate the local lon/lat arrays and reset the land domain to NULL_DOMAIN2D
+!> Deallocates the module-level lon_local_lnd and lat_local_lnd arrays
+!! and sets the lnd_domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_LND_
   lnd_domain = NULL_DOMAIN2D
   if (allocated(lon_local_lnd)) deallocate(lon_local_lnd)
   if (allocated(lat_local_lnd)) deallocate(lat_local_lnd)
 end subroutine
 
-!> Deallocate the local lon/lat arrays and reset the ice domain to NULL_DOMAIN2D
+!> Deallocates the module-level lon_local_ice and lat_local_ice arrays
+!! and sets the ice_domain to NULL_DOMAIN2D
 subroutine DATA_OVERRIDE_UNSET_ICE_
   ice_domain = NULL_DOMAIN2D
   if (allocated(lon_local_ice)) deallocate(lon_local_ice)
@@ -802,10 +806,10 @@ subroutine DATA_OVERRIDE_UNSET_ICE_
 end subroutine
 
 !> @brief Given a gridname, this routine returns the working domain associated with this gridname,
-!! which is the Domain stored as a module-level variable ([ocn/atm/land/ice]_domain) for the given grid
+!! which is the Domain type stored as a module-level variable ([ocn/atm/land/ice]_domain) for the given grid
 subroutine get_domain(gridname, domain, comp_domain)
   character(len=3), intent(in) :: gridname !< Grid name (OCN, ATM, LND, ICE)
-  type(domain2D), intent(inout) :: domain !< Output structured-grid domain for gridname
+  type(domain2D), intent(inout) :: domain !< Domain stored for given grid name
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
 
   domain = NULL_DOMAIN2D
@@ -830,7 +834,7 @@ end subroutine get_domain
 !! which is the UGDomain stored as a module-level variable (land_domainUG) for the given grid name
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
   character(len=3), intent(in) :: gridname !< Grid name (currently LND only)
-  type(domainUG), intent(inout) :: UGdomain !< Output unstructured-grid domain for gridname
+  type(domainUG), intent(inout) :: UGdomain !< Unstructured-grid domain stored for given grid name
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
   type(domain2D), pointer :: SGdomain => NULL()
 

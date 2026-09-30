@@ -77,7 +77,7 @@ private
 !! The optional "override" argument is intent(out) and will be set to true if the data was successfully read and
 !! interpolated, or false if the data was not found in the data_table.
 !!
-!! For typical calling patterns, see the QUICKSTART.md file in this directory.
+!! For typical calling patterns, see the README.MD file in this directory.
 !!
 !> @ingroup data_override_mod
 interface data_override
@@ -89,12 +89,9 @@ interface data_override
      module procedure data_override_3d_r8
 end interface
 
-!> Version of @ref data_override for unstructured grids. An unstructured grid is
-!! defined by mpp_domains_mod and contains
-!! a number of elements with custom defined axis.
+!> Version of @ref data_override for unstructured grid domains.
 !!
-!! For typical calling patterns, see the QUICKSTART.md file in this directory.
-!!
+!! For typical calling patterns, see the README.MD file in this directory.
 !> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d_r4
