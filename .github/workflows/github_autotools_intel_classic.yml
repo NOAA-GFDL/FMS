@@ -50,15 +50,14 @@ jobs:
         mpiifort -show
         icc --version
         ifort --version
-        
     - name: Install packages for building
       run: sudo apt-get update && sudo apt-get install -y autoconf libtool automake zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
         set -eux
-        mkdir -p /libs/include /libs/lib /libs/bin
-        chown -R $USER:$USER /libs
+        sudo mkdir -p /libs/include /libs/lib /libs/bin
+        sudo chown -R "$(id -u):$(id -g)" /libs
         export PATH="/libs/bin:$PATH"
         export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}"
         export CPPFLAGS="-I/libs/include"
@@ -67,33 +66,27 @@ jobs:
         export LDFLAGS="-L/libs/lib -Wl,-rpath,/libs/lib"
         wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz
         tar xf hdf5-1.14.6.tar.gz && cd hdf5-1.14.6
-        CC="$CC" \
-        CFLAGS="$CFLAGS" \
-        CPPFLAGS="$CPPFLAGS" \
-        LDFLAGS="$LDFLAGS" \
         ./configure \
           --prefix=/libs \
           --enable-shared \
-          --enable-hl
+          --enable-hl \
+          --with-zlib=/usr
         make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
-        CC="$CC" \
-        FC="$FC" \
-        CPPFLAGS="-I/libs/include" \
-        CFLAGS="-I/libs/include" \
-        FCFLAGS="-I/libs/include" \
-        LDFLAGS="-L/libs/lib -Wl,-rpath,/libs/lib" \
-        LIBS="-lhdf5_hl -lhdf5 -lz -ldl -lm" \
-        ./configure --enable-remote-fortran-bootstrap --prefix=/libs
-        make -j install
-        make -j -k build-netcdf-fortran
+        ./configure \
+        --prefix=/libs \
+        --enable-remote-fortran-bootstrap \
+        --enable-fortran \
+        --with-hdf5=/libs
+        make -j 
+        make install
+        make -j build-netcdf-fortran
         make -j install-netcdf-fortran
         wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
         ./configure --prefix=/libs
         make -j install
-        cd /home/runner/work/FMS/FMS && sudo rm -rf *
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
@@ -109,13 +102,13 @@ jobs:
         ./configure --with-yaml
         cat config.log
     - name: Compile
-      run:
+      run: |
         set -eux
         export PATH="/libs/bin:$PATH"
         export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}"
         make -j || make
     - name: Run test suite
-      run:
+      run: |
         set -eux
         export PATH="/libs/bin:$PATH"
         export LD_LIBRARY_PATH="/libs/lib:${LD_LIBRARY_PATH:-}"
