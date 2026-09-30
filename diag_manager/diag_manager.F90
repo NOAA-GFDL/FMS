@@ -165,7 +165,6 @@
 MODULE diag_manager_mod
 use platform_mod
 
-
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
        & get_ticks_per_second
@@ -195,7 +194,8 @@ use platform_mod
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
        & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
        & use_refactored_send, &
-       & use_modern_diag, use_clock_average, diag_null, pack_size_str
+       & use_modern_diag, use_clock_average, diag_null, pack_size_str, &
+       & wildcard_filename_prefix, wildcard_filename_separator
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
   USE diag_output_mod, ONLY: get_diag_global_att, set_diag_global_att
@@ -4061,7 +4061,8 @@ END FUNCTION register_static_field
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
          & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_clock_average, &
-         & field_log_separator, use_refactored_send
+         & field_log_separator, use_refactored_send, &
+         & wildcard_filename_prefix, wildcard_filename_separator
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN
@@ -4133,6 +4134,17 @@ END FUNCTION register_static_field
        WRITE (err_msg_local,'(ES8.1E2)') CMOR_MISSING_VALUE
        CALL error_mesg('diag_manager_mod::diag_manager_init', 'Using CMOR missing value ('//TRIM(err_msg_local)// &
             & ').', NOTE)
+    END IF
+
+    ! wildcard_filename_prefix/separator are inserted directly into output file names, so must not
+    ! contain a directory separator
+    IF ( INDEX(TRIM(wildcard_filename_prefix), '/') > 0 ) THEN
+       CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML variable '//&
+            & 'wildcard_filename_prefix ("'//TRIM(wildcard_filename_prefix)//'") cannot contain "/"', FATAL)
+    END IF
+    IF ( INDEX(TRIM(wildcard_filename_separator), '/') > 0 ) THEN
+       CALL error_mesg('diag_manager_mod::diag_manager_init', 'DIAG_MANAGER_NML variable '//&
+            & 'wildcard_filename_separator ("'//TRIM(wildcard_filename_separator)//'") cannot contain "/"', FATAL)
     END IF
 
     ! How to handle Out of Range Warnings.
