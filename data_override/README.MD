@@ -21,7 +21,7 @@ land grids.
 Define and initialize the component domain, call `data_override_init` after
 the component model is initialized, then call `data_override` for each field
 and model time. `data_override_init` requires `INPUT/grid_spec.nc`, typically
-created by [fre-nctools](github.com/noaa-gfdl/frenc-tools), to describe the component grid. The dimensions in
+created by [FRE-NCtools](https://github.com/NOAA-GFDL/FRE-NCtools), to describe the component grid. The dimensions in
 that file must match the corresponding global MPP domain. Grid metadata may be
 read from classic `grid_spec.nc` variables or from the mosaic descriptions
 (`ocn_mosaic_file` and `gridfiles`).
@@ -78,8 +78,8 @@ The first argument is the three-character model grid ID (`'ATM'`, `'OCN'`,
 `'LND'`, or `'ICE'`), and the second is the field name used by the model. The
 third argument is the output value or array. For an array, the call replaces
 the selected values with data from the table after spatial interpolation,
-temporal interpolation to `Time`, and multiplication by `factor`. Outside a
-configured subregion, existing array values are retained. The optional
+temporal interpolation to `Time`, and multiplication by `factor`. Values excluded
+by the configured subregion type are retained. The optional
 `override` argument is set to `.true.` when the field is successfully read and
 interpolated, and `.false.` when no matching table entry is found.
 
@@ -125,7 +125,7 @@ implementations are initialized. To initialize only one precision, pass
 call data_override_init(Ocean_domain_in=Ocn_domain, mode=r8_kind)
 ```
 
-When a domain is no longer needed, release it with
+When a structured-grid domain is no longer needed, release it with
 `data_override_unset_domains`. The optional `must_be_set` argument controls
 whether attempting to unset an unset domain is fatal.
 
@@ -298,7 +298,7 @@ variables:
 #### 7. Ensemble and nest support
 
 Each ensemble member can use its own YAML table. For two ensemble members, FMS
-looks for `data_table_ens_01.yaml` and `data_table_ens_02.yaml`. Do not provide
+looks for `data_table.ens_01.yaml` and `data_table.ens_02.yaml`. Do not provide
 both `data_table.yaml` and an ensemble-specific table: only one table choice is
 allowed and the run will fail.
 

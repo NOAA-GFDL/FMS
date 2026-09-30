@@ -40,8 +40,8 @@ end module data_override_r8
 !! This module provides routines to read data from external files and adjust it to match the model's grid and time.
 !! It performs spatial and temporal interpolation using horiz_interp_mod and time_interp_external2_mod from FMS.
 !!
-!! A grid_spec.nc file (typically created by fre-nctools) that defines paths/directories for the component's
-!! grid files is required during data_override_init.
+!! An INPUT/grid_spec.nc file (typically created by FRE-NCtools) that either contains component grid coordinates
+!! directly or references mosaic grid files is required during data_override_init.
 !!
 !! The operations performed are specified by the data_table. The data_table is a user-provided file that describes
 !! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table
@@ -53,8 +53,8 @@ end module data_override_r8
 !!   and factor = that constant value
 !! - If a user wants to override fieldname_code with data from a file, set fieldname_file = name in
 !!   the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
-!! - Fields will be overridden globally by default; users can also specify one or two regions in which
-!!   data_override will take place, in which case field values outside the region will not be affected.
+!! - Fields will be overridden globally by default; users can instead specify one region and choose whether
+!!   data_override applies inside or outside it. Field values excluded by that choice are not affected.
 !!
 !! Data override also supports the use of nested domains and ensembles. See the README.md in this directory for more
 !! information about how to specify nested domains and ensembles.
