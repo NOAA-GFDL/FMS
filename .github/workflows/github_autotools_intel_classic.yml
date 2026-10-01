@@ -79,7 +79,7 @@ jobs:
         --enable-remote-fortran-bootstrap \
         --enable-fortran \
         --with-hdf5=/libs
-        make -j 
+        make -j
         make install
         make -j build-netcdf-fortran
         make -j install-netcdf-fortran
