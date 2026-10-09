@@ -9,7 +9,6 @@ sequential patch number (starting from `01`).
 ## [2026.03] - 2026-10-09
 
 ### Known Issues
-- MPP: `mpp_get_current_pelist_legacy`  interface change triggers segfault in MOM6 (#1912)
 - INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
 - Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
 - BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
