@@ -2950,7 +2950,7 @@ contains
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -2966,7 +2966,7 @@ contains
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -3011,7 +3011,7 @@ contains
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -3026,7 +3026,7 @@ contains
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
