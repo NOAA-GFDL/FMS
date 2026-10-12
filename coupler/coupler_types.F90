@@ -2943,7 +2943,8 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
@@ -2959,7 +2960,8 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc_r4(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
@@ -3004,7 +3006,8 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
@@ -3019,7 +3022,8 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc_r4(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
