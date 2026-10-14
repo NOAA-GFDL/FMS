@@ -40,7 +40,6 @@ jobs:
           --oci-username-variable REGISTRY_USER \
           --oci-password-variable REGISTRY_TOKEN \
           gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
-        spack buildcache update-index gfdl-gh-cache
     - name: Set up OCI build cache (read-only for PRs)
       if: github.event_name == 'pull_request'
       run: |
@@ -54,6 +53,9 @@ jobs:
       run: |
         spack compiler find
         spack install netcdf-fortran%nvhpc mpich%nvhpc libyaml%nvhpc target=x86_64
+    - name: Update OCI build cache index
+      if: github.event_name != 'pull_request'
+      run: spack buildcache update-index gfdl-gh-cache
     - name: Configure
       run: |
         . /home/runner/work/FMS/FMS/spack/share/spack/setup-env.sh
