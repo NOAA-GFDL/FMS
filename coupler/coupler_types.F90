@@ -2943,14 +2943,15 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -2959,14 +2960,15 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc_r4(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -3004,14 +3006,15 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -3019,14 +3022,15 @@ contains
 
       ! allocate array for returned send data statuses
       if( present(return_statuses) .and. var%num_bcs .gt. 0) then
-        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+        allocate(return_statuses(var%num_bcs, maxval(var%bc_r4(1:var%num_bcs)%num_fields)))
+        return_statuses = .false.
       endif
 
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
-            if(allocated(return_statuses)) return_statuses(n,m) = used
+            if(present(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
