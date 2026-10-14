@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   intel-autotools:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       CC: mpiicc
       FC: mpiifort
