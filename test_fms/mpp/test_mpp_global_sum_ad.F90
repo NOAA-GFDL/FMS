@@ -24,7 +24,7 @@ program test_mpp_global_sum_ad
 
   use mpp_mod,         only : FATAL, MPP_DEBUG
   use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sum
-  use mpp_mod,         only : mpp_init, stdout, stderr
+  use mpp_mod,         only : mpp_init, stdout, stderr, mpp_exit
   use mpp_mod,         only : mpp_get_current_pelist, mpp_broadcast
   use mpp_mod,         only : mpp_init_test_requests_allocated
   use mpp_domains_mod, only : BITWISE_EXACT_SUM
@@ -67,7 +67,7 @@ program test_mpp_global_sum_ad
   call test_global_sum_ad_i8( 'Cyclic symmetry center')
 
 
-  call MPI_finalize(ierr)
+  call mpp_exit()
 
 contains
 

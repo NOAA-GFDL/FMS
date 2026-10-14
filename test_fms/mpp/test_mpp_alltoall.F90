@@ -35,7 +35,7 @@ program test_mpp_alltoall
 
   use platform_mod
   use mpp_mod, only : mpp_init, mpp_init_test_requests_allocated, mpp_init_test_peset_allocated, mpp_error, FATAL
-  use mpp_mod, only : mpp_pe, mpp_npes, mpp_alltoall
+  use mpp_mod, only : mpp_pe, mpp_npes, mpp_alltoall, mpp_exit
   use mpp_mod, only : mpp_type_create, mpp_type, mpp_byte
 
   implicit none
@@ -64,7 +64,7 @@ program test_mpp_alltoall
     call test_mpp_alltoallw_int4(npes)
     call test_mpp_alltoallw_int8(npes)
 
-    call MPI_FINALIZE(ierr)
+    call mpp_exit()
 
 
   contains

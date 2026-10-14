@@ -57,62 +57,62 @@ test_expect_failure "test 5" '
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 6/" clock.nml
-test_expect_success "" '
+test_expect_success "test 6" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 7/" clock.nml
-test_expect_success "" '
+test_expect_success "test 7" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 8/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 8" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 9/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 9" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 10/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 10" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 11/" clock.nml
-test_expect_success "" '
+test_expect_success "test 11" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 12/" clock.nml
-test_expect_success "" '
+test_expect_success "test 12" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 13/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 13" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 14/" clock.nml
-test_expect_success "" '
+test_expect_success "test 14" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 15/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 15" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 16/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 16" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 
 sed -i "s/test_number = [0-9]*/test_number = 17/" clock.nml
-test_expect_failure "" '
+test_expect_failure "test 17" '
     mpirun -n 1 ./test_mpp_clock_begin_end_id
 '
 test_done

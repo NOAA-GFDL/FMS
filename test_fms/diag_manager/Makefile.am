@@ -110,12 +110,18 @@ else
   ncdump_skip=""
 endif
 
-if SKIP_PARALLEL_TEST
-  parallel_skip="skip"
+if SERIAL_BUILD
+  nc_parallel_skip="skip"
 else
-  parallel_skip=""
+  nc_parallel_skip=""
 endif
 
-TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip=${parser_skip}
+if TEST_NC_PARALLEL
+  nc_nc_parallel_skip=""
+else
+  nc_nc_parallel_skip="skip"
+endif
+
+TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} nc_parallel_skip=${parallel_skip} parser_skip=${parser_skip}
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

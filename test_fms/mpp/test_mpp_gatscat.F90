@@ -73,8 +73,7 @@ program test_mpp_gatscat
 
   if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
 
-  call MPI_finalize(ierr)
-
+  call mpp_exit()
 
 contains
 

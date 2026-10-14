@@ -26,7 +26,7 @@
 
 program test_mpp_init_logfile
 
-  use mpp_mod, only : mpp_init
+  use mpp_mod, only : mpp_init, mpp_exit
   use mpp_mod, only : mpp_init_test_logfile_init
 
   IMPLICIT NONE
@@ -38,6 +38,6 @@ program test_mpp_init_logfile
   call mpp_init( test_level =  mpp_init_test_logfile_init)
 
   ! With the unifinished initialization, mpp_exit() may cause a crash. Use MPI_FINALIZE:
-  call MPI_FINALIZE(err_no)
+  call mpp_exit()
 
 end program test_mpp_init_logfile

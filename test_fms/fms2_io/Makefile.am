@@ -79,16 +79,17 @@ else
 ncdump_skip=""
 endif
 
-if SKIP_PARALLEL_TEST
-parallel_skip="skip"
+# tests that require hdf5/netcdf to be built with mpi for collective io
+if TEST_NC_PARALLEL
+nc_parallel_skip=""
 else
-parallel_skip=""
+nc_parallel_skip="skip"
 endif
 
 # Set srcdir as evironment variable to be reference in the job script
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)" ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip}
+TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)" ncdump_skip=${ncdump_skip} nc_parallel_skip=${nc_parallel_skip}
 
 CLEANFILES = *.mod *.nc *.nc.* input.nml logfile.000000.out the_mask ascii_test1 *.dpi *.spi *.dyn *.spl *-files/*
