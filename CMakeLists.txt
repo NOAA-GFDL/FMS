@@ -98,8 +98,7 @@ if (OPENACC)
 endif()
 
 if (WITH_YAML)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(YAML REQUIRED IMPORTED_TARGET "yaml-0.1")
+  find_package(YAML REQUIRED)
 endif ()
 
 # Used to skip ncdump-dependent test checks when ncdump isn't available, mirroring autotools
@@ -430,7 +429,7 @@ foreach(kind ${kinds})
                                          MPI::MPI_Fortran)
 
   if(YAML_FOUND)
-    target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
+    target_link_libraries(${libTgt} PUBLIC PkgConfig::YAML)
   endif()
 
   if(OpenMP_Fortran_FOUND)
@@ -575,7 +574,7 @@ if(NOT kinds)
                                            MPI::MPI_Fortran)
 
     if(YAML_FOUND)
-      target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
+      target_link_libraries(${libTgt} PUBLIC PkgConfig::YAML)
     endif()
 
     if(OpenMP_Fortran_FOUND)
@@ -1089,7 +1088,7 @@ export(EXPORT FMSExports
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FMSConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/fms-config.cmake
   INSTALL_DESTINATION ${CONFIG_INSTALL_DESTINATION})
-install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindNetCDF.cmake ${CMAKE_CURRENT_BINARY_DIR}/fms-config.cmake
+install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindNetCDF.cmake ${CMAKE_SOURCE_DIR}/cmake/FindYAML.cmake ${CMAKE_CURRENT_BINARY_DIR}/fms-config.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
 
 write_basic_package_version_file(
