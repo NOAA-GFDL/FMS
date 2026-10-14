@@ -18,7 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:15.1.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
+        EXCLUDE_TESTS: "" # "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
@@ -27,7 +27,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DOVERSUBSCRIBE_FLAG="--map-by :OVERSUBSCRIBE" $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view -DUNIT_TESTS=on ..
+        cmake $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view -DUNIT_TESTS=on ..
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
@@ -43,7 +43,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm-cmake-update
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_sat_vapor_pres|test_mpp_clock_begin_end_id"
+        EXCLUDE_TESTS: "" # "test_mpp_nesting|test_sat_vapor_pres|test_mpp_clock_begin_end_id"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code

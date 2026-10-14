@@ -24,7 +24,7 @@
 . ../test-lib.sh
 
 # TODO: Enable these tests once generalized indices work is complete
-SKIP_TESTS="$SKIP_TESTS test_data_override2_ongrid.[2-5]" 
+SKIP_TESTS="$SKIP_TESTS test_data_override2_ongrid.[2-5]"
 
 output_dir
 rm -rf data_table data_table.yaml input.nml input_base.nml
