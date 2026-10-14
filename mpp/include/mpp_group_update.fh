@@ -876,17 +876,17 @@ subroutine SET_ZERO_  (group, field_type, i0, j0, use_device_ptr)
         case (2)
           !$omp target teams distribute parallel do default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
+          do i2=lb(2),ub(2)
+            do i1=lb(1),ub(1)
               field2d(i1, i2) = zero_
             end do
           end do
         case (3)
           !$omp target teams distribute parallel do default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
+          do i3=lb(3),ub(3)
             do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
+              do i1=lb(1),ub(1)
                 field3d(i1, i2, i3) = zero_
               end do
             end do
@@ -894,10 +894,10 @@ subroutine SET_ZERO_  (group, field_type, i0, j0, use_device_ptr)
         case (4)
           !$omp target teams distribute parallel do default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                do i4=lb(4),ub(4)
+          do i4=lb(4),ub(4)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
                   field4d(i1, i2, i3, i4) = zero_
                 end do
               end do
@@ -989,17 +989,17 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie, use_device_ptr)
         case (2)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
+          do i2=lb(2),ub(2)
+            do i1=lb(1),ub(1)
               field2d(i1,i2) = -field2d(i1,i2)
             end do
           end do
         case (3)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
+          do i3=lb(3),ub(3)
             do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
+              do i1=lb(1),ub(1)
                 field3d(i1,i2,i3) = -field3d(i1,i2,i3)
               end do
             end do
@@ -1007,10 +1007,10 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie, use_device_ptr)
         case (4)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
           !$omp   shared(lb,ub)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                do i4=lb(4),ub(4)
+          do i4=lb(4),ub(4)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
                   field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
                 end do
               end do
@@ -1053,6 +1053,8 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset, use_device_ptr)
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: l, i1, i2, i3, i4
   integer :: is0, js0, offset1
+
+  integer :: src(4)
 
   ix = group%ix_v
   iy = group%iy_v
@@ -1104,48 +1106,42 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset, use_device_ptr)
       select case(nd)
         case (2)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
-          !$omp   shared(lb,ub,offset1)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              block
-                integer :: src(2)
-
-                src = [i1, i2]
-                src(ix) = offset1 - src(ix)
-                field2d(i1,i2) = field2d(src(1),src(2))
-              end block
+          !$omp   shared(lb,ub,offset1) private(src)
+          do i2=lb(2),ub(2)
+            do i1=lb(1),ub(1)
+              src(1) = i1
+              src(2) = i2
+              src(ix) = offset1 - src(ix)
+              field2d(i1,i2) = field2d(src(1),src(2))
             end do
           end do
         case (3)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
-          !$omp   shared(lb,ub,offset1)
-          do i1=lb(1),ub(1)
+          !$omp   shared(lb,ub,offset1) private(src)
+          do i3=lb(3),ub(3)
             do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                block
-                  integer :: src(3)
-
-                  src = [i1, i2, i3]
-                  src(ix) = offset1 - src(ix)
-                  field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
-                end block
+              do i1=lb(1),ub(1)
+                src(1) = i1
+                src(2) = i2
+                src(3) = i3
+                src(ix) = offset1 - src(ix)
+                field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
               end do
             end do
           end do
         case (4)
           !$omp target teams distribute parallel do collapse(2) default(shared) &
-          !$omp   shared(lb,ub,offset1)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                do i4=lb(4),ub(4)
-                  block
-                    integer :: src(4)
-
-                    src = [i1, i2, i3, i4]
-                    src(ix) = offset1 - src(ix)
-                    field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
-                  end block
+          !$omp   shared(lb,ub,offset1) private(src)
+          do i4=lb(4),ub(4)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
+                  src(1) = i1
+                  src(2) = i2
+                  src(3) = i3
+                  src(4) = i4
+                  src(ix) = offset1 - src(ix)
+                  field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
                 end do
               end do
             end do
@@ -1154,43 +1150,37 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset, use_device_ptr)
     else
       select case(nd)
         case (2)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              block
-                integer :: src(2)
-
-                src = [i1, i2]
-                src(ix) = offset1 - src(ix)
-                field2d(i1,i2) = field2d(src(1),src(2))
-              end block
+          do i2=lb(2),ub(2)
+            do i1=lb(1),ub(1)
+              src(1) = i1
+              src(2) = i2
+              src(ix) = offset1 - src(ix)
+              field2d(i1,i2) = field2d(src(1),src(2))
             end do
           end do
         case (3)
-          do i1=lb(1),ub(1)
+          do i3=lb(3),ub(3)
             do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                block
-                  integer :: src(3)
-
-                  src = [i1, i2, i3]
-                  src(ix) = offset1 - src(ix)
-                  field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
-                end block
+              do i1=lb(1),ub(1)
+                src(1) = i1
+                src(2) = i2
+                src(3) = i3
+                src(ix) = offset1 - src(ix)
+                field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
               end do
             end do
           end do
         case (4)
-          do i1=lb(1),ub(1)
-            do i2=lb(2),ub(2)
-              do i3=lb(3),ub(3)
-                do i4=lb(4),ub(4)
-                  block
-                    integer :: src(4)
-
-                    src = [i1, i2, i3, i4]
-                    src(ix) = offset1 - src(ix)
-                    field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
-                  end block
+          do i4=lb(4),ub(4)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
+                  src(1) = i1
+                  src(2) = i2
+                  src(3) = i3
+                  src(4) = i4
+                  src(ix) = offset1 - src(ix)
+                  field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
                 end do
               end do
             end do
