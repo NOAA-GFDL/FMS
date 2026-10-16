@@ -233,7 +233,7 @@
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
 
-      call mpp_declare_pelist( pelist, comm=comm )
+      call mpp_declare_pelist( pelist, commID=comm%mpi_val )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
@@ -260,7 +260,7 @@
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GATHER: You must first call mpp_init.' )
 
-      call mpp_declare_pelist( pelist, comm=comm )
+      call mpp_declare_pelist( pelist, commID=comm%mpi_val )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
@@ -282,7 +282,7 @@
       if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_GATHERV: You must first call mpp_init.' )
 
 
-      call mpp_declare_pelist( pelist, comm=comm )
+      call mpp_declare_pelist( pelist, commID=comm%mpi_val )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 

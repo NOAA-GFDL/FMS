@@ -15,37 +15,36 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
-
-  !> @brief Creates a new @ref horiz_interp_type
-  !!
-  !> Allocates space and initializes a derived-type variable
-  !! that contains pre-computed interpolation indices and weights.
+  !> @parblock
+  !! Computes weights and mapping indices for bicubic interpation from a rectilinear input grid
+  !! specified as 1D arrays to a general output grid specified as 2D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
-    type(horiz_interp_type), intent(inout) :: Interp !< A derived-type variable containing indices
-                                       !! and weights used for subsequent interpolations. To
-                                       !! reinitialize this variable for a different grid-to-grid
-                                       !! interpolation you must first use the
-                                       !! @ref HORIZ_INTERP_BICUBIC_NEW__del interface.
-    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in !< Longitude (radians) for source data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lat_in !< Latitude (radians) for source data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
-    integer, intent(in),          optional :: verbose !< flag for print output amount
-    logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition along
-                                       !! zonal boundary is cyclic or not. Zonal boundary condition
-                                       !!is cyclic when true
-    integer                                :: i, j, ip1, im1, jp1, jm1
-    logical                                :: src_is_modulo
-    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
-    integer                                :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_)                     :: xz, yz
-    integer                                :: iunit
-    integer, parameter   :: kindl = FMS_HI_KIND_ !< real size at compile time
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
+      !< are the longitude coordinates for the rectilinear input grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
+      !< are the latitude coordinates for the rectilinear input grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude coordinates for the output grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude coordinates for the output grid in radians
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output
+    logical, intent(in), optional :: src_modulo
+      !< is true if boundary condition along zonal boundary is cyclic
+    integer :: i, j, ip1, im1, jp1, jm1
+    logical :: src_is_modulo
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out
+    integer :: jcl, jcu, icl, icu, jj
+    real(FMS_HI_KIND_) :: xz, yz
+    integer :: iunit
+    integer, parameter :: kindl = FMS_HI_KIND_
+      !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
     src_is_modulo = .false.
@@ -53,7 +52,7 @@
 
     if(size(lon_out,1) /= size(lat_out,1) .or. size(lon_out,2) /= size(lat_out,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear ' // &
-         'interplation, the output grids should be geographical grids')
+         'interpolation, the output grids should be geographical grids')
 
     !--- get the grid size
     nlon_in  = size(lon_in)   ; nlat_in  = size(lat_in)
@@ -193,26 +192,36 @@
     Interp%interp_method = BICUBIC
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_
 
-  !> @brief Creates a new @ref horiz_interp_type
-  !!
-  !> Allocates space and initializes a derived-type variable
-  !! that contains pre-computed interpolation indices and weights.
+  !> @parblock
+  !! Subroutine to compute weignts and mapping indices for bicubic interpolation
+  !! from a rectilinear input grid to a rectilinear output grid, both supplied
+  !! as 1D arrays of latitude and longitude gridpoints.
+  !! @endparblock
   subroutine HORIZ_INTERP_BICUBIC_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_out, lat_out
-    integer, intent(in),          optional :: verbose
-    logical, intent(in),          optional :: src_modulo
-    integer                                :: i, j, ip1, im1, jp1, jm1
-    logical                                :: src_is_modulo
-    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
-    integer                                :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_)                                   :: xz, yz
-    integer                                :: iunit
-    integer, parameter                     :: kindl = FMS_HI_KIND_ !< real size at compile time
+      !< will be populated with interpolation weights and mapping indices
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
+      !< are the longitude coordinates for the rectilinear input grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
+      !< are the latitude coordinates for the rectilinear input grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_out
+      !< are the longitude coordinates for the rectilinear output grid in radians
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_out
+      !< are the latitude coordinates for the rectilinear output grid in radians
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output
+    logical, intent(in), optional :: src_modulo
+      !< is true if boundary condition along zonal boundary is cyclic
+    integer :: i, j, ip1, im1, jp1, jm1
+    logical :: src_is_modulo
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out
+    integer :: jcl, jcu, icl, icu, jj
+    real(FMS_HI_KIND_) :: xz, yz
+    integer :: iunit
+    integer, parameter :: kindl = FMS_HI_KIND_ ! real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
     src_is_modulo = .false.
@@ -349,17 +358,27 @@
 
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
 
-  !> @brief Perform bicubic horizontal interpolation
+  !> @parblock
+  !! Interpolates 2D data using the weights and mapping indices stored in Interp
+  !! @endparblock
   subroutine HORIZ_INTERP_BICUBIC_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
                                  &  missing_permit)
-    type (horiz_interp_type), intent(in)        :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in
-    real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out
-    integer, intent(in),               optional :: verbose
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:), optional :: mask_in
+    type (horiz_interp_type), intent(in) :: Interp
+      !< contains the interpolation weights and mapping indices
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
+      !< is the data on the source grid to interpolate
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+      !< will contain the interpolated data on the output grid
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+      !< is not used
     real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
-    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value
-    integer, intent(in),               optional :: missing_permit
+      !< is populated to be 1 for all points
+    real(FMS_HI_KIND_), intent(in), optional :: missing_value
+      !< is not used
+    integer, intent(in), optional :: missing_permit
+      !< is not used
     real(FMS_HI_KIND_) :: yz, ycu, ycl
     real(FMS_HI_KIND_) :: xz, xcu, xcl
     real(FMS_HI_KIND_) :: val, val1, val2
@@ -368,7 +387,8 @@
     integer :: iclp1, icup1, jclp1, jcup1
     integer :: iclm1, icum1, jclm1, jcum1
     integer :: i,j
-    integer, parameter :: kindl = FMS_HI_KIND_ !< set kind size at compile time
+    integer, parameter :: kindl = FMS_HI_KIND_
+      !< set kind size at compile time
 
     if ( present(verbose) ) verbose_bicubic = verbose
 
@@ -425,8 +445,8 @@
         call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
         if(present(mask_out)) mask_out(i,j) = 1.0_kindl
-!!        dff_x(i,j) = val1
-!!        dff_y(i,j) = val2
+!!        dff_x(i,j) = val1 ! x-derivative of fc at the fine grid
+!!        dff_y(i,j) = val2 ! y-derivative of fc at the fine grid
       enddo
     enddo
   return
@@ -434,11 +454,16 @@
 
 !---------------------------------------------------------------------------
 
+   !> @parblock
+   !! Internally used subroutine to interpolate data.  Adopted from
+   !! Numerical Recipes for Fortran (1986-1992)
+   !! @endparblock
    subroutine BCUINT_(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND_) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
 !     uses BCUCOF_
       integer i
-      integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
+      integer, parameter :: kindl = FMS_HI_KIND_
+        !< compiled kind size
       real(FMS_HI_KIND_) t,u,c(4,4)
       call bcucof(y,y1,y2,y12,x1u-x1l,x2u-x2l,c)
       ansy=0.0_kindl
@@ -456,13 +481,19 @@
    end subroutine BCUINT_
 !---------------------------------------------------------------------------
 
+   !> @parblock
+   !! Internally used subroutine called by bcuint_r4/r8 to compute bicubic coefficients.
+   !! Adopted from Numerical Recipes for Fortran (1986-1992)
+   !! @endparblock
    subroutine BCUCOF_(y,y1,y2,y12,d1,d2,c)
       real(FMS_HI_KIND_) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
       integer i,j,k,l
       real(FMS_HI_KIND_) d1d2,xx,cl(16),x(16)
-      integer, parameter :: kindl = FMS_HI_KIND_!< compiled kind type
+      integer, parameter :: kindl = FMS_HI_KIND_
+        !< compiled kind type
       !! n*0.0 represents n consecutive 0.0's
-      real(FMS_HI_KIND_), save, dimension(16,16) :: wt !< weights use
+      real(FMS_HI_KIND_), save, dimension(16,16) :: wt
+        !< weights use
       data wt/1.0_kindl, 0.0_kindl, -3.0_kindl, 2.0_kindl, 4*0.0_kindl, -3.0_kindl, 0.0_kindl, 9.0_kindl, -6.0_kindl, &
               2.0_kindl, 0.0_kindl, -6.0_kindl, 4.0_kindl, 8*0.0_kindl, 3.0_kindl, 0.0_kindl, -9.0_kindl, 6.0_kindl,  &
               -2.0_kindl, 0.0_kindl, 6.0_kindl, -4.0_kindl, 10*0.0_kindl, 9.0_kindl, -6.0_kindl, 2*0.0_kindl,         &
@@ -510,13 +541,17 @@
 
 !-----------------------------------------------------------------------
 
-!! TODO These routines are redundant, we can find the lower neighbor and add 1
-!> find the lower neighbour of xf in field xc, return is the index
+   !> @parblock
+   !! Internally used subroutine to find the lower neighbor of xf in field xc, return is the index.
+   !! (TODO These routines are redundant, we can find the lower neighbor and add 1.)
+   !! xc, yc : co-ordinates of the coarse grid
+   !! xf, yf : co-ordinates of the fine grid
+   !! @endparblock
     function INDL_(xc, xf)
     real(FMS_HI_KIND_), intent(in) :: xc(1:)
     real(FMS_HI_KIND_), intent(in) :: xf
-    integer             :: INDL_
-    integer             :: ii
+    integer :: INDL_
+    integer :: ii
        INDL_ = 1
        do ii=1, size(xc)
          if(xc(ii).gt.xf) return
@@ -528,12 +563,16 @@
 
 !-----------------------------------------------------------------------
 
-!> find the upper neighbour of xf in field xc, return is the index
+    !> @parblock
+    !> Internally used subroutine to find the upper neighbour of xf in field xc, return is the index.
+    !! xc, yc : co-ordinates of the coarse grid
+    !! co-ordinates of the fine grid
+    !! @endparblock
     function INDU_(xc, xf)
     real(FMS_HI_KIND_), intent(in) :: xc(1:)
     real(FMS_HI_KIND_), intent(in) :: xf
-    integer             :: INDU_
-    integer             :: ii
+    integer :: INDU_
+    integer :: ii
        do ii=1, size(xc)
          INDU_ = ii
          if(xc(ii).gt.xf) return
@@ -544,19 +583,22 @@
 
 !-----------------------------------------------------------------------
 
+    !> @parblock
+    !! Unused subroutine.
+    !! @endparblock
     subroutine FILL_XY_(fi, ics, ice, jcs, jce, mask, maxpass)
-      integer, intent(in)        :: ics,ice,jcs,jce
-      real(FMS_HI_KIND_), intent(inout)        :: fi(ics:ice,jcs:jce)
+      integer, intent(in) :: ics,ice,jcs,jce
+      real(FMS_HI_KIND_), intent(inout) :: fi(ics:ice,jcs:jce)
       real(FMS_HI_KIND_), intent(in), optional :: mask(ics:ice,jcs:jce)
-      integer, intent(in)        :: maxpass
-      real(FMS_HI_KIND_)                       :: work_old(ics:ice,jcs:jce)
-      real(FMS_HI_KIND_)                       :: work_new(ics:ice,jcs:jce)
+      integer, intent(in) :: maxpass
+      real(FMS_HI_KIND_) :: work_old(ics:ice,jcs:jce)
+      real(FMS_HI_KIND_) :: work_new(ics:ice,jcs:jce)
       logical :: ready
       integer, parameter :: kindl = FMS_HI_KIND_
-      real(FMS_HI_KIND_), parameter    :: blank = real(-1.e30, FMS_HI_KIND_)
-      real(FMS_HI_KIND_)    :: tavr
+      real(FMS_HI_KIND_), parameter :: blank = real(-1.e30, FMS_HI_KIND_)
+      real(FMS_HI_KIND_) :: tavr
       integer :: ipass
-      integer :: inl, inr, jnl, jnu, i, j, is, js,  iavr
+      integer :: inl, inr, jnl, jnu, i, j, is, js, iavr
 
 
       ready = .false.
@@ -663,4 +705,3 @@
       endif
       return
     end subroutine FILL_XY_
-!> @}

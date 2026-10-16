@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_spherical
-!> @{
 #undef FMS_HI_KIND_
 #define FMS_HI_KIND_ r8_kind
 
@@ -45,4 +43,3 @@
 #define FULL_SEARCH_ full_search_r8
 
 #include "horiz_interp_spherical.inc"
-!> @}

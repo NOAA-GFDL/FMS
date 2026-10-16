@@ -15,32 +15,51 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_mod
-!> @{
-  !> @brief Creates a 1D @ref horiz_interp_type with the given parameters
+  !> @parblock
+  !! Wrapper to compute weights for conservative, bilinear, bicubic, or spherical
+  !! interpolation for rectangular input and output grids that are specified as
+  !! 1D arrays.  The 1D array of gridpoints are used to construct 2D grids before
+  !! calling either horiz_interp_conserve_new, horiz_interp_bilinear_new, horiz_interp_bicubic_new,
+  !! or horiz_interp_spherical_new.
+  !! @endparblock
   subroutine HORIZ_INTERP_NEW_1D_ (Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                                   interp_method, num_nbrs, max_dist, src_modulo,     &
                                   grid_at_center, mask_in, mask_out)
 
     !-----------------------------------------------------------------------
-    type(horiz_interp_type), intent(inout)        :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:)               :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),  dimension(:)               :: lon_out, lat_out
-    integer, intent(in),                 optional :: verbose
-    character(len=*), intent(in),        optional :: interp_method
-    integer, intent(in),                 optional :: num_nbrs
-    real(FMS_HI_KIND_),    intent(in),                 optional :: max_dist
-    logical, intent(in),                 optional :: src_modulo
-    logical, intent(in),                 optional :: grid_at_center
-    real(FMS_HI_KIND_), intent(in), dimension(:,:),    optional :: mask_in  !< dummy variable
-    real(FMS_HI_KIND_), intent(inout),dimension(:,:),  optional :: mask_out !< dummy variable
-    !-----------------------------------------------------------------------
+    type(horiz_interp_type), intent(inout)  :: Interp
+      !< is a derived type that will be populated with interpolation weights and indices
+    real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_in
+      !< are the longitude coordinates [radians] for the rectangular input grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
+      !< are the latitude coordinates [radians] for the rectangular input grid
+    real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_out
+      !< are the longitude coordinates [radians] for the rectangular output grid
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_out
+      !< are the latitude coordinates [radians] for the rectangular output grid
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level
+    character(len=*), intent(in), optional :: interp_method
+      !< is the interpolation method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
+    integer, intent(in), optional :: num_nbrs
+      !< is the number of nearest neighbor for spherical interp; defaults to 4
+    real(FMS_HI_KIND_),  intent(in), optional :: max_dist
+      !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+    logical, intent(in), optional :: src_modulo
+      !< is true if boundary condition along zonal boundary is cyclic
+    logical, intent(in), optional :: grid_at_center
+      !< is true if the grid points are the grid center points for bilinear interp; if false, computes center points
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+      !< is an unused variable
+    real(FMS_HI_KIND_), intent(inout),dimension(:,:),  optional :: mask_out
+      !< is an unused variable
+
     real(FMS_HI_KIND_), dimension(:,:), allocatable :: lon_src, lat_src, lon_dst, lat_dst
     real(FMS_HI_KIND_), dimension(:),   allocatable :: lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d
-    integer                           :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
-    logical                           :: center
-    character(len=40)                 :: method
-    integer, parameter                :: kindl = FMS_HI_KIND_ !> real kind size currently compiling
+    integer  :: i, j, nlon_in, nlat_in, nlon_out, nlat_out
+    logical  :: center
+    character(len=40)  :: method
+    integer, parameter  :: kindl = FMS_HI_KIND_ !> real kind size currently compiling
     !-----------------------------------------------------------------------
     call horiz_interp_init
 
@@ -150,31 +169,53 @@
   end subroutine HORIZ_INTERP_NEW_1D_
 
 !#######################################################################
-
+  !> @parblock
+  !! Wrapper to compute weights for conservative, bilinear, bicubic, or spherical
+  !! interpolation for rectangular input grids specified as 1D arrays and 2D output grids
+  !! of any kind.  The 1D array of input gridpoints will be used to construct
+  !! 2D grids before calling either horiz_interp_conserve_new, horiz_interp_bilinear_new,
+  !! horiz_interp_bicubic_new, or horiz_interp_spherical_new.
+  !! @endparblock
  subroutine HORIZ_INTERP_NEW_1D_SRC_ (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                      verbose, interp_method, num_nbrs, max_dist, &
                                      src_modulo, grid_at_center, mask_in, mask_out, is_latlon_out )
 
-   type(horiz_interp_type), intent(inout)        :: Interp
-   real(FMS_HI_KIND_), intent(in),  dimension(:)               :: lon_in , lat_in
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:)             :: lon_out, lat_out
-   integer, intent(in),                 optional :: verbose
-   character(len=*), intent(in),        optional :: interp_method
-   integer, intent(in),                 optional :: num_nbrs  !< minimum number of neighbors
-   real(FMS_HI_KIND_),    intent(in),                 optional :: max_dist
-   logical, intent(in),                 optional :: src_modulo
-   logical, intent(in),                 optional :: grid_at_center
-   real(FMS_HI_KIND_), intent(in), dimension(:,:),    optional :: mask_in
-   real(FMS_HI_KIND_), intent(out),dimension(:,:),    optional :: mask_out
-   logical, intent(in),                 optional :: is_latlon_out
+   type(horiz_interp_type), intent(inout) :: Interp
+     !< is a derived type that will be populated with interpolation weights and indices
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_in
+     !< are the longitude coordinates [radians] for the rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
+     !< are the latitude coordinates [radians] for the rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out
+     !< are the 2D lontitude coordinates [radians] for the output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_out
+     !< are the 2D latitude coordinates [radians] for the output grid
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interpolation method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
+   logical, intent(in), optional :: grid_at_center
+     !< is true if the grid points are the grid center points for bilinear interp; if false, computes center points
+   real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
+   real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
+     !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+   logical, intent(in), optional :: is_latlon_out
+     !< is true if output grid is a lat-lon grid
 
    real(FMS_HI_KIND_), dimension(:,:), allocatable :: lon_src, lat_src
    real(FMS_HI_KIND_), dimension(:),   allocatable :: lon_src_1d, lat_src_1d
-   integer                           :: i, j, nlon_in, nlat_in
-   character(len=40)                 :: method
-   logical                           :: center
-   logical                           :: dst_is_latlon
-   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+   integer  :: i, j, nlon_in, nlat_in
+   character(len=40)  :: method
+   logical  :: center
+   logical  :: dst_is_latlon
+   integer, parameter  :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
    !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -268,24 +309,46 @@
  end subroutine HORIZ_INTERP_NEW_1D_SRC_
 
 !#######################################################################
-
+!> @parblock
+!! Wrapper to compute weights for conservative, bilinear, or spherical
+!! interpolation.  Both input and output grids are represented as 2D arrays and
+!! do not need to be rectangular.  Bicubic interpolation is not supported in this subroutine.
+!! @endparblock
  subroutine HORIZ_INTERP_NEW_2D_ (Interp, lon_in, lat_in, lon_out, lat_out,   &
                                  verbose, interp_method, num_nbrs, max_dist, &
                                  src_modulo, mask_in, mask_out, is_latlon_in, is_latlon_out  )
- type(horiz_interp_type), intent(inout)     :: Interp
- real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_in , lat_in
- real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_out, lat_out
- integer, intent(in),              optional :: verbose
- character(len=*), intent(in),     optional :: interp_method
- integer, intent(in),              optional :: num_nbrs
- real(FMS_HI_KIND_),    intent(in),              optional :: max_dist
- logical, intent(in),              optional :: src_modulo
+ type(horiz_interp_type), intent(inout)  :: Interp
+   !< is a derived type that will be populated with interpolation weights and indices
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in
+   !< are the longitude coordinates of the 2D input grid
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_in
+   !< are the latitude coordinates of the 2D input grid
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out
+   !< are the longitude coordinates of the 2D output grid
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_out
+   !< are the latitude coordinates of the 2D output grid
+ integer, intent(in), optional :: verbose
+   !< sets the verbosity level
+ character(len=*), intent(in), optional :: interp_method
+   !< is the interpolation method; can be "conservative", "bilinear", "bicubic", or "spherical"; defaults to "bilinear"
+ integer, intent(in), optional :: num_nbrs
+   !< is the number of nearest neighbor for spherical interp; defaults to 4
+ real(FMS_HI_KIND_), intent(in), optional :: max_dist
+   !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+ logical, intent(in), optional :: src_modulo
+   !< is true if boundary condition along zonal boundary is cyclic
  real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+   !< used in conservative interp to mask input grid cells (skip interp for masked cells)
  real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
- logical, intent(in),              optional :: is_latlon_in, is_latlon_out
- logical           :: src_is_latlon, dst_is_latlon
+   !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+ logical, intent(in), optional :: is_latlon_in
+   !< indicates if the input grid is a lat-lon grid; used for conservative interpolation
+ logical, intent(in), optional :: is_latlon_out
+   !< indicates if the output grid is a lat-lon grid; used for conservative interpolation
+
+ logical  :: src_is_latlon, dst_is_latlon
  character(len=40) :: method
- integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+ integer, parameter  :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
 !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -345,26 +408,49 @@
  end subroutine HORIZ_INTERP_NEW_2D_
 
 !#######################################################################
+ !> @parblock
+ !! Wrapper to compute weights for conservative, bilinear, or spherical
+ !! interpolation for any 2D input grids and rectangular output grids specified
+ !! as 1D arrays.  The 1D array of input gridpoints will be used to construct
+ !! 2D grids before calling either horiz_interp_conserve_new, horiz_interp_bilinear_new,
+ !! or horiz_interp_spherical_new.
+ !! @endparblock
  subroutine HORIZ_INTERP_NEW_1D_DST_ (Interp, lon_in, lat_in, lon_out, lat_out,   &
       verbose, interp_method, num_nbrs, max_dist, src_modulo, mask_in, mask_out, is_latlon_in )
-   type(horiz_interp_type), intent(inout)     :: Interp
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_in , lat_in
-   real(FMS_HI_KIND_), intent(in),  dimension(:)            :: lon_out, lat_out
-   integer, intent(in),              optional :: verbose
-   character(len=*), intent(in),     optional :: interp_method
-   integer, intent(in),              optional :: num_nbrs
-   real(FMS_HI_KIND_),    intent(in),              optional :: max_dist
-   logical, intent(in),              optional :: src_modulo
+
+   type(horiz_interp_type), intent(inout) :: Interp
+     !< is a derived type that will be populated with interpolation weights and indices
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in
+     !< are the longitude coordinates of the 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_in
+     !< are the latitude coordinates of the 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_out
+     !< are the longitude coordinates of a rectangular output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_out
+     !< are the latitude coordinates of a rectangular output grid
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interpolation method; can be "conservative", "bilinear", or "spherical"; defaults to "bilinear"
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
    real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
-   logical, intent(in),              optional :: is_latlon_in
+     !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+   logical, intent(in), optional :: is_latlon_in
+     !< indicates if the input grid is a lat-lon grid; used for conservative interpolation
 
    character(len=40) :: method
-   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+   integer, parameter  :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
    !-------------some local variables-----------------------------------------------
-   integer                           :: i, j, nlon_out, nlat_out
+   integer  :: i, j, nlon_out, nlat_out
    real(FMS_HI_KIND_), dimension(:,:), allocatable :: lon_dst, lat_dst
-   logical                           :: src_is_latlon
+   logical  :: src_is_latlon
    !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -424,20 +510,33 @@
 
 !#######################################################################
 
+ !> @parblock
+ !! Interpolates 2D input data using the weights stored in Interp.
+ !! @endparblock
  subroutine HORIZ_INTERP_BASE_2D_ ( Interp, data_in, data_out, verbose, &
                                    mask_in, mask_out, missing_value, missing_permit, &
                                    err_msg, new_missing_handle )
 !-----------------------------------------------------------------------
    type (horiz_interp_type), intent(in) :: Interp
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose
-      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
-      integer, intent(in),                optional :: missing_permit
-   character(len=*), intent(out),         optional :: err_msg
-      logical, intent(in),                optional :: new_missing_handle
+     !< contains the interpolation weights and indices
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+     !< is the data to interpolate
+   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+     !< is not use unless Interp%version=1 for conservative interp
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+     !< is not used unless Interp%version=1 for conservative interp
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear or spherical interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear
+   character(len=*), intent(out), optional :: err_msg
+     !< will contain the error message
+   logical, intent(in), optional :: new_missing_handle
+     !< turns on alternative missing value handling for bilinear interp
 !-----------------------------------------------------------------------
    if(present(err_msg)) err_msg = ''
    if(.not.Interp%I_am_initialized) then
@@ -466,9 +565,10 @@
 
 !#######################################################################
 
- !> Overload of interface HORIZ_INTERP_BASE_2D_
- !! uses 3d arrays for data and mask
- !! this allows for multiple interpolations with one call
+ !> @parblock
+ !! Interpolates data for each 2D slice in data_in(:,:,n) for each n using the weights
+ !! stored in Interp.
+ !! @endparblock
  subroutine HORIZ_INTERP_BASE_3D_ ( Interp, data_in, data_out, verbose, mask_in, mask_out, &
       missing_value, missing_permit, err_msg  )
    !-----------------------------------------------------------------------
@@ -476,15 +576,24 @@
    !   uses 3d arrays for data and mask
    !   this allows for multiple interpolations with one call
    !-----------------------------------------------------------------------
-   type (horiz_interp_type), intent(in)           :: Interp
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:,:)            :: data_in
-   real(FMS_HI_KIND_), intent(out), dimension(:,:,:)            :: data_out
-   integer, intent(in),                  optional :: verbose
+   type (horiz_interp_type), intent(in)  :: Interp
+     !< contains the interpolation weights and indices
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:,:)  :: data_in
+     !< is the data to interpolate
+   real(FMS_HI_KIND_), intent(out), dimension(:,:,:)  :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
    real(FMS_HI_KIND_), intent(in),   dimension(:,:,:), optional :: mask_in
+     !< is not use unless Interp%version=1 for conservative interp
    real(FMS_HI_KIND_), intent(out),  dimension(:,:,:), optional :: mask_out
-   real(FMS_HI_KIND_), intent(in),                     optional :: missing_value
-   integer, intent(in),                  optional :: missing_permit
-   character(len=*), intent(out),        optional :: err_msg
+     !< is not used unless Interp%version=1 for conservative interp
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear or spherical interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear interp
+   character(len=*), intent(out), optional :: err_msg
+     !< will contain the error message
    !-----------------------------------------------------------------------
    integer :: n
 
@@ -523,28 +632,49 @@
 
 !#######################################################################
 
-!> Interpolates from a rectangular grid to rectangular grid.
-!! interp_method can be the value conservative, bilinear or spherical.
-!! horiz_interp_new don't need to be called before calling this routine.
- subroutine HORIZ_INTERP_SOLO_1D_ ( data_in, lon_in, lat_in, lon_out, lat_out,    &
+ !> @parblock
+ !! Compute weights and interpolate 2D data from a rectangular grid to a rectangular grid that
+ !! are provided as 1D arrays.  The 1D arrays of gridpoints will be used to construct the 2D grids
+ !! in horiz_interp_new that will be called to generate weights for interp_methods "conservative" (default),
+ !! "bilinear", "bicubic", or "spherical" before calling horiz_interp to interpolate data.
+ !! @endparblock
+ subroutine HORIZ_INTERP_SOLO_1D_ ( data_in, lon_in, lat_in, lon_out, lat_out,   &
                                    data_out, verbose, mask_in, mask_out,         &
                                    interp_method, missing_value, missing_permit, &
                                    num_nbrs, max_dist,src_modulo, grid_at_center  )
 !-----------------------------------------------------------------------
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lon_in , lat_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lon_out, lat_out
-      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose
-      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-   character(len=*), intent(in),          optional :: interp_method
-      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
-   integer, intent(in),                   optional :: missing_permit
-   integer, intent(in),                   optional :: num_nbrs
-      real(FMS_HI_KIND_), intent(in),                   optional :: max_dist
-   logical, intent(in),                   optional :: src_modulo
-   logical, intent(in),                   optional :: grid_at_center
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+     !< is the data to be interpolated
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_in
+     !< are the longitude coordinates of rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
+     !< are the latitude coordinates of rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_out
+     !< are the longitude coordinates of rectangular output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_out
+     !< are the latitude coordinates of rectangular output grid
+   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< is the verbosity level
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+     !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interp method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear or spherical interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear interp
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
+   logical, intent(in), optional :: grid_at_center
+     !< is true if the grid points are the grid center points for bilinear interp; if false, computes center points
 !-----------------------------------------------------------------------
     type (horiz_interp_type) :: Interp
 !-----------------------------------------------------------------------
@@ -563,33 +693,55 @@
 
 !#######################################################################
 
-!> Interpolates from a uniformly spaced grid to any output grid.
-!! interp_method can be the value "onservative","bilinear" or "spherical".
-!! horiz_interp_new don't need to be called before calling this routine.
+ !> @parblock
+ !! Subroutine to compute weights and interpolate 2D data where the input grid is
+ !! a rectangular grid specified as 1D arrays and the output grid as 2D arrays.
+ !! The 1D array of gridpoints will be used to construct the 2D grid in horiz_interp_new
+ !! that will be called to generate weights for interp_methods "conservative" (default),
+ !! "bilinear", "bicubic", or "spherical" before calling horiz_interp to interpolate data.
+ !! @endparblock
  subroutine HORIZ_INTERP_SOLO_1D_SRC_ ( data_in, lon_in, lat_in, lon_out, lat_out,    &
                                        data_out, verbose, mask_in, mask_out,         &
                                        interp_method, missing_value, missing_permit, &
                                        num_nbrs, max_dist, src_modulo, grid_at_center )
 !-----------------------------------------------------------------------
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lon_in , lat_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
-      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose
-      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-   character(len=*), intent(in),          optional :: interp_method
-      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
-   integer, intent(in),                   optional :: missing_permit
-   integer, intent(in),                   optional :: num_nbrs
-      real(FMS_HI_KIND_), intent(in),                   optional :: max_dist
-   logical, intent(in),                   optional :: src_modulo
-   logical, intent(in),                   optional :: grid_at_center
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+     !< is the data to be interpolated
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lon_in
+     !< are the longitude coordinates of a rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:) :: lat_in
+     !< are the latitude coordinates of a rectangular input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out
+     !< are the longitude coordinates of the 2D output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_out
+     !< are the latitude coordinates of the 2D output grid
+   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+     !< will be populated with output grid cell areas computed from exchange grid in conserve interp
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interp method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear or spherical interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear or spherical interp
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
+   logical, intent(in), optional :: grid_at_center
+     !< is true if the grid points are the grid center points for bilinear interp; if false, computes center points
 
 !-----------------------------------------------------------------------
    type (horiz_interp_type) :: Interp
-   logical                  :: dst_is_latlon
-   character(len=128)       :: method
+   logical  :: dst_is_latlon
+   character(len=128)  :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
     method = 'conservative'
@@ -621,29 +773,49 @@
 
 !#######################################################################
 
-!> Interpolates from any grid to any grid. interp_method should be "spherical"
-!! horiz_interp_new don't need to be called before calling this routine.
+ !> @parblock
+ !! Compute weights and interpolate 2D by first calling horiz_interp_new to generate weights for
+ !! interp_method "conservative", "bilinear" (default), or "spherical" before calling horiz_interp
+ !! to interpolate data.
+ !! @endparblock
  subroutine HORIZ_INTERP_SOLO_2D_ ( data_in, lon_in, lat_in, lon_out, lat_out, data_out, &
                                    verbose, mask_in, mask_out, interp_method, missing_value,&
                                    missing_permit, num_nbrs, max_dist, src_modulo  )
 !-----------------------------------------------------------------------
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
-      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose
-      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-   character(len=*), intent(in),          optional :: interp_method
-      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
-   integer, intent(in),                   optional :: missing_permit
-   integer, intent(in),                   optional :: num_nbrs
-      real(FMS_HI_KIND_), intent(in),                   optional :: max_dist
-   logical, intent(in),                   optional :: src_modulo
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+     !< is the data to be interpolated
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in
+     !< are the longitude coordinates of 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_in
+     !< are the latitude coordinates of 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out
+     !< are the longitude coordinates of the 2D output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_out
+     !< are the latitude coordinates of the 2D output grid
+   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+     !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interp method; can be "conservative", "bilinear" (default), "bicubic", or "spherical"
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear or spherical interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear interp
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
 !-----------------------------------------------------------------------
    type (horiz_interp_type) :: Interp
-   logical                  :: dst_is_latlon, src_is_latlon
-   character(len=128)       :: method
+   logical  :: dst_is_latlon, src_is_latlon
+   character(len=128)  :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
 
@@ -679,30 +851,51 @@
 
 !#######################################################################
 
-!>   interpolates from any grid to rectangular longitude/latitude grid.
-!!   interp_method should be "spherical".
-!!   horiz_interp_new don't need to be called before calling this routine.
+ !> @parblock
+  !! Subroutine to compute weights and interpolate 2D data where the output grid is
+ !! a rectangular grid specified as 1D arrays and the output grid as 2D arrays.
+ !! The 1D array of gridpoints will be used to construct the 2D grid in horiz_interp_new
+ !! that will be called to generate weights for interp_methods "conservative",
+ !! "bilinear" (default), "bicubic", or "spherical" before calling horiz_interp to interpolate data.
+ !! @endparblock
  subroutine HORIZ_INTERP_SOLO_1D_DST_ ( data_in, lon_in, lat_in, lon_out, lat_out, data_out,    &
                                        verbose, mask_in, mask_out,interp_method,missing_value, &
                                        missing_permit,  num_nbrs, max_dist, src_modulo)
 !-----------------------------------------------------------------------
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lon_out, lat_out
-      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in),                   optional :: verbose
-      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-   character(len=*), intent(in),          optional :: interp_method
-      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
-   integer, intent(in),                   optional :: missing_permit
-   integer, intent(in),                   optional :: num_nbrs
-      real(FMS_HI_KIND_), intent(in),                   optional :: max_dist
-   logical, intent(in),                   optional :: src_modulo
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+     !< is the data to be interpolated
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in
+     !< are the longitude coordinates of the 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lat_in
+     !< are the latitude coordinates of the 2D input grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:)  :: lon_out
+   !< are the longitude coordinates of a lat-lon output grid
+   real(FMS_HI_KIND_), intent(in),  dimension(:)  :: lat_out
+     !< are the latitude coordinates of a lat-lon output grid
+   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+     !< will contain the interpolated data
+   integer, intent(in), optional :: verbose
+     !< sets the verbosity level
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+     !< used in conservative interp to mask input grid cells (skip interp for masked cells)
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+     !< will be populated with output grid cell areas computed from exchange grid for conserve interp
+   character(len=*), intent(in), optional :: interp_method
+     !< is the interpolation method; can be "conservative", "bilinear" (default), "bicubic", or "spherical"
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value for bilinear and spherical_interp
+   integer, intent(in), optional :: missing_permit
+     !< is the maximum number of missing values allowed for bilinear interp
+   integer, intent(in), optional :: num_nbrs
+     !< is the number of nearest neighbor for spherical interp; defaults to 4
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+     !< is the maximum region of influence around output grid cell for spherical interp; defaults to 0.1 radians
+   logical, intent(in), optional :: src_modulo
+     !< is true if boundary condition along zonal boundary is cyclic
 !-----------------------------------------------------------------------
    type (horiz_interp_type) :: Interp
-   logical                  :: src_is_latlon
-   character(len=128)       :: method
+   logical  :: src_is_latlon
+   character(len=128)  :: method
 !-----------------------------------------------------------------------
     call horiz_interp_init
 
@@ -742,32 +935,34 @@
 !-----------------------------------------------------------------------
       real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in !< Global input data stored from west to east
                                         !! (1st dimension), south to north (2nd dimension)
-      real(FMS_HI_KIND_), intent(in)                  :: wb !< Longitude (radians) that correspond to western-most
+      real(FMS_HI_KIND_), intent(in)  :: wb !< Longitude (radians) that correspond to western-most
                                               !! boundary of grid box j=1 in array data_in
-      real(FMS_HI_KIND_), intent(in)                  :: sb !< Latitude (radians) that correspond to western-most
+      real(FMS_HI_KIND_), intent(in)  :: sb !< Latitude (radians) that correspond to western-most
                                               !! boundary of grid box j=1 in array data_in
-      real(FMS_HI_KIND_), intent(in)                  :: dx !< Grid spacing (in radians) for the longitude axis
+      real(FMS_HI_KIND_), intent(in)  :: dx !< Grid spacing (in radians) for the longitude axis
                                               !! (first dimension) for the input data
-      real(FMS_HI_KIND_), intent(in)                  :: dy !< Grid spacing (in radians) for the latitude axis
+      real(FMS_HI_KIND_), intent(in)  :: dy !< Grid spacing (in radians) for the latitude axis
                                               !! (first dimension) for the input data
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lon_out !< The longitude edges (in radians) for output
+      real(FMS_HI_KIND_), intent(in),  dimension(:)  :: lon_out !< The longitude edges (in radians) for output
                                         !! data grid boxes. The values are for adjacent grid boxes
                                         !! and must increase in value. If there are MLON grid boxes
                                         !! there must be MLON+1 edge values
-      real(FMS_HI_KIND_), intent(in),  dimension(:)   :: lat_out !< The latitude edges (in radians) for output
+      real(FMS_HI_KIND_), intent(in),  dimension(:)  :: lat_out !< The latitude edges (in radians) for output
                                         !! data grid boxes. The values are for adjacent grid boxes
                                         !! and may increase or decrease in value. If there are NLAT
                                         !! grid boxes there must be NLAT+1 edge values
       real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out !< Output data on the output grid defined by grid box
-   integer, intent(in),                   optional :: verbose
+   integer, intent(in), optional :: verbose
       real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+        !< used in conservative interp to mask input grid cells (skip interp for masked cells)
       real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+        !< will be populated with output grid cell areas computed from exchange grid for conserve interp
 !-----------------------------------------------------------------------
      real(FMS_HI_KIND_), dimension(size(data_in,1)+1)  :: blon_in
      real(FMS_HI_KIND_), dimension(size(data_in,2)+1)  :: blat_in
      integer :: i, j, nlon_in, nlat_in
-     real(FMS_HI_KIND_)    :: tpi
-     integer, parameter    :: kindl = FMS_HI_KIND_ !< real size at compile time
+     real(FMS_HI_KIND_)  :: tpi
+     integer, parameter  :: kindl = FMS_HI_KIND_ !< real size at compile time
 !-----------------------------------------------------------------------
    call horiz_interp_init
 
@@ -798,12 +993,18 @@
 
 !#######################################################################
 
-
- !####################################################################
+ !> @parblock
+ !! Function to determine if a grid is a lat-lon grid.  A lat-lon grid
+ !! is defined where the latitude values are constant for a longitudinal line
+ !! and longitude values are constant along each latitudinal line.
+ !! @endparblock
  function IS_LAT_LON_(lon, lat)
-    real(FMS_HI_KIND_), dimension(:,:), intent(in) :: lon, lat
-    logical                          :: IS_LAT_LON_
-    integer                          :: i, j, nlon, nlat, num
+    real(FMS_HI_KIND_), dimension(:,:), intent(in) :: lon
+      !< are the longitude points of a grid
+    real(FMS_HI_KIND_), dimension(:,:), intent(in) :: lat
+      !< are the latitude points of a grid
+    logical  :: IS_LAT_LON_
+    integer  :: i, j, nlon, nlat, num
 
     IS_LAT_LON_ = .true.
     nlon = size(lon,1)
@@ -840,28 +1041,47 @@
     return
  end function IS_LAT_LON_
 
- !> Subroutine for reading a weight file and use it to fill in the horiz interp type
-!! for the bilinear interpolation method.
+ !> @parblock
+ !! Subroutine to populate Interp with weights and indices read in from the weight file.
+ !! Only supports weight files generated by fregrid for bilinear interpolation.
+ !! @endparblock
  subroutine HORIZ_INTERP_READ_WEIGHTS_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
                                        weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
-   type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
-   character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
-   real(FMS_HI_KIND_),      intent(in)    :: lat_out(:,:)       !< Output (model) latitude
-   real(FMS_HI_KIND_),      intent(in)    :: lon_out(:,:)       !< Output (model) longitude
-   real(FMS_HI_KIND_),      intent(in)    :: lat_in(:)          !< Input (data) latitude
-   real(FMS_HI_KIND_),      intent(in)    :: lon_in(:)          !< Input (data) longitude
-   character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
-   character(len=*),        intent(in)    :: interp_method      !< The interp method to use
-   integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
-   integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
-   integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
+   type(horiz_interp_type), intent(inout) :: Interp
+     !< will be populated with interpolation weights and indices read in from the weight file
+   character(len=*), intent(in)  :: weight_filename
+     !< is the weight file containing interpolation weights
+   real(FMS_HI_KIND_), intent(in)  :: lat_out(:,:)
+     !< are the latitude coordiantes of output grid
+   real(FMS_HI_KIND_), intent(in)  :: lon_out(:,:)
+     !< are the longitude coordinates of output grid
+   real(FMS_HI_KIND_), intent(in)  :: lat_in(:)
+     !< are the latitude coordinates of the input grid
+   real(FMS_HI_KIND_), intent(in)  :: lon_in(:)
+     !< are the longitude coordinates of the input grid
+   character(len=*), intent(in)  :: weight_file_source
+     !< Source of the weight file, only accepts "fregrid" at this time
+   character(len=*), intent(in)  :: interp_method
+     !< is the interpolation method, only accepts bilinear at this time
+   integer, intent(in) :: isw
+     !< starting x index in compute domain
+   integer, intent(in) :: iew
+     !< ending x index in compute domain
+   integer, intent(in) :: jsw
+     !< starting y index in compute domain
+   integer, intent(in) :: jew
+     !< ending y index in compute domain
+   integer, intent(in) :: nglon
+     !< is the number of longitudinal cells in the global domain
+   integer, intent(in) :: nglat
+     !< is the number of latitudinal cells in the global domain
 
-   integer                           :: i, j                 !< For do loops
-   integer                           :: nlon_in              !< Number of longitude in the data
-   integer                           :: nlat_in              !< Number of latitude in the data grid
-   real(FMS_HI_KIND_), allocatable   :: lon_src_1d(:)        !< Center points of the longitude data grid
-   real(FMS_HI_KIND_), allocatable   :: lat_src_1d(:)        !< Center points of the lattiude data grid
-   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+   integer  :: i, j                 ! For do loops
+   integer  :: nlon_in              ! Number of longitude in the data
+   integer  :: nlat_in              ! Number of latitude in the data grid
+   real(FMS_HI_KIND_), allocatable  :: lon_src_1d(:)        ! Center points of the longitude data grid
+   real(FMS_HI_KIND_), allocatable  :: lat_src_1d(:)        ! Center points of the latitude data grid
+   integer, parameter  :: kindl = FMS_HI_KIND_ ! real kind size currently compiling
 
    select case (trim(interp_method))
    case ("bilinear")
@@ -887,4 +1107,3 @@
       trim(interp_method)//" method. It is currently only supported for bilinear")
    end select
  end subroutine HORIZ_INTERP_READ_WEIGHTS_
-!> @}

@@ -263,7 +263,7 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
- class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
+ class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(:)           !< Range to add as a attribute (#1896)
  LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< Mask
  LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
@@ -385,6 +385,9 @@ subroutine fms_register_diag_field_obj &
   endif
 
   if (present(varRANGE)) then
+    !> See #1896
+    if (size(varRANGE) /= 2) call mpp_error("fms_register_diag_field_obj", &
+      "The varRange passed to register a diagnostic must have exactly 2 elements (/min, max/)", FATAL)
     select type (varRANGE)
      type is (integer(kind=i4_kind))
              allocate(integer(kind=i4_kind) :: this%data_RANGE(2))

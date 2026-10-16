@@ -15,13 +15,23 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_conserve_mod
-!> @{
+!> @parblock
+!! Subroutine to generate weights and mapping indices for conservative interpolation
+!! when the input and output grids are supplied as 1D arrays.
+!! @endparblock
 subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_out, lat_out
-    integer, intent(in),       optional    :: verbose
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
+      !< are the longitude edges for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
+      !< are the latitude edges for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_out
+      !< are the longitude edges for the rectangular output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_out
+      !< are the latitude edges for the rectangular output grid in radians.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
 
     !-----------------------------------------------------------------------
     real(FMS_HI_KIND_), dimension(size(lat_out(:))-1,2) :: sph
@@ -221,15 +231,29 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !#######################################################################
 
+  !> @parblock
+  !! Subroutine to compute weights and mapping indices for conservative interpolation where
+  !! the input grid is a rectangular grid specified as 1D arrays and the output grid can be
+  !! any grid specified as 2D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
-    type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
-    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
+      !< are the longitude edges for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
+      !< are the latitude edges for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude edges for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude edges for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), optional, dimension(:,:) :: mask_in
+      !< masks (skips) input cells if value < 0.5.
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
-
+      !< will be 1.0 if the exchange grid fully covers the output grid cell.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
 
     integer :: create_xgrid_1DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -388,14 +412,29 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !#######################################################################
 
+  !> @parblock
+  !! Subroutine to compute weights and mapping indices for conservative interpolation where
+  !! the input grid can be any grid specified as 2D arrays and the output grid is a rectangular
+  !! grid specified as 1D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
-    type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_out, lat_out
-    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
+      !< are the longitude edges for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
+      !< are the latitude edges for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_out
+      !< are the longitude edges for the rectangular output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_out
+      !< are the latitude edges for the rectangular output grid in radians.
+    real(FMS_HI_KIND_), intent(in), optional, dimension(:,:) :: mask_in
+      !< masks (skips) input cells if value < 0.5.
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+      !< will be 1.0 if the exchange grid fully covers the output grid cell.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
 
     integer :: create_xgrid_2DX1D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -495,14 +534,28 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !#######################################################################
 
+  !> @parblock
+  !! Subroutine to compute weights and mapping indices for conservative interpolation
+  !! where the input and output grids are specified as 2D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
-    type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
-    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
+      !< are the longitude edges for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
+      !< are the latitude edges for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude edges for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude edges for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), optional, dimension(:,:) :: mask_in
+      !< masks (skips) input cells if value < 0.5.
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+      !< will be 1.0 if the exchange grid fully covers the output grid cell.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -600,27 +653,26 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !########################################################################
 
-  !> @brief Subroutine for performing the horizontal interpolation between two grids.
-  !!
-  !> Subroutine for performing the horizontal interpolation between two grids.
-  !! horiz_interp_conserve_new must be called before calling this routine.
+  !> @parblock
+  !! Subroutine to interpolate 2D data using the weights and mapping indices stored
+  !! in Interp.  Calls horiz_interp_conserve_version1 when Interp%version = 1 and
+  !! horiz_interp_conserve_version2 when Interp%version = 2.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in !< Input data on source grid
-    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out !< Output data on destination grid
-    integer, intent(in),                   optional :: verbose !< 0 = no output; 1 = min,max,means;
-                                                               !! 2 = max output
-    real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as
-                        !! the input data. The real value of mask_in must be in the range (0.,1.).
-                        !! Set mask_in=0.0 for data points that should not be used or have missing
-                        !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
-                        !! called. mask_in will be passed into horiz_interp_conserve_new_2d
-    real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out !< Output mask that specifies whether
-                        !! data was computed. mask_out will be computed only when
-                        !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
-                        !! horiz_interp_conserve_new_2d
+      !< contains the interpolation weights and mapping indices
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
+      !< is the data to be interpolated
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+      !< will contain the interpolated data
+    integer, intent(in), optional :: verbose
+      !< sets verbosity level: 0 = no output; 1 = min,max,means; 2 = max output
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+      !< is used only for Interp%version = 1 where input and output grids were supplied as 1D arrays.
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+      !< is populated only when Interp%version = 1
 
     !  --- error checking ---
     if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
@@ -641,15 +693,27 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   end subroutine HORIZ_INTERP_CONSERVE_
 
   !##############################################################################
+  !> @parblock
+  !! Subroutine to interpolate 2D data using the weights and mapping indices stored
+  !! in Interp where weights were generated from input and output grids that were
+  !! specified as 1D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+      !< contains the interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
+      !< is the data to be interpolated on the source grid.
     real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-    integer, intent(in),                   optional :: verbose
-    real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-    real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+      !< will contain the interpolated data on the destination grid.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level: 0 = no output; 1 = min,max,means; 2 = max output.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+      !< is the input mask ranging from [0, 1.]
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+      !< is populated with values [0., 1.]
+
     !----------local variables----------------------------------------------------
     integer :: m, n, nlon_in, nlat_in, nlon_out, nlat_out,   &
          miss_in, miss_out, is, ie, js, je,   &
@@ -790,14 +854,22 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   end subroutine HORIZ_INTERP_CONSERVE_VERSION1_
 
   !#############################################################################
+
+  !> @parblock
+  !! Subroutine to interpolate 2D data using the weights and mapping indices stored in Interp.
+  !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND_),    intent(in),  dimension(:,:) :: data_in
-    real(FMS_HI_KIND_),    intent(out), dimension(:,:) :: data_out
-    integer, intent(in),        optional :: verbose
+      !< contains the interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
+      !< is the data to be interpolated on the source grid.
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+      !< will contain the interpolated data on the destination grid.
+    integer, intent(in), optional :: verbose
+      !< is not used.
     integer :: i, i_src, j_src, i_dst, j_dst
-    integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
+    integer, parameter :: kindl = FMS_HI_KIND_ ! compiled kind size
 
     data_out = 0.0_kindl
     do i = 1, Interp%nxgrid
@@ -810,12 +882,21 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
 
   !#######################################################################
-  !> This statistics is for conservative scheme
+  !> @parblock
+  !! Internally used subroutine to compute statistics when Interp%version = 1.
+  !! Called from horiz_interp_conserve_version1.
+  !! @endparblock
   subroutine STATS_ ( dat, area, asum, dsum, wsum, low, high, miss, mask )
-    real(FMS_HI_KIND_),    intent(in)  :: dat(:,:), area(:,:)
-    real(FMS_HI_KIND_),    intent(out) :: asum, dsum, wsum, low, high
+    real(FMS_HI_KIND_), intent(in) :: dat(:,:)
+      !< are the data to analyze for statistics.
+    real(FMS_HI_KIND_), intent(in) :: area(:,:)
+      !< are the grid cell areas.
+    real(FMS_HI_KIND_), intent(out) :: asum, dsum, wsum, low, high
+      !< are the sum of area, sum of data*area, sum of weighted area, minimum, and maximum.
     integer, intent(out) :: miss
-    real(FMS_HI_KIND_),    intent(in), optional :: mask(:,:)
+      !< is the number of missing points.
+    real(FMS_HI_KIND_), intent(in), optional :: mask(:,:)
+      !< is the mask applied to dat when computing the statistics.
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     integer :: pe, root_pe, npes, p, buffer_int(1)
@@ -876,15 +957,22 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !#######################################################################
 
-  !> sums up the data and weights for a single output grid box
+   !> @parblock
+  !! Internally used subroutine to compute dwtsum, wtsum, and arsum when Interp%version = 1.
+  !! Called from horiz_interp_conserve_version1.
+  !! @endparblock
   subroutine DATA_SUM_( grid_data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
 
     !-----------------------------------------------------------------------
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: grid_data, area
-    real(FMS_HI_KIND_), intent(in)                 :: facis, facie, facjs, facje
-    real(FMS_HI_KIND_), intent(inout)              :: dwtsum, wtsum, arsum
-    real(FMS_HI_KIND_), intent(in), optional       :: mask(:,:)
+      !< are the data and area of the input grid boxes contributing to the output grid box.
+    real(FMS_HI_KIND_), intent(in) :: facis, facie, facjs, facje
+      !< are the fractional portions of the boundary grid boxes included in the integral.
+    real(FMS_HI_KIND_), intent(inout) :: dwtsum, wtsum, arsum
+      !< are the running sums of data*weight, weight, and area for the output grid box.
+    real(FMS_HI_KIND_), intent(in), optional :: mask(:,:)
+      !< is the mask applied to grid_data when summing.
 
     !  fac__ = fractional portion of each boundary grid box included
     !          in the integral
@@ -919,4 +1007,3 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     !-----------------------------------------------------------------------
 
   end subroutine DATA_SUM_
-!> @}

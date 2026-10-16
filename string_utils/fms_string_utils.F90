@@ -26,6 +26,7 @@
 !> @addtogroup fms_string_utils_mod
 !> @{
 module fms_string_utils_mod
+#include <fms_platform.h>
   use, intrinsic :: iso_c_binding
   use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
   use mpp_mod
@@ -129,7 +130,7 @@ contains
   !! @return An array of c pointers
   function fms_array_to_pointer(my_array) &
   result(my_pointer)
-    character(len=*), target :: my_array(:) !!< Array of strings to convert
+    character(len=FMS_MAX_FILE_LEN), target :: my_array(:) !!< Array of strings to convert (#1895)
     type(c_ptr), allocatable :: my_pointer(:)
 
     integer :: i !< For do loops

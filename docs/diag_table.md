@@ -65,6 +65,11 @@ Thus, a file name of `file2_yr_dy%1yr%3dy` will have a base file name of
 `new_file_freq` and `new_file_freq_units` are used, otherwise a FMS `FATAL`
 error will occur.
 
+The `_` shown before and between the substituted fields above is the default,
+and can be changed via the `diag_manager_nml` namelist options
+`wildcard_filename_prefix` (inserted before the first substituted field) and
+`wildcard_filename_separator` (inserted between each subsequent field).
+
 #### `INTEGER :: output_freq`
 
 How often to write fields to file.

@@ -15,19 +15,29 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_type_mod
-!> @{
-!> @brief This statistics is for bilinear interpolation and spherical regrid.
+ !> @parblock
+ !! Returns statistics such as total number of missing values, min, and max data values
+ !! on the data on the source grid or target grid for bilinear and spherical interpolation
+ !! @endparblock
  subroutine STATS_ ( dat, low, high, avg, miss, missing_value, mask )
- real(FMS_HI_KIND_),    intent(in)  :: dat(:,:)
- real(FMS_HI_KIND_),    intent(out) :: low, high, avg
- integer, intent(out) :: miss
- real(FMS_HI_KIND_), intent(in), optional :: missing_value
- real(FMS_HI_KIND_),    intent(in), optional :: mask(:,:)
+   real(FMS_HI_KIND_), intent(in)  :: dat(:,:)
+     !< is the data to analyze.
+   real(FMS_HI_KIND_), intent(out) :: low
+     !< is the minimum value in dat.
+   real(FMS_HI_KIND_), intent(out) :: high
+     !< is the maximum value in dat.
+   real(FMS_HI_KIND_), intent(out) :: avg
+     !< is the global average of dat.
+   integer, intent(out) :: miss
+     !< is the total number of missing data points.
+   real(FMS_HI_KIND_), intent(in), optional :: missing_value
+     !< is the missing_value.
+   real(FMS_HI_KIND_), intent(in), optional :: mask(:,:)
+     !< is the mask used to exclude the missing data points from the statistics.
 
- real(FMS_HI_KIND_) :: dsum, buffer_real(3)
- integer :: pe, root_pe, npes, p, buffer_int(2), npts
- integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
+   real(FMS_HI_KIND_) :: dsum, buffer_real(3)
+   integer :: pe, root_pe, npes, p, buffer_int(2), npts
+   integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
    pe = mpp_pe()
    root_pe = mpp_root_pe()
