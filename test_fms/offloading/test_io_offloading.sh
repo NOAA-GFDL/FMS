@@ -24,15 +24,19 @@
 . ../test-lib.sh
 
 cat > input.nml << _EOF
-offloading_io_nml
-  max_offloaded_files = 10
-/
 _EOF
 
-# TODO fails with older gnus
-#test_expect_success "test_io_offloading" '
-#  mpirun -n 7 ./test_io_offloading
-#'
+test_expect_success "io offload with one model PE and one writer" '
+  mpirun -n 2 ./test_io_offloading
+'
+
+test_expect_success "io offload gathers all model PEs without halos" '
+  mpirun -n 3 ./test_io_offloading
+'
+
+test_expect_success "io offload gathers a 2-D model decomposition" '
+  mpirun -n 5 ./test_io_offloading
+'
 
 test_expect_success "test metadata transfer" '
   mpirun -n 4 ./test_metadata_transfer

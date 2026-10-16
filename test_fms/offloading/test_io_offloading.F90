@@ -16,133 +16,129 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 program test_io_offloading
-  use fms_mod, only: fms_init, fms_end, string, check_nml_error
-  use platform_mod
-  use mpp_mod
-  use mpp_domains_mod
+  use fms_mod, only: fms_init, fms_end
+  use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL
+  use mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_define_io_domain, &
+                            mpp_get_data_domain, mpp_get_compute_domain, mpp_deallocate_domain
+  use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, read_data
   use offloading_io_mod
-  use fms2_io_mod
-
+  use platform_mod, only: r4_kind, r8_kind, i4_kind
+  use netcdf
   implicit none
 
-  integer, parameter          :: lat_lon = 1     !< Using a lat lon domain
-  integer, parameter          :: cube_sphere = 2 !< Using a cube sphere domain
-  integer, allocatable        :: model_pes(:)    !< The model PEs
-  integer, allocatable        :: offload_pes(:)  !< The PEs for offloading
-  integer, allocatable        :: og_pes(:)       !< all of the PEs
-  logical                     :: is_root_pe      !< The root PE from all of the PEs
-  logical                     :: is_model_pe     !< .True. if current PE is a member of the model_pes
-  logical                     :: is_offload_pe   !< .True. if current PE is a member of the offload_pes
-  type(domain2D)              :: model_domain    !< Domain for the model PEs
-  integer                     :: i               !< For do loops
-  integer                     :: io              !< Error code when reading namelist
-  integer                     :: ierr            !< Error code for namelist
-  character(len=30)           :: filename        !< Filename for the test
-  type(FmsNetcdfDomainFile_t) :: fileobj         !< Fileobj for the test
-  real(kind=r4_kind), allocatable :: var_r4(:,:) !< Variable data for the "model"
+  integer, parameter :: nx = 128, ny = 96
+  integer, allocatable :: all_pes(:), model_pes(:), writer_pes(:)
+  type(domain2d) :: domain
+  type(FmsNetcdfFile_t) :: fileobj
+  integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
+  integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims
+  real, allocatable :: data(:,:), actual(:,:)
+  real(kind=r4_kind) :: r4_att
+  real(kind=r8_kind) :: r8_att
+  integer(kind=i4_kind) :: i4_att
+  character(len=64) :: str_att
+  character(len=9) :: axes(2) = [character(len=9) :: "latitude", "longitude"]
+  character(len=*), parameter :: filename = "offloaded_output.nc"
+  character(len=32) :: mode
 
-  !< Namelist variables
-  integer :: nx = 96                  !< Number of points in the x direction (per tile)
-  integer :: ny = 96                  !< Number of points in the y direction (per tile)
-  integer :: nxhalo = 2               !< Number of halo points in the x direction
-  integer :: nyhalo = 2               !< Number of halo points in the x direction
-  integer :: noffload_pes = 1         !< Number of PEs to use for offloading (need 1 per tile)
-  integer :: nmodel_pes = 6           !< Number of PEs to use for the model
-  integer :: io_layout(2)             !< Io layout to use for the model domain
-  integer :: domain_type = lat_lon    !< The type of domain to use [lat_lon or cube_sphere]
-
-  namelist /test_io_offloading_nml/ nx, ny, nxhalo, nyhalo, noffload_pes, nmodel_pes, domain_type
-
-  call fms_init
-  call offloading_io_init
-
-  read(input_nml_file, nml=test_io_offloading_nml, iostat=io)
-  ierr = check_nml_error(io, 'test_io_offloading_nml')
-
-  if (mpp_npes() .ne. nmodel_pes + noffload_pes) &
-    call mpp_error(FATAL, "The total number of PEs "//string(mpp_npes())//" is not equal to model_pes + noffload_pes")
-
-  is_root_pe = mpp_pe() .eq. mpp_root_pe()
-  allocate(og_pes(mpp_npes()))
-  call mpp_get_current_pelist(og_pes)
-
-  allocate(model_pes(nmodel_pes))
-  model_pes(1) = 0
-  do i = 2, nmodel_pes
-    model_pes(i) = model_pes(i-1) + 1
-  enddo
-  if (is_root_pe) print *, "Model PEs:", model_pes
-  call mpp_declare_pelist(model_pes, "model_pes")
-
-  allocate(offload_pes(noffload_pes))
-  offload_pes(1) = model_pes(nmodel_pes) + 1
-  do i = 2, noffload_pes
-    offload_pes(i) = offload_pes(i-1) + 1
-  enddo
-  if (is_root_pe) print *, "Offload PEs:", offload_pes
-  call mpp_declare_pelist(offload_pes, "offload_pes")
-
-  is_model_pe = .false.
-  is_offload_pe = .false.
-  if (any(model_pes .eq. mpp_pe())) is_model_pe = .true.
-  if (any(offload_pes .eq. mpp_pe())) is_offload_pe = .true.
-
-  if (is_model_pe) then
-    call mpp_set_current_pelist( model_pes )
-    ! Only the model pes are creating the domain and allocating the data
-    select case (domain_type)
-    case (lat_lon)
-      model_domain = create_lat_lon_domain(nx, ny, halox=nxhalo, haloy=nyhalo)
-    case (cube_sphere)
-      model_domain = create_cubic_domain(nx, ny, 6, io_layout, nhalos=nxhalo)
-    end select
-
-    filename = "atmos.daily.nc"
-    var_r4 = create_dummy_data(model_domain)
-  endif
-
-  call mpp_set_current_pelist(og_pes) !All of the PEs need to call the offloading stuff
-  call open_file_offload(fileobj, filename, &
-    model_domain, &
-    model_pes, offload_pes)
-
-  call global_metadata_offload(fileobj, "Number of times Fortran made you cry", 20)
-  call global_metadata_offload(fileobj, "Number of lines of code", 19.54326541)
-
-  call register_axis_offload(fileobj, "lon", "x")
-  call register_axis_offload(fileobj, "lat", "x")
-
-  call register_field_offload(fileobj, "mullions", "double", (/"lon", "lat"/))
-  call write_data_offload(fileobj, "mullions", var_r4)
-  call close_file_offload(fileobj)
-  call fms_end
-
-  contains
-
-  function create_dummy_data(domain) &
-    result(dummy_data)
-
-    type(domain2D), intent(in) :: domain
-    real(kind=r4_kind), allocatable :: dummy_data(:,:)
-
-    integer :: is !< Starting x index
-    integer :: ie !< Ending x index
-    integer :: js !< Starting y index
-    integer :: je !< Ending y index
-
-    integer :: j, k
-
-    !Allocate the data to the size of the data domain but only fill the compute domain with data
+  call fms_init()
+  call get_command_argument(1, mode)
+  call setup_offloading_pelists(all_pes, model_pes, writer_pes)
+  if (any(model_pes == mpp_pe())) then
+    call mpp_set_current_pelist(model_pes)
+    call mpp_define_layout((/1,nx,1,ny/), size(model_pes), layout)
+    call mpp_define_domains((/1,nx,1,ny/), layout, domain, xhalo=1, yhalo=1)
+    call mpp_define_io_domain(domain, (/1,1/))
     call mpp_get_data_domain(domain, is, ie, js, je)
-    allocate(dummy_data(is:ie, js:je))
-    dummy_data = -999_r4_kind
-
-    call mpp_get_compute_domain(domain, is, ie, js, je)
-    do j = is, ie
-      do k = js, je
-        dummy_data(j, k) = real(j, kind=r4_kind)* 100_r4_kind + &
-          real(k, kind=r4_kind)
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+    allocate(data(is:ie, js:je))
+    call send_domain_metadata(domain)
+    call open_offloaded_file(filename)
+    ! Deliberately register y before x to exercise transmitted dimension indices.
+    call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain)
+    if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", "z", nx)
+    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/))
+    if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true.)
+    call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind)
+    call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind)
+    call global_metadata_offload("pi", 3.141592653589793_r8_kind)
+    call register_field_offloaded_file("temperature", (/2,1/))
+    call register_field_offloaded_file("rainfall", (/2,1/))
+    do step = 1, 3
+      data = -999.
+      do j = jsc, jec
+        do i = isc, iec
+          data(i,j) = real(1000*step + 100*j + i)
+        enddo
+      enddo
+      call write_field_offloaded_file("temperature", data, domain)
+    enddo
+    data = -999.
+    do j = jsc, jec
+      do i = isc, iec
+        data(i,j) = real(-100*j - i)
       enddo
     enddo
-  end function
+    call write_field_offloaded_file("rainfall", data, domain)
+    ! Registered after data writes to exercise switching the file back to define mode.
+    call global_metadata_offload("title", "offloading test")
+    call close_offloaded_file()
+  else
+    call recv_domain_metadata(domain, global_size)
+    if (any(global_size /= (/nx, ny/))) call mpp_error(FATAL, "test: incorrect global domain metadata")
+    call run_offload_writer()
+  endif
+  call mpp_deallocate_domain(domain)
+  call mpp_set_current_pelist(all_pes, no_sync=.true.)
+  call mpp_sync()
+
+  if (mpp_pe() == all_pes(1)) then
+    call mpp_set_current_pelist((/all_pes(1)/), no_sync=.true.)
+    call check_nc(nf90_open(filename, nf90_nowrite, ncid))
+    call check_nc(nf90_inq_varid(ncid, "temperature", varid))
+    call check_nc(nf90_inquire_variable(ncid, varid, ndims=ndims))
+    if (ndims /= 2) call mpp_error(FATAL, "test: field rank differs from two")
+    call check_nc(nf90_inquire_variable(ncid, varid, dimids=dimids))
+    call check_nc(nf90_inquire_dimension(ncid, dimids(1), len=dimlen))
+    if (dimlen /= nx) call mpp_error(FATAL, "test: incorrect x dimension size")
+    call check_nc(nf90_inquire_dimension(ncid, dimids(2), len=dimlen))
+    if (dimlen /= ny) call mpp_error(FATAL, "test: incorrect y dimension size")
+    call check_nc(nf90_inq_dimid(ncid, "longitude", varid))
+    if (varid /= dimids(1)) call mpp_error(FATAL, "test: incorrect x dimension name/order")
+    call check_nc(nf90_inq_dimid(ncid, "latitude", varid))
+    if (varid /= dimids(2)) call mpp_error(FATAL, "test: incorrect y dimension name/order")
+    call check_nc(nf90_get_att(ncid, nf90_global, "Number of times Fortran made you cry", i4_att))
+    if (i4_att /= 20_i4_kind) call mpp_error(FATAL, "test: incorrect i4 global attribute")
+    call check_nc(nf90_get_att(ncid, nf90_global, "Number of lines of code", r4_att))
+    if (r4_att /= 19.54326541_r4_kind) call mpp_error(FATAL, "test: incorrect r4 global attribute")
+    call check_nc(nf90_get_att(ncid, nf90_global, "pi", r8_att))
+    if (r8_att /= 3.141592653589793_r8_kind) call mpp_error(FATAL, "test: incorrect r8 global attribute")
+    str_att = ""
+    call check_nc(nf90_get_att(ncid, nf90_global, "title", str_att))
+    if (trim(str_att) /= "offloading test") &
+      call mpp_error(FATAL, "test: incorrect string global attribute")
+    call check_nc(nf90_close(ncid))
+    allocate(actual(nx,ny))
+    if (.not. open_file(fileobj, filename, "read")) call mpp_error(FATAL, "test: output file missing")
+    call read_data(fileobj, "temperature", actual)
+    do j = 1, ny
+      do i = 1, nx
+        if (actual(i,j) /= real(3000 + 100*j + i)) call mpp_error(FATAL, "test: temperature data mismatch")
+      enddo
+    enddo
+    call read_data(fileobj, "rainfall", actual)
+    do j = 1, ny
+      do i = 1, nx
+        if (actual(i,j) /= real(-100*j - i)) call mpp_error(FATAL, "test: rainfall data mismatch")
+      enddo
+    enddo
+    call close_file(fileobj)
+  endif
+  call mpp_set_current_pelist(all_pes, no_sync=.true.)
+  call fms_end()
+contains
+  subroutine check_nc(status)
+    integer, intent(in) :: status
+    if (status /= nf90_noerr) call mpp_error(FATAL, "test: "//trim(nf90_strerror(status)))
+  end subroutine
 end program test_io_offloading
