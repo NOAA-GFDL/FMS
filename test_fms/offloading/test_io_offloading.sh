@@ -76,8 +76,91 @@ cat > input.nml << _EOF
 /
 _EOF
 
-test_expect_failure "cubic io offload rejects a writer count that differs from the tile count" '
+test_expect_failure "cubic io offload rejects a writer count that is not a multiple of the tile count" '
   mpirun -n 7 ./test_io_offloading_cubic
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 1
+  nwriters = 4
+/
+_EOF
+
+test_expect_success "single tile io offload with 4 writers into one file" '
+  rm -f offloaded_multi*.nc* && mpirun -n 8 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 1
+  nwriters = 4
+  writer_io_layout = 2, 2
+/
+_EOF
+
+test_expect_success "single tile io offload with 4 writers into distributed files" '
+  rm -f offloaded_multi*.nc* && mpirun -n 8 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 6
+  nwriters = 12
+/
+_EOF
+
+test_expect_success "cubic io offload with 2 writers per tile" '
+  rm -f offloaded_multi*.nc* && mpirun -n 18 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 6
+  nwriters = 12
+  writer_layout = 1, 2
+  writer_io_layout = 1, 2
+/
+_EOF
+
+test_expect_success "cubic io offload with 2 writers per tile into distributed files" '
+  rm -f offloaded_multi*.nc* && mpirun -n 18 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 6
+  nwriters = 24
+  writer_layout = 2, 2
+/
+_EOF
+
+test_expect_success "cubic io offload with 4 writers per tile and 12 model pes" '
+  rm -f offloaded_multi*.nc* && mpirun -n 36 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 6
+  nwriters = 9
+/
+_EOF
+
+test_expect_failure "cubic io offload rejects 9 writers for 6 tiles" '
+  rm -f offloaded_multi*.nc* && mpirun -n 15 ./test_io_offloading_multi_writer
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_multi_writer_nml
+  ntiles = 6
+  nwriters = 12
+  writer_layout = 1, 2
+  writer_io_layout = 2, 1
+/
+_EOF
+
+test_expect_failure "io offload rejects a writer io_layout that does not divide the writer layout" '
+  rm -f offloaded_multi*.nc* && mpirun -n 18 ./test_io_offloading_multi_writer
 '
 
 cat > input.nml << _EOF

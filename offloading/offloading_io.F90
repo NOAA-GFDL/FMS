@@ -15,26 +15,31 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @brief This module provides a method of offloading I/O operations to dedicated writer PEs.
+!> @brief This module provides a method of offloading I/O operations to dedicated writer PEs in order
+!! to perform asynchronous I/O operations while the model PEs continue their computation.
 !!
-!! One writer PE is used per domain tile, so single-tile domains use one writer and cubed-sphere
-!! domains (see mpp_define_cubic_domain) use six. Writer N writes tile N, and fms2_io adds the
-!! ".tileN" suffix to the file name for multi-tile domains.
+!! The writer PEs are split evenly between the domain tiles, so the number of writers must be a
+!! multiple of the number of tiles (e.g. 6, 12, ... for a cubed sphere built by
+!! mpp_define_cubic_domain). Writers (t-1)*n+1 to t*n write tile t, splitting it with a writer
+!! layout. fms2_io adds the ".tileN" suffix to the file name for multi-tile domains.
+!! The writer io_layout selects the output files for each tile: (1,1) (the default) writes one
+!! combined file per tile, and a larger io_layout writes distributed files (".nc.XXXX") in parallel.
 !!
 !! The model side never waits on the writers during normal operation:
 !! - Field data does not go through a model-side gather. Each model PE copies its compute domain
-!!   into a buffer from a small ring and posts a nonblocking send directly to its tile's writer.
-!!   A send only has to finish when its buffer is reused or the file is closed.
+!!   into a buffer from a small ring and posts nonblocking sends of the parts each writer owns
+!!   directly to those writers. A send only has to finish when its buffer is reused or the file
+!!   is closed.
 !! - Each operation (open, register, write, ...) is one packed control message from the model root
 !!   to every writer, also sent without waiting from a ring of buffers.
-!! Writers receive field data straight into the tile array through MPI subarray types, and each
-!! tile is written by its own writer at the same time.
+!! Writers receive field data straight into place through MPI subarray types, and all writers
+!! write at the same time.
 module offloading_io_mod
 #ifdef use_libMPI
 !! TODO mpi calls should all go through mpp and have a non f08 interface ideally
   use mpi_f08, only: MPI_Comm, MPI_Request, MPI_Datatype, MPI_Isend, MPI_Irecv, MPI_Recv, MPI_Send, MPI_Wait, &
                      MPI_Waitall, MPI_Testall, MPI_Type_create_subarray, MPI_Type_commit, MPI_Type_free, &
-                     MPI_INTEGER, MPI_REAL4, MPI_REAL8, MPI_ORDER_FORTRAN, MPI_STATUS_IGNORE, &
+                     MPI_INTEGER, MPI_REAL4, MPI_REAL8, MPI_ORDER_FORTRAN, MPI_STATUS_IGNORE, MPI_DATATYPE_NULL, &
                      MPI_STATUSES_IGNORE, MPI_REQUEST_NULL
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_declare_pelist, mpp_set_current_pelist, &
                     mpp_sync, mpp_sum, mpp_error, FATAL
@@ -57,13 +62,17 @@ module offloading_io_mod
   integer, parameter :: control_length = 2*string_words + 8
   !> Number of control messages the model root can have in flight to each writer.
   integer, parameter :: control_slots = 64
-  !> Columns of the layout table: tile, isc, iec, jsc, jec, tile x size, tile y size
-  integer, parameter :: layout_info_size = 7
+  !> Columns of the model layout table: tile, isc, iec, jsc, jec, tile x size, tile y size,
+  !! number of tiles, writer layout (2), writer io_layout (2)
+  integer, parameter :: layout_info_size = 12
+  !> Columns of the writer layout table: tile, isc, iec, jsc, jec
+  integer, parameter :: writer_info_size = 5
   integer, allocatable :: all_pes(:), model_pes(:), writer_pes(:)
   integer, allocatable :: writer_ranks(:)
   integer :: model_root_rank = -1
   integer :: global_size(2) = 0 !< size of each tile
   integer :: ntiles = 0
+  integer :: writer_layout(2) = 0, writer_io_layout(2) = 0 !< decomposition of each tile among its writers
   logical :: metadata_ready = .false., file_is_open = .false., session_finished = .false.
   type(MPI_Comm) :: offload_comm
   type(MPI_Datatype) :: real_type
@@ -76,16 +85,20 @@ module offloading_io_mod
   integer, allocatable, asynchronous :: control_buffers(:,:)
   type(MPI_Request), allocatable, asynchronous :: control_requests(:,:)
 
-  ! Model PE state: compute bounds, destination writer, and the ring of field data in flight.
-  integer :: compute_bounds(4) = 0, writer_rank = -1, next_send = 1
+  ! Model PE state: compute bounds, the writers that own parts of it and which parts,
+  ! and the ring of field data in flight (send_requests(writer, slot)).
+  integer :: compute_bounds(4) = 0, next_send = 1
+  integer, allocatable :: dest_ranks(:)
+  type(MPI_Datatype), allocatable :: send_types(:)
   real, allocatable, asynchronous :: send_buffers(:,:,:)
-  type(MPI_Request), allocatable, asynchronous :: send_requests(:)
+  type(MPI_Request), allocatable, asynchronous :: send_requests(:,:)
 
-  ! Writer PE state: the model ranks on this tile and where their blocks go in the tile array.
+  ! Writer PE state: its part of the tile, the model ranks that overlap it and where their parts go.
+  type(domain2d), save :: writer_domain
   integer, allocatable :: source_ranks(:)
   type(MPI_Datatype), allocatable :: recv_types(:)
   type(MPI_Request), allocatable, asynchronous :: recv_requests(:)
-  real, allocatable, asynchronous :: tile_data(:,:)
+  real, allocatable, asynchronous :: block_data(:,:)
 
   public :: setup_offloading_pelists, send_domain_metadata, recv_domain_metadata, run_offload_writer
   public :: open_offloaded_file, close_offloaded_file, close_offloaded_files
@@ -95,10 +108,10 @@ module offloading_io_mod
 contains
 
   !> Collective on the initial pelist; reserve its last nwriters PEs for the writers.
-  !! nwriters must equal the number of tiles in the model domain (6 for a cubed sphere).
+  !! nwriters must be a multiple of the number of tiles in the model domain (6 for a cubed sphere).
   subroutine setup_offloading_pelists(global_pelist, model_pelist, writer_pelist, nwriters)
     integer, allocatable, intent(out) :: global_pelist(:), model_pelist(:), writer_pelist(:)
-    integer, intent(in), optional :: nwriters !< number of writer PEs, one per tile (default 1)
+    integer, intent(in), optional :: nwriters !< number of writer PEs (default 1)
     integer :: n, comm_id, w
 
     if (allocated(all_pes)) call mpp_error(FATAL, "offloading: pelists already initialized")
@@ -132,19 +145,27 @@ contains
   end subroutine
 
   !> All model PEs call this once, paired with recv_domain_metadata on every writer.
-  !! The domain must have one tile per writer PE, and each model PE must own exactly one tile.
-  !! max_pending_writes sets how many field writes each model PE can have in flight (default 4).
-  subroutine send_domain_metadata(model_domain, max_pending_writes)
+  !! Each model PE must own exactly one tile, and the number of writer PEs must be a multiple of the
+  !! number of tiles. All optional arguments must be the same on every model PE.
+  subroutine send_domain_metadata(model_domain, max_pending_writes, writer_layout, writer_io_layout)
     type(domain2d), intent(inout) :: model_domain
-    integer, intent(in), optional :: max_pending_writes
-    integer :: info(layout_info_size), tile_id(1), nslots
+    integer, intent(in), optional :: max_pending_writes !< field writes each model PE can have in
+                                                        !! flight (default 4)
+    integer, intent(in), optional :: writer_layout(2) !< layout of each tile's writers
+                                                      !! (default from mpp_define_layout)
+    integer, intent(in), optional :: writer_io_layout(2) !< io_layout of each tile's writers (default
+                                                         !! (1,1), one file per tile); must divide
+                                                         !! writer_layout
+    integer :: info(layout_info_size), tile_id(1), nslots, ntile_count, writers_per_tile
 
     call require_model()
     if (metadata_ready) call mpp_error(FATAL, "offloading: metadata already sent")
-    if (mpp_get_ntile_count(model_domain) /= size(writer_pes)) &
-      call mpp_error(FATAL, "offloading: the number of writer PEs must equal the number of domain tiles")
+    ntile_count = mpp_get_ntile_count(model_domain)
+    if (mod(size(writer_pes), ntile_count) /= 0) &
+      call mpp_error(FATAL, "offloading: the number of writer PEs must be a multiple of the number of domain tiles")
     if (mpp_get_current_ntile(model_domain) /= 1) &
       call mpp_error(FATAL, "offloading: each model PE must own exactly one tile")
+    writers_per_tile = size(writer_pes) / ntile_count
     nslots = default_max_pending_writes
     if (present(max_pending_writes)) nslots = max_pending_writes
     if (nslots < 1) call mpp_error(FATAL, "offloading: max_pending_writes must be positive")
@@ -152,13 +173,19 @@ contains
     info(1) = tile_id(1)
     call mpp_get_compute_domain(model_domain, info(2), info(3), info(4), info(5))
     call mpp_get_global_domain(model_domain, xsize=info(6), ysize=info(7))
+    info(8) = ntile_count
+    if (present(writer_layout)) then
+      info(9:10) = writer_layout
+    else
+      call mpp_define_layout((/1, info(6), 1, info(7)/), writers_per_tile, info(9:10))
+    endif
+    info(11:12) = 1
+    if (present(writer_io_layout)) info(11:12) = writer_io_layout
     call mpp_set_current_pelist(all_pes, no_sync=.true.)
     call mpp_broadcast_domain(model_domain)
     call exchange_layout(info)
-    compute_bounds = info(2:5)
-    writer_rank = writer_ranks(info(1))
     allocate(send_buffers(info(3)-info(2)+1, info(5)-info(4)+1, nslots))
-    allocate(send_requests(nslots))
+    allocate(send_requests(size(dest_ranks), nslots))
     send_requests = MPI_REQUEST_NULL
     next_send = 1
     if (mpp_pe() == model_pes(1)) then
@@ -190,47 +217,111 @@ contains
     metadata_ready = .true.
   end subroutine
 
-  !> Collective on all PEs. Shares each model PE's tile and compute bounds, checks that every tile
-  !! is covered and has the same size, and sets up the receive types on the writers.
+  !> Collective on all PEs. Shares the model PEs' tiles and compute bounds, defines the writers'
+  !! decomposition of the tiles, and sets up the MPI types that move each overlap between a model
+  !! PE and a writer.
   subroutine exchange_layout(info)
     integer, intent(in) :: info(layout_info_size) !< this PE's layout information (zeros on writers)
-    integer, allocatable :: table(:,:)
-    integer :: n, k, my_tile, ncells
+    integer, allocatable :: table(:,:), writer_table(:,:), global_indices(:,:), layouts(:,:)
+    integer, allocatable :: pe_start(:), pe_end(:)
+    integer :: n, my_model, my_writer, ncells, writers_per_tile, overlap(4), no_contact(0)
+    integer :: overlap_cells
 
-    ntiles = size(writer_pes)
     allocate(table(layout_info_size, size(model_pes)))
     table = 0
-    do n = 1, size(model_pes)
-      if (model_pes(n) == mpp_pe()) table(:,n) = info
-    enddo
+    my_model = findloc(model_pes, mpp_pe(), 1)
+    if (my_model > 0) table(:, my_model) = info
     call mpp_sum(table, size(table))
     global_size = table(6:7, 1)
+    ntiles = table(8, 1)
+    writer_layout = table(9:10, 1)
+    writer_io_layout = table(11:12, 1)
     do n = 1, size(model_pes)
+      if (any(table(6:12,n) /= table(6:12,1))) &
+        call mpp_error(FATAL, "offloading: tile size, writer layout and io_layout must agree on all model PEs")
       if (table(1,n) < 1 .or. table(1,n) > ntiles) call mpp_error(FATAL, "offloading: invalid model tile id")
-      if (any(table(6:7,n) /= global_size)) call mpp_error(FATAL, "offloading: all tiles must have the same size")
     enddo
     do n = 1, ntiles
       if (.not. any(table(1,:) == n)) call mpp_error(FATAL, "offloading: a tile has no model PEs")
     enddo
+    writers_per_tile = size(writer_pes) / ntiles
+    if (writers_per_tile * ntiles /= size(writer_pes)) &
+      call mpp_error(FATAL, "offloading: the number of writer PEs must be a multiple of the number of domain tiles")
+    if (any(writer_layout < 1) .or. product(writer_layout) /= writers_per_tile) &
+      call mpp_error(FATAL, "offloading: writer_layout must use all the writers of a tile")
+    if (any(writer_io_layout < 1) .or. any(mod(writer_layout, max(writer_io_layout, 1)) /= 0)) &
+      call mpp_error(FATAL, "offloading: writer_io_layout must divide writer_layout")
+    if (any(writer_layout > global_size)) call mpp_error(FATAL, "offloading: writer_layout is larger than a tile")
 
-    my_tile = findloc(writer_pes, mpp_pe(), 1)
-    if (my_tile == 0) return
-    allocate(source_ranks(count(table(1,:) == my_tile)))
-    allocate(recv_types(size(source_ranks)), recv_requests(size(source_ranks)))
-    allocate(tile_data(global_size(1), global_size(2)))
-    k = 0
-    ncells = 0
-    do n = 1, size(model_pes)
-      if (table(1,n) /= my_tile) cycle
-      k = k + 1
-      source_ranks(k) = rank_of(model_pes(n))
-      call MPI_Type_create_subarray(2, global_size, (/table(3,n)-table(2,n)+1, table(5,n)-table(4,n)+1/), &
-                                    (/table(2,n)-1, table(4,n)-1/), MPI_ORDER_FORTRAN, real_type, recv_types(k))
-      call MPI_Type_commit(recv_types(k))
-      ncells = ncells + (table(3,n)-table(2,n)+1) * (table(5,n)-table(4,n)+1)
-    enddo
-    if (ncells /= product(global_size)) call mpp_error(FATAL, "offloading: compute domains do not cover the tile")
-    recv_requests = MPI_REQUEST_NULL
+    ! Writers define their decomposition: tile t goes to writers (t-1)*writers_per_tile+1 onward.
+    allocate(writer_table(writer_info_size, size(writer_pes)))
+    writer_table = 0
+    my_writer = findloc(writer_pes, mpp_pe(), 1)
+    if (my_writer > 0) then
+      allocate(global_indices(4, ntiles), layouts(2, ntiles), pe_start(ntiles), pe_end(ntiles))
+      do n = 1, ntiles
+        global_indices(:,n) = (/1, global_size(1), 1, global_size(2)/)
+        layouts(:,n) = writer_layout
+        pe_start(n) = writer_pes((n-1)*writers_per_tile + 1)
+        pe_end(n) = writer_pes(n*writers_per_tile)
+      enddo
+      call mpp_set_current_pelist(writer_pes, no_sync=.true.)
+      ! No contacts: the domain only describes how the writers split and name the tile files.
+      call mpp_define_mosaic(global_indices, layouts, writer_domain, ntiles, 0, no_contact, no_contact, &
+                             no_contact, no_contact, no_contact, no_contact, no_contact, no_contact, no_contact, &
+                             no_contact, pe_start, pe_end, name="offload writer mosaic")
+      call mpp_define_io_domain(writer_domain, writer_io_layout)
+      writer_table(1, my_writer) = (my_writer - 1) / writers_per_tile + 1
+      call mpp_get_compute_domain(writer_domain, writer_table(2, my_writer), writer_table(3, my_writer), &
+                                  writer_table(4, my_writer), writer_table(5, my_writer))
+      call mpp_set_current_pelist(all_pes, no_sync=.true.)
+    endif
+    call mpp_sum(writer_table, size(writer_table))
+
+    if (my_model > 0) then
+      ! Model PE: one send type per writer that owns part of this compute domain.
+      call find_overlaps(table(:, my_model), writer_table, writer_pes, dest_ranks, send_types)
+      ncells = (info(3)-info(2)+1) * (info(5)-info(4)+1)
+      compute_bounds = info(2:5)
+    else
+      ! Writer: one receive type per model PE that owns part of this writer's block.
+      call find_overlaps(writer_table(:, my_writer), table, model_pes, source_ranks, recv_types)
+      allocate(recv_requests(size(source_ranks)))
+      recv_requests = MPI_REQUEST_NULL
+      allocate(block_data(writer_table(3,my_writer)-writer_table(2,my_writer)+1, &
+                          writer_table(5,my_writer)-writer_table(4,my_writer)+1))
+      ncells = size(block_data)
+    endif
+    if (overlap_cells /= ncells) call mpp_error(FATAL, "offloading: model and writer domains do not match")
+
+  contains
+
+    !> Find the PEs in others (same tile) whose bounds overlap mine, and build a subarray type for each
+    !! overlap, relative to my own bounds.
+    subroutine find_overlaps(mine, others, other_pes, ranks, types)
+      integer, intent(in) :: mine(:), others(:,:), other_pes(:)
+      integer, allocatable, intent(out) :: ranks(:)
+      type(MPI_Datatype), allocatable, intent(out) :: types(:)
+      integer :: m, k
+
+      allocate(ranks(0), types(0))
+      overlap_cells = 0
+      do m = 1, size(other_pes)
+        if (others(1,m) /= mine(1)) cycle
+        overlap = (/max(mine(2), others(2,m)), min(mine(3), others(3,m)), &
+                    max(mine(4), others(4,m)), min(mine(5), others(5,m))/)
+        if (overlap(1) > overlap(2) .or. overlap(3) > overlap(4)) cycle
+        k = size(ranks) + 1
+        ranks = (/ranks, rank_of(other_pes(m))/)
+        types = (/types, MPI_DATATYPE_NULL/)
+        call MPI_Type_create_subarray(2, (/mine(3)-mine(2)+1, mine(5)-mine(4)+1/), &
+                                      (/overlap(2)-overlap(1)+1, overlap(4)-overlap(3)+1/), &
+                                      (/overlap(1)-mine(2), overlap(3)-mine(4)/), MPI_ORDER_FORTRAN, &
+                                      real_type, types(k))
+        call MPI_Type_commit(types(k))
+        overlap_cells = overlap_cells + (overlap(2)-overlap(1)+1) * (overlap(4)-overlap(3)+1)
+      enddo
+    end subroutine
   end subroutine
 
   subroutine open_offloaded_file(filename)
@@ -344,7 +435,7 @@ contains
     character(len=*), intent(in) :: field_name
     real, intent(in) :: field_data(:,:)
     type(domain2d), intent(inout) :: domain
-    integer :: nx, ny, isc, iec, jsc, jec, isd, ied, jsd, jed, ioff, joff, k
+    integer :: nx, ny, isc, iec, jsc, jec, isd, ied, jsd, jed, ioff, joff, k, d
 
     call require_file()
     call check_string(field_name)
@@ -365,11 +456,13 @@ contains
 
     ! Reuse the oldest buffer; this only waits if all max_pending_writes sends are still in flight.
     k = next_send
-    call MPI_Wait(send_requests(k), MPI_STATUS_IGNORE)
-    next_send = mod(next_send, size(send_requests)) + 1
+    call MPI_Waitall(size(dest_ranks), send_requests(:,k), MPI_STATUSES_IGNORE)
+    next_send = mod(next_send, size(send_requests, 2)) + 1
     send_buffers(:,:,k) = field_data(ioff+1:ioff+iec-isc+1, joff+1:joff+jec-jsc+1)
-    call MPI_Isend(send_buffers(:,:,k), size(send_buffers(:,:,k)), real_type, writer_rank, data_tag, &
-                   offload_comm, send_requests(k))
+    do d = 1, size(dest_ranks)
+      call MPI_Isend(send_buffers(:,:,k), 1, send_types(d), dest_ranks(d), data_tag, offload_comm, &
+                     send_requests(d,k))
+    enddo
     call start_message(IO_OP_WRITE)
     call pack_string(field_name)
     call post_message()
@@ -380,7 +473,9 @@ contains
     integer :: acknowledgement, w
 
     call require_file()
-    call MPI_Waitall(size(send_requests), send_requests, MPI_STATUSES_IGNORE)
+    do w = 1, size(send_requests, 2)
+      call MPI_Waitall(size(dest_ranks), send_requests(:,w), MPI_STATUSES_IGNORE)
+    enddo
     call start_message(IO_OP_CLOSE)
     call post_message()
     if (mpp_pe() == model_pes(1)) then
@@ -395,7 +490,10 @@ contains
       deallocate(control_buffers, control_requests)
     endif
     call mpp_sync()
-    deallocate(send_buffers, send_requests)
+    do w = 1, size(send_types)
+      call MPI_Type_free(send_types(w))
+    enddo
+    deallocate(send_buffers, send_requests, dest_ranks, send_types)
     file_is_open = .false.
     session_finished = .true.
   end subroutine
@@ -405,12 +503,10 @@ contains
   end subroutine
 
   !> Enters main write loop for an offloaded writer PE.
-  !! To be called by every writer after recv_domain_metadata; writer N writes tile N.
+  !! To be called by every writer after recv_domain_metadata.
   subroutine run_offload_writer()
     type(FmsNetcdfDomainFile_t) :: fileobj
-    type(domain2d) :: domain
     integer :: operation, axis_size(1), naxes, direction, field_dims(2), axis_directions(2), n
-    integer :: global_indices(4, size(writer_pes)), layout(2, size(writer_pes)), no_contact(0)
     character(len=string_length) :: name, cart, axis_names(2)
 
     call require_setup()
@@ -418,14 +514,6 @@ contains
     if (.not. metadata_ready) call mpp_error(FATAL, "offloading: receive metadata before running writer")
     if (session_finished) call mpp_error(FATAL, "offloading: writer session already finished")
     call mpp_set_current_pelist(writer_pes, no_sync=.true.)
-    do n = 1, ntiles
-      global_indices(:,n) = (/1, global_size(1), 1, global_size(2)/)
-      layout(:,n) = (/1, 1/)
-    enddo
-    call mpp_define_mosaic(global_indices, layout, domain, ntiles, 0, no_contact, no_contact, no_contact, &
-                           no_contact, no_contact, no_contact, no_contact, no_contact, no_contact, no_contact, &
-                           writer_pes, writer_pes, name="offload writer mosaic")
-    call mpp_define_io_domain(domain, (/1,1/))
     naxes = 0
     axis_directions = 0
     do
@@ -436,7 +524,7 @@ contains
       case (IO_OP_OPEN)
         if (file_is_open) call mpp_error(FATAL, "offloading: file already open")
         call unpack_string(name)
-        if (.not. open_file(fileobj, trim(name), "overwrite", domain=domain)) &
+        if (.not. open_file(fileobj, trim(name), "overwrite", domain=writer_domain)) &
           call mpp_error(FATAL, "offloading: unable to open "//trim(name))
         file_is_open = .true.
       case (IO_OP_REGISTER_AXIS)
@@ -469,10 +557,10 @@ contains
       case (IO_OP_WRITE)
         call unpack_string(name)
         do n = 1, size(source_ranks)
-          call MPI_Irecv(tile_data, 1, recv_types(n), source_ranks(n), data_tag, offload_comm, recv_requests(n))
+          call MPI_Irecv(block_data, 1, recv_types(n), source_ranks(n), data_tag, offload_comm, recv_requests(n))
         enddo
         call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-        call write_data(fileobj, trim(name), tile_data)
+        call write_data(fileobj, trim(name), block_data)
       case (IO_OP_GLOBAL_ATTRIBUTE)
         call recv_global_attribute(fileobj)
       case (IO_OP_CLOSE)
@@ -485,11 +573,11 @@ contains
         call mpp_error(FATAL, "offloading: unknown operation received")
       end select
     enddo
-    call mpp_deallocate_domain(domain)
+    call mpp_deallocate_domain(writer_domain)
     do n = 1, size(recv_types)
       call MPI_Type_free(recv_types(n))
     enddo
-    deallocate(source_ranks, recv_types, recv_requests, tile_data)
+    deallocate(source_ranks, recv_types, recv_requests, block_data)
   end subroutine
 
   !> Writer half of global_metadata_offload; unpacks the rest of the current message.
@@ -551,10 +639,14 @@ contains
   subroutine start_message(operation)
     integer, intent(in) :: operation
     logical :: all_done
+    integer :: k
 
     ! Let MPI progress field data sends that are still in flight.
-    if (allocated(send_requests)) &
-      call MPI_Testall(size(send_requests), send_requests, all_done, MPI_STATUSES_IGNORE)
+    if (allocated(send_requests)) then
+      do k = 1, size(send_requests, 2)
+        call MPI_Testall(size(dest_ranks), send_requests(:,k), all_done, MPI_STATUSES_IGNORE)
+      enddo
+    endif
     message = 0
     message(1) = operation
     message_position = 1
