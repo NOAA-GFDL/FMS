@@ -15,6 +15,8 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
+!> @brief This module provides a method of offloading I/O operations to dedicated writer PE
+!! or group of writer PEs. 
 module offloading_io_mod
 #ifdef use_libMPI
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_declare_pelist, mpp_set_current_pelist, &

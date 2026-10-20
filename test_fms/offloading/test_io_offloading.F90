@@ -16,8 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 program test_io_offloading
-  use fms_mod, only: fms_init, fms_end
-  use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL
+  use fms_mod, only: fms_init, fms_end, check_nml_error
+  use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL, input_nml_file
   use mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_define_io_domain, &
                             mpp_get_data_domain, mpp_get_compute_domain, mpp_deallocate_domain
   use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, read_data
@@ -32,18 +32,28 @@ program test_io_offloading
   type(FmsNetcdfFile_t) :: fileobj
   integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
   integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims
-  real, allocatable :: data(:,:), actual(:,:)
+  real, allocatable :: model_data(:,:), actual(:,:)
   real(kind=r4_kind) :: r4_att
   real(kind=r8_kind) :: r8_att
   integer(kind=i4_kind) :: i4_att
   character(len=64) :: str_att
   character(len=9) :: axes(2) = [character(len=9) :: "latitude", "longitude"]
   character(len=*), parameter :: filename = "offloaded_output.nc"
-  character(len=32) :: mode
+  integer :: io_status
+  ! Select normal, bad-axis, bad-dims, or bad-attribute in input.nml.
+  character(len=32) :: mode = "normal"
+  namelist /test_io_offloading_nml/ mode
 
   call fms_init()
-  call get_command_argument(1, mode)
+  read(input_nml_file, nml=test_io_offloading_nml, iostat=io_status)
+  io_status = check_nml_error(io_status, "test_io_offloading_nml")
+  select case (trim(mode))
+  case ("normal", "bad-axis", "bad-dims", "bad-attribute")
+  case default
+    call mpp_error(FATAL, "test_io_offloading: unknown mode "//trim(mode))
+  end select
   call setup_offloading_pelists(all_pes, model_pes, writer_pes)
+  ! model pes section: define domain and send metadata and i/o ops to the writer pe
   if (any(model_pes == mpp_pe())) then
     call mpp_set_current_pelist(model_pes)
     call mpp_define_layout((/1,nx,1,ny/), size(model_pes), layout)
@@ -51,7 +61,7 @@ program test_io_offloading
     call mpp_define_io_domain(domain, (/1,1/))
     call mpp_get_data_domain(domain, is, ie, js, je)
     call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
-    allocate(data(is:ie, js:je))
+    allocate(model_data(is:ie, js:je))
     call send_domain_metadata(domain)
     call open_offloaded_file(filename)
     ! Deliberately register y before x to exercise transmitted dimension indices.
@@ -65,29 +75,33 @@ program test_io_offloading
     call register_field_offloaded_file("temperature", (/2,1/))
     call register_field_offloaded_file("rainfall", (/2,1/))
     do step = 1, 3
-      data = -999.
+      model_data = -999.
       do j = jsc, jec
         do i = isc, iec
-          data(i,j) = real(1000*step + 100*j + i)
+          model_data(i,j) = real(1000*step + 100*j + i)
         enddo
       enddo
-      call write_field_offloaded_file("temperature", data, domain)
+      call write_field_offloaded_file("temperature", model_data, domain)
     enddo
-    data = -999.
+    model_data = -999.
     do j = jsc, jec
       do i = isc, iec
-        data(i,j) = real(-100*j - i)
+        model_data(i,j) = real(-100*j - i)
       enddo
     enddo
-    call write_field_offloaded_file("rainfall", data, domain)
+    call write_field_offloaded_file("rainfall", model_data, domain)
     ! Registered after data writes to exercise switching the file back to define mode.
     call global_metadata_offload("title", "offloading test")
     call close_offloaded_file()
-  else
+
+  else ! writer PE
+
     call recv_domain_metadata(domain, global_size)
     if (any(global_size /= (/nx, ny/))) call mpp_error(FATAL, "test: incorrect global domain metadata")
     call run_offload_writer()
+
   endif
+
   call mpp_deallocate_domain(domain)
   call mpp_set_current_pelist(all_pes, no_sync=.true.)
   call mpp_sync()

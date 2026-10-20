@@ -30,13 +30,31 @@ test_expect_success "io offload with one model PE and one writer" '
   mpirun -n 2 ./test_io_offloading
 '
 
-test_expect_success "io offload gathers all model PEs without halos" '
-  mpirun -n 3 ./test_io_offloading
-'
+cat > input.nml << _EOF
+&test_io_offloading_nml
+  mode = "normal"
+/
+_EOF
 
-test_expect_success "io offload gathers a 2-D model decomposition" '
+test_expect_success "io offload with 4 model pes and one writer" '
   mpirun -n 5 ./test_io_offloading
 '
+
+# check error on bad input during register/attribute routines
+for mode in bad-axis bad-dims bad-attribute; do
+  cat > input.nml << _EOF
+&test_io_offloading_nml
+  mode = "$mode"
+/
+_EOF
+
+  test_expect_failure "io offload rejects $mode" '
+    mpirun -n 2 ./test_io_offloading
+  '
+done
+
+cat > input.nml << _EOF
+_EOF
 
 test_expect_success "test metadata transfer" '
   mpirun -n 4 ./test_metadata_transfer
