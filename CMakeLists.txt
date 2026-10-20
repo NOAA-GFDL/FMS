@@ -782,6 +782,7 @@ if(UNIT_TESTS)
     test_fms/time_manager/test_time_manager.F90
     test_fms/offloading/test_metadata_transfer.F90
     test_fms/offloading/test_io_offloading.F90
+    test_fms/offloading/test_io_offloading_cubic.F90
     )
   # list any test sources that are used for two executables (r4 and r8)
   list(APPEND TEST_SRC_TWO_TARGETS

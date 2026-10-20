@@ -56,6 +56,33 @@ done
 cat > input.nml << _EOF
 _EOF
 
+test_expect_success "cubic io offload with 6 model pes and 6 writers" '
+  mpirun -n 12 ./test_io_offloading_cubic
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_cubic_nml
+  max_pending_writes = 1
+/
+_EOF
+
+test_expect_success "cubic io offload with 12 model pes, 6 writers and one pending write" '
+  mpirun -n 18 ./test_io_offloading_cubic
+'
+
+cat > input.nml << _EOF
+&test_io_offloading_cubic_nml
+  nwriters = 1
+/
+_EOF
+
+test_expect_failure "cubic io offload rejects a writer count that differs from the tile count" '
+  mpirun -n 7 ./test_io_offloading_cubic
+'
+
+cat > input.nml << _EOF
+_EOF
+
 test_expect_success "test metadata transfer" '
   mpirun -n 4 ./test_metadata_transfer
 '
