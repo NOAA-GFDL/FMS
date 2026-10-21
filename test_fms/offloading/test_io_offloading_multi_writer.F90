@@ -32,7 +32,7 @@ program test_io_offloading_multi_writer
   integer, parameter :: n = 48, nsteps = 3
   integer, allocatable :: all_pes(:), model_pes(:), writer_pes(:)
   type(domain2d) :: domain, check_domain
-  type(FmsNetcdfDomainFile_t) :: fileobj
+  type(FmsNetcdfDomainFile_t) :: fileobj, offload_file
   integer :: is, ie, js, je, isc, iec, jsc, jec, tile_ids(1), tile, layout(2)
   integer :: i, j, step, global_size(2), writers_per_tile, io_status
   real, allocatable :: model_data(:,:), actual(:,:)
@@ -74,9 +74,9 @@ program test_io_offloading_multi_writer
     else
       call send_domain_metadata(domain, writer_io_layout=writer_io_layout)
     endif
-    call open_offloaded_file(filename)
-    call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain)
-    call register_field_offloaded_file("temperature", (/1,2/))
+    call open_offloaded_file(filename, offload_file)
+    call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain, offload_file)
+    call register_field_offloaded_file("temperature", (/1,2/), fileobj=offload_file)
     do step = 1, nsteps
       model_data = -999.
       do j = jsc, jec
@@ -84,9 +84,10 @@ program test_io_offloading_multi_writer
           model_data(i,j) = expected(tile, step, i, j)
         enddo
       enddo
-      call write_field_offloaded_file("temperature", model_data, domain)
+      call write_field_offloaded_file("temperature", model_data, domain, offload_file)
     enddo
-    call close_offloaded_file()
+    call close_offloaded_file(offload_file)
+    call offloading_io_end()
     call mpp_deallocate_domain(domain)
   else
     call recv_domain_metadata(domain, global_size)

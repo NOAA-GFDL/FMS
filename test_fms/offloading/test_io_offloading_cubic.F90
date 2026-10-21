@@ -22,7 +22,7 @@ program test_io_offloading_cubic
   use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL, input_nml_file
   use mpp_domains_mod, only: domain2d, mpp_define_cubic_domain, mpp_get_data_domain, mpp_get_compute_domain, &
                              mpp_get_tile_id, mpp_get_ntile_count, mpp_deallocate_domain
-  use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, read_data
+  use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, open_file, close_file, read_data
   use offloading_io_mod
   use platform_mod, only: i4_kind
   use netcdf
@@ -32,6 +32,7 @@ program test_io_offloading_cubic
   integer, allocatable :: all_pes(:), model_pes(:), writer_pes(:)
   type(domain2d) :: domain
   type(FmsNetcdfFile_t) :: fileobj
+  type(FmsNetcdfDomainFile_t) :: offload_file
   integer :: is, ie, js, je, isc, iec, jsc, jec, tile_ids(1), tile
   integer :: i, j, k, step, global_size(2), ncid, varid, dimids(2), dimlen, i4_att
   real, allocatable :: data_domain(:,:), compute_domain(:,:), actual(:,:)
@@ -63,13 +64,13 @@ program test_io_offloading_cubic
     allocate(data_domain(is:ie, js:je), compute_domain(isc:iec, jsc:jec))
     ! send domain info and open the offloaded file
     call send_domain_metadata(domain, max_pending_writes=max_pending_writes)
-    call open_offloaded_file(filename)
+    call open_offloaded_file(filename, offload_file)
     ! register axes/fields and send writing data 
-    call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain)
-    call global_metadata_offload("ntiles", int(ntiles, i4_kind))
-    call register_field_offloaded_file("temperature", (/1,2/))
+    call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain, offload_file)
+    call global_metadata_offload("ntiles", int(ntiles, i4_kind), offload_file)
+    call register_field_offloaded_file("temperature", (/1,2/), fileobj=offload_file)
     do k = 1, nextra
-      call register_field_offloaded_file(extra_name(k), (/1,2/))
+      call register_field_offloaded_file(extra_name(k), (/1,2/), fileobj=offload_file)
     enddo
     do step = 1, nsteps
       data_domain = -999.
@@ -78,7 +79,7 @@ program test_io_offloading_cubic
           data_domain(i,j) = expected(tile, step, i, j)
         enddo
       enddo
-      call write_field_offloaded_file("temperature", data_domain, domain)
+      call write_field_offloaded_file("temperature", data_domain, domain, offload_file)
     enddo
     do k = 1, nextra
       do j = jsc, jec
@@ -86,9 +87,10 @@ program test_io_offloading_cubic
           compute_domain(i,j) = -expected(tile, k, i, j)
         enddo
       enddo
-      call write_field_offloaded_file(extra_name(k), compute_domain, domain)
+      call write_field_offloaded_file(extra_name(k), compute_domain, domain, offload_file)
     enddo
-    call close_offloaded_file()
+    call close_offloaded_file(offload_file)
+    call offloading_io_end()
   ! writer pes
   else
     call recv_domain_metadata(domain, global_size)

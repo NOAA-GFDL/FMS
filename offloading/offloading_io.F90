@@ -37,7 +37,8 @@
 !! - Each operation (open, register, write, ...) is one packed control message from the model root
 !!   to every writer, also sent without waiting from a ring of buffers.
 !! Writers receive field data straight into place through MPI subarray types, and all writers
-!! write at the same time.
+!! write at the same time. The number of simultaneously open files is set by max_files in
+!! offloading_io_nml; offloading_io_end ends the writer session.
 module offloading_io_mod
 #ifdef use_libMPI
 !! TODO mpi calls should all go through mpp and have a non f08 interface ideally
@@ -46,7 +47,8 @@ module offloading_io_mod
                      MPI_INTEGER, MPI_REAL4, MPI_REAL8, MPI_ORDER_FORTRAN, MPI_STATUS_IGNORE, MPI_DATATYPE_NULL, &
                      MPI_STATUSES_IGNORE, MPI_REQUEST_NULL
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_declare_pelist, mpp_set_current_pelist, &
-                    mpp_sync, mpp_sum, mpp_error, FATAL
+                    mpp_sync, mpp_sum, mpp_error, FATAL, input_nml_file
+  use fms_mod, only: check_nml_error
   use mpp_domains_mod
   use fms2_io_mod, only: FmsNetcdfDomainFile_t, open_file, close_file, register_axis, register_field, write_data, &
                          register_global_attribute
@@ -55,9 +57,12 @@ module offloading_io_mod
   implicit none
   private
 
+  integer :: max_files = 10
+  namelist /offloading_io_nml/ max_files
+
   !> opcode enumerations to send the writers
   integer, parameter :: IO_OP_OPEN = 1, IO_OP_REGISTER_AXIS = 2, IO_OP_REGISTER_FIELD = 3
-  integer, parameter :: IO_OP_WRITE = 4, IO_OP_CLOSE = 5, IO_OP_GLOBAL_ATTRIBUTE = 6
+  integer, parameter :: IO_OP_WRITE = 4, IO_OP_CLOSE = 5, IO_OP_GLOBAL_ATTRIBUTE = 6, IO_OP_SHUTDOWN = 7
   integer, parameter :: ATTRIBUTE_R4 = 1, ATTRIBUTE_R8 = 2, ATTRIBUTE_I4 = 3, ATTRIBUTE_I8 = 4, ATTRIBUTE_STR = 5
   integer, parameter :: FIELD_R4 = 1, FIELD_R8 = 2
   !> These are arbitrary values used to tag the data flow in mpi communication
@@ -81,7 +86,8 @@ module offloading_io_mod
   integer :: global_size(2) = 0 !< size of each tile
   integer :: ntiles = 0
   integer :: writer_layout(2) = 0, writer_io_layout(2) = 0 !< decomposition of each tile among its writers
-  logical :: metadata_ready = .false., file_is_open = .false., session_finished = .false.
+  logical :: metadata_ready = .false., session_finished = .false.
+  logical, allocatable :: file_is_open(:)
   type(MPI_Comm) :: offload_comm
 
   ! Control message being packed (model root) or unpacked (writers).
@@ -103,6 +109,9 @@ module offloading_io_mod
 
   ! Writer PE state: its part of the tile, the model ranks that overlap it and where their parts go.
   type(domain2d), save :: writer_domain
+  type(FmsNetcdfDomainFile_t), allocatable :: writer_fileobjs(:)
+  integer, allocatable :: writer_naxes(:), writer_axis_directions(:,:)
+  character(len=string_length), allocatable :: writer_axis_names(:,:)
   integer, allocatable :: source_ranks(:)
   type(MPI_Datatype), allocatable :: recv_types(:,:)
   type(MPI_Request), allocatable, asynchronous :: recv_requests(:)
@@ -110,7 +119,7 @@ module offloading_io_mod
   real(kind=r8_kind), allocatable, asynchronous :: block_data_r8(:,:)
 
   public :: setup_offloading_pelists, send_domain_metadata, recv_domain_metadata, run_offload_writer
-  public :: open_offloaded_file, close_offloaded_file, close_offloaded_files
+  public :: open_offloaded_file, close_offloaded_file, offloading_io_end
   public :: register_axis_offloaded_file, register_axes_offloaded_file
   public :: register_field_offloaded_file, write_field_offloaded_file, global_metadata_offload
 
@@ -128,13 +137,18 @@ contains
   subroutine setup_offloading_pelists(global_pelist, model_pelist, writer_pelist, nwriters)
     integer, allocatable, intent(out) :: global_pelist(:), model_pelist(:), writer_pelist(:)
     integer, intent(in), optional :: nwriters !< number of writer PEs (default 1)
-    integer :: n, comm_id, w
+    integer :: n, comm_id, w, io_status
 
     if (allocated(all_pes)) call mpp_error(FATAL, "offloading: pelists already initialized")
     n = 1
     if (present(nwriters)) n = nwriters
     if (n < 1) call mpp_error(FATAL, "offloading: at least one writer PE is required")
     if (mpp_npes() <= n) call mpp_error(FATAL, "offloading: at least one model PE is required besides the writers")
+    read(input_nml_file, nml=offloading_io_nml, iostat=io_status)
+    io_status = check_nml_error(io_status, "offloading_io_nml")
+    if (max_files < 1) call mpp_error(FATAL, "offloading: max_files must be positive")
+    allocate(file_is_open(max_files))
+    file_is_open = .false.
     allocate(all_pes(mpp_npes()))
     call mpp_get_current_pelist(all_pes)
     model_pes = all_pes(:size(all_pes)-n)
@@ -224,6 +238,11 @@ contains
     call mpp_broadcast_domain(model_domain)
     info = 0
     call exchange_layout(info)
+    allocate(writer_fileobjs(max_files), writer_naxes(max_files), &
+         writer_axis_directions(2,max_files), writer_axis_names(2,max_files))
+    writer_naxes = 0
+    writer_axis_directions = 0
+    writer_axis_names = ""
     global_domain_size = global_size
     call mpp_set_current_pelist(writer_pes, no_sync=.true.)
     metadata_ready = .true.
@@ -343,26 +362,33 @@ contains
     end subroutine
   end subroutine
 
-  subroutine open_offloaded_file(filename)
+  subroutine open_offloaded_file(filename, fileobj)
     character(len=*), intent(in) :: filename
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer :: file_id
 
     call require_model()
     if (.not. metadata_ready) call mpp_error(FATAL, "offloading: send domain metadata before opening a file")
-    if (file_is_open .or. session_finished) call mpp_error(FATAL, "offloading: only one file per session is supported")
+    if (session_finished) call mpp_error(FATAL, "offloading: session already finished")
     call check_string(filename)
+    file_id = find_free_file_id()
+    if (file_id == 0) call mpp_error(FATAL, "offloading: max_files exceeded")
+    file_is_open(file_id) = .true.
+    fileobj%offloading_obj_in%id = file_id
     call start_message(IO_OP_OPEN)
+    call pack_words((/file_id/))
     call pack_string(filename)
     call post_message()
-    file_is_open = .true.
   end subroutine
 
   !> axis_size is the size of one tile in the cart_name direction.
-  subroutine register_axis_offloaded_file(axis_name, cart_name, axis_size)
+  subroutine register_axis_offloaded_file(axis_name, cart_name, axis_size, fileobj)
     character(len=*), intent(in) :: axis_name, cart_name
     integer, intent(in) :: axis_size
-    integer :: direction
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer :: direction, file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     call check_string(axis_name)
     select case (cart_name)
     case ("x")
@@ -374,37 +400,41 @@ contains
     end select
     if (axis_size /= global_size(direction)) call mpp_error(FATAL, "offloading: axis size differs from domain")
     call start_message(IO_OP_REGISTER_AXIS)
+    call pack_words((/file_id/))
     call pack_string(axis_name)
     call pack_string(cart_name)
     call pack_words((/axis_size/))
     call post_message()
   end subroutine
 
-  subroutine register_axes_offloaded_file(axis_names, cart_names, axis_sizes, domain)
+  subroutine register_axes_offloaded_file(axis_names, cart_names, axis_sizes, domain, fileobj)
     character(len=*), intent(in) :: axis_names(:), cart_names(:)
     integer, intent(in) :: axis_sizes(:)
     type(domain2d), intent(in) :: domain
-    integer :: i, nx, ny
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer :: i, nx, ny, file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     if (size(axis_names) /= size(cart_names) .or. size(axis_names) /= size(axis_sizes)) &
       call mpp_error(FATAL, "offloading: axis arrays must have equal sizes")
     call mpp_get_global_domain(domain, xsize=nx, ysize=ny)
     if (any(global_size /= (/nx, ny/))) call mpp_error(FATAL, "offloading: axis domain differs from metadata")
     do i = 1, size(axis_names)
-      call register_axis_offloaded_file(axis_names(i), cart_names(i), axis_sizes(i))
+      call register_axis_offloaded_file(axis_names(i), cart_names(i), axis_sizes(i), fileobj)
     enddo
   end subroutine
 
   !> Dimension indices refer to registration order, and must describe x then y.
   !! TODO, should field type/kind argument be required? r8 default currently if not given
-  subroutine register_field_offloaded_file(field_name, field_dims, field_type)
+  subroutine register_field_offloaded_file(field_name, field_dims, field_type, fileobj)
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: field_dims(:)
     character(len=*), intent(in), optional :: field_type
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer :: field_kind
+    integer :: file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     call check_string(field_name)
     if (size(field_dims) /= 2) call mpp_error(FATAL, "offloading: only 2-D fields are supported")
     if (any(field_dims < 1) .or. any(field_dims > 2)) &
@@ -421,6 +451,7 @@ contains
       end select
     endif
     call start_message(IO_OP_REGISTER_FIELD)
+    call pack_words((/file_id/))
     call pack_string(field_name)
     call pack_words(field_dims)
     call pack_words((/field_kind/))
@@ -430,13 +461,16 @@ contains
   !> Register a scalar global attribute (r4, r8, i4, i8 or string) on the offloaded file.
   !! Only the model root's value is sent, and every tile file gets it.
   !! Can be called at any time while the file is open.
-  subroutine global_metadata_offload(attribute_name, attribute_value)
+  subroutine global_metadata_offload(attribute_name, attribute_value, fileobj)
     character(len=*), intent(in) :: attribute_name
     class(*), intent(in) :: attribute_value
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer :: file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     call check_string(attribute_name)
     call start_message(IO_OP_GLOBAL_ATTRIBUTE)
+    call pack_words((/file_id/))
     call pack_string(attribute_name)
     select type (attribute_value)
     type is (real(kind=r4_kind))
@@ -465,13 +499,15 @@ contains
   !> Collective on model PEs, but no PE waits on the others or on the writer. Field data can cover
   !! the compute or the data domain; halos are not sent. Returns once the data is copied into a
   !! send buffer, so the caller can reuse field_data right away.
-  subroutine write_field_offloaded_file_r4(field_name, field_data, domain)
+  subroutine write_field_offloaded_file_r4(field_name, field_data, domain, fileobj)
     character(len=*), intent(in) :: field_name
     real(kind=r4_kind), intent(in) :: field_data(:,:)
     type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer :: ioff, joff, nx, ny, k, d
+    integer :: file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     call check_string(field_name)
     !! TODO, this might only be needed when writer PEs > 1. can probably optimize for single writer case
     call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
@@ -486,18 +522,21 @@ contains
                      send_requests(d,k))
     enddo
     call start_message(IO_OP_WRITE)
+    call pack_words((/file_id/))
     call pack_string(field_name)
     call pack_words((/FIELD_R4/))
     call post_message()
   end subroutine
 
-  subroutine write_field_offloaded_file_r8(field_name, field_data, domain)
+  subroutine write_field_offloaded_file_r8(field_name, field_data, domain, fileobj)
     character(len=*), intent(in) :: field_name
     real(kind=r8_kind), intent(in) :: field_data(:,:)
     type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer :: ioff, joff, nx, ny, k, d
+    integer :: file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
     call check_string(field_name)
     call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
 
@@ -510,6 +549,7 @@ contains
                      send_requests(d,k))
     enddo
     call start_message(IO_OP_WRITE)
+    call pack_words((/file_id/))
     call pack_string(field_name)
     call pack_words((/FIELD_R8/))
     call post_message()
@@ -541,15 +581,40 @@ contains
     endif
   end subroutine
 
-  !> Close also stops the writers. Returns once every tile file is closed.
-  subroutine close_offloaded_file()
-    integer :: acknowledgement, w, d
+  !> Close one file handle, or close the legacy file and stop the writer session.
+  subroutine close_offloaded_file(fileobj)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer :: file_id
 
-    call require_file()
+    file_id = require_file(fileobj)
+    call close_file_slot(file_id)
+    fileobj%offloading_obj_in%id = 0
+  end subroutine
+
+  subroutine close_file_slot(file_id)
+    integer, intent(in) :: file_id
+    integer :: w
+
+    if (file_id < 1 .or. file_id > max_files) call mpp_error(FATAL, "offloading: invalid file id")
+    if (.not. file_is_open(file_id)) call mpp_error(FATAL, "offloading: no open file")
     do w = 1, size(send_requests, 2)
       call MPI_Waitall(size(dest_ranks), send_requests(:,w), MPI_STATUSES_IGNORE)
     enddo
     call start_message(IO_OP_CLOSE)
+    call pack_words((/file_id/))
+    call post_message()
+    file_is_open(file_id) = .false.
+  end subroutine
+
+  subroutine offloading_io_end()
+    integer :: acknowledgement, w, d, file_id
+
+    call require_model()
+    if (session_finished) call mpp_error(FATAL, "offloading: session already finished")
+    do file_id = 1, max_files
+      if (file_is_open(file_id)) call close_file_slot(file_id)
+    enddo
+    call start_message(IO_OP_SHUTDOWN)
     call post_message()
     if (mpp_pe() == model_pes(1)) then
       do w = 1, control_slots
@@ -558,7 +623,7 @@ contains
       do w = 1, size(writer_pes)
         call MPI_Recv(acknowledgement, 1, MPI_INTEGER, writer_ranks(w), protocol_tag, offload_comm, &
                       MPI_STATUS_IGNORE)
-        if (acknowledgement /= IO_OP_CLOSE) call mpp_error(FATAL, "offloading: invalid close acknowledgement")
+        if (acknowledgement /= IO_OP_SHUTDOWN) call mpp_error(FATAL, "offloading: invalid shutdown acknowledgement")
       enddo
       deallocate(control_buffers, control_requests)
     endif
@@ -569,20 +634,15 @@ contains
       enddo
     enddo
     deallocate(send_buffers_r4, send_buffers_r8, send_requests, dest_ranks, send_types)
-    file_is_open = .false.
+    deallocate(file_is_open)
     session_finished = .true.
-  end subroutine
-
-  subroutine close_offloaded_files()
-    call close_offloaded_file()
   end subroutine
 
   !> Enters the main write loop for offloaded writer PE's to receive data and control messages from the model PEs
   !! To be called by every writer after recv_domain_metadata.
   subroutine run_offload_writer()
-    type(FmsNetcdfDomainFile_t) :: fileobj
-    integer :: operation, axis_size(1), naxes, direction, field_dims(2), axis_directions(2), field_kind(1), n
-    character(len=string_length) :: name, cart, axis_names(2)
+    integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(2), field_kind(1), n
+    character(len=string_length) :: name, cart
 
     ! checks for proper setup (setup_offloading_pelists,send/recv_domain_metadata)
     call require_setup()
@@ -592,26 +652,30 @@ contains
     if (session_finished) call mpp_error(FATAL, "offloading: writer session already finished")
     ! switch to the writers pelist if not already
     call mpp_set_current_pelist(writer_pes, no_sync=.true.)
-    naxes = 0
-    axis_directions = 0
     ! main loop for io writers, receive operations from model PEs and handle them accordingly
     ! operations are "packed" into a single message for less overhead
     do
       operation = recv_message()
-      if (operation /= IO_OP_OPEN .and. .not. file_is_open) &
-        call mpp_error(FATAL, "offloading: operation received before file open")
       select case (operation)
       case (IO_OP_OPEN)
-        if (file_is_open) call mpp_error(FATAL, "offloading: file already open")
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call check_file_id(file_id)
+        if (file_is_open(file_id)) call mpp_error(FATAL, "offloading: file already open")
         call unpack_string(name)
-        if (.not. open_file(fileobj, trim(name), "overwrite", domain=writer_domain)) &
+        if (.not. open_file(writer_fileobjs(file_id), trim(name), "overwrite", domain=writer_domain)) &
           call mpp_error(FATAL, "offloading: unable to open "//trim(name))
-        file_is_open = .true.
+        file_is_open(file_id) = .true.
+        writer_naxes(file_id) = 0
+        writer_axis_directions(:,file_id) = 0
       case (IO_OP_REGISTER_AXIS)
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call require_writer_file(file_id)
         call unpack_string(name)
         call unpack_string(cart)
         call unpack_words(axis_size)
-        if (naxes == 2) call mpp_error(FATAL, "offloading: only two axes are supported")
+        if (writer_naxes(file_id) == 2) call mpp_error(FATAL, "offloading: only two axes are supported")
         select case (trim(cart))
         case ("x")
           direction = 1
@@ -621,27 +685,34 @@ contains
           call mpp_error(FATAL, "offloading: invalid axis direction received")
         end select
         if (axis_size(1) /= global_size(direction)) call mpp_error(FATAL, "offloading: invalid axis size received")
-        if (any(axis_directions(:naxes) == direction)) call mpp_error(FATAL, "offloading: duplicate axis direction")
-        naxes = naxes + 1
-        axis_names(naxes) = name
-        axis_directions(naxes) = direction
-        call register_axis(fileobj, trim(name), trim(cart))
+        if (any(writer_axis_directions(:writer_naxes(file_id),file_id) == direction)) &
+          call mpp_error(FATAL, "offloading: duplicate axis direction")
+        writer_naxes(file_id) = writer_naxes(file_id) + 1
+        writer_axis_names(writer_naxes(file_id),file_id) = name
+        writer_axis_directions(writer_naxes(file_id),file_id) = direction
+        call register_axis(writer_fileobjs(file_id), trim(name), trim(cart))
       case (IO_OP_REGISTER_FIELD)
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call require_writer_file(file_id)
         call unpack_string(name)
         call unpack_words(field_dims)
         call unpack_words(field_kind)
-        if (any(field_dims < 1) .or. any(field_dims > naxes)) &
+        if (any(field_dims < 1) .or. any(field_dims > writer_naxes(file_id))) &
           call mpp_error(FATAL, "offloading: field refers to unregistered axes")
-        if (any(axis_directions(field_dims) /= (/1,2/))) &
+        if (any(writer_axis_directions(field_dims,file_id) /= (/1,2/))) &
           call mpp_error(FATAL, "offloading: field dimensions must describe x then y")
         if (field_kind(1) == FIELD_R4) then
-          call register_field(fileobj, trim(name), "float", axis_names(field_dims))
+          call register_field(writer_fileobjs(file_id), trim(name), "float", writer_axis_names(field_dims,file_id))
         else if (field_kind(1) == FIELD_R8) then
-          call register_field(fileobj, trim(name), "double", axis_names(field_dims))
+          call register_field(writer_fileobjs(file_id), trim(name), "double", writer_axis_names(field_dims,file_id))
         else
           call mpp_error(FATAL, "offloading: invalid field type received")
         endif
       case (IO_OP_WRITE)
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call require_writer_file(file_id)
         call unpack_string(name)
         call unpack_words(field_kind)
         select case (field_kind(1))
@@ -652,24 +723,35 @@ contains
                            recv_requests(n))
           enddo
           call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          call write_data(fileobj, trim(name), block_data_r4)
+          call write_data(writer_fileobjs(file_id), trim(name), block_data_r4)
         case (FIELD_R8)
           do n = 1, size(source_ranks)
             call MPI_Irecv(block_data_r8, 1, recv_types(2,n), source_ranks(n), data_tag, offload_comm, &
                            recv_requests(n))
           enddo
           call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          call write_data(fileobj, trim(name), block_data_r8)
+          call write_data(writer_fileobjs(file_id), trim(name), block_data_r8)
         case default
           call mpp_error(FATAL, "offloading: invalid field type received")
         end select
       case (IO_OP_GLOBAL_ATTRIBUTE)
-        call recv_global_attribute(fileobj)
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call require_writer_file(file_id)
+        call recv_global_attribute(writer_fileobjs(file_id))
       case (IO_OP_CLOSE)
-        call close_file(fileobj)
-        file_is_open = .false.
+        call unpack_words(file_id_words)
+        file_id = file_id_words(1)
+        call require_writer_file(file_id)
+        call close_file(writer_fileobjs(file_id))
+        file_is_open(file_id) = .false.
+        writer_naxes(file_id) = 0
+      case (IO_OP_SHUTDOWN)
+        do file_id = 1, max_files
+          if (file_is_open(file_id)) call close_file(writer_fileobjs(file_id))
+        enddo
         session_finished = .true.
-        call MPI_Send(IO_OP_CLOSE, 1, MPI_INTEGER, model_root_rank, protocol_tag, offload_comm)
+        call MPI_Send(IO_OP_SHUTDOWN, 1, MPI_INTEGER, model_root_rank, protocol_tag, offload_comm)
         exit
       case default
         call mpp_error(FATAL, "offloading: unknown operation received")
@@ -681,6 +763,8 @@ contains
       call MPI_Type_free(recv_types(2,n))
     enddo
     deallocate(source_ranks, recv_types, recv_requests, block_data_r4, block_data_r8)
+    deallocate(writer_fileobjs, writer_naxes, writer_axis_directions, writer_axis_names)
+    deallocate(file_is_open)
   end subroutine
 
   !> Writer half of global_metadata_offload; unpacks the rest of the current message.
@@ -727,9 +811,38 @@ contains
     call mpp_set_current_pelist(model_pes, no_sync=.true.)
   end subroutine
 
-  subroutine require_file()
+  integer function require_file(fileobj) result(file_id)
+    type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
+
     call require_model()
-    if (.not. file_is_open) call mpp_error(FATAL, "offloading: no open file")
+    file_id = fileobj%offloading_obj_in%id
+    call check_file_id(file_id)
+    if (.not. file_is_open(file_id)) call mpp_error(FATAL, "offloading: no open file")
+  end function
+
+  integer function find_free_file_id() result(file_id)
+    integer :: i
+
+    file_id = 0
+    do i = 1, max_files
+      if (.not. file_is_open(i)) then
+        file_id = i
+        return
+      endif
+    enddo
+  end function
+
+  subroutine check_file_id(file_id)
+    integer, intent(in) :: file_id
+
+    if (file_id < 1 .or. file_id > max_files) call mpp_error(FATAL, "offloading: invalid file id")
+  end subroutine
+
+  subroutine require_writer_file(file_id)
+    integer, intent(in) :: file_id
+
+    call check_file_id(file_id)
+    if (.not. file_is_open(file_id)) call mpp_error(FATAL, "offloading: operation received before file open")
   end subroutine
 
   subroutine check_string(value)

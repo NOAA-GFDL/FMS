@@ -20,7 +20,7 @@ program test_io_offloading
   use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL, input_nml_file
   use mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_define_io_domain, &
                             mpp_get_data_domain, mpp_get_compute_domain, mpp_deallocate_domain
-  use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, read_data
+  use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, open_file, close_file, read_data
   use offloading_io_mod
   use platform_mod, only: r4_kind, r8_kind, i4_kind
   use netcdf
@@ -30,6 +30,8 @@ program test_io_offloading
   integer, allocatable :: all_pes(:), model_pes(:), writer_pes(:)
   type(domain2d) :: domain
   type(FmsNetcdfFile_t) :: fileobj
+  type(FmsNetcdfDomainFile_t) :: offload_file
+  type(FmsNetcdfDomainFile_t) :: second_file
   integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
   integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims
   real, allocatable :: model_data(:,:), actual(:,:)
@@ -40,6 +42,7 @@ program test_io_offloading
   character(len=64) :: str_att
   character(len=9) :: axes(2) = [character(len=9) :: "latitude", "longitude"]
   character(len=*), parameter :: filename = "offloaded_output.nc"
+  character(len=*), parameter :: second_filename = "offloaded_output_second.nc"
   integer :: io_status
   ! Select normal, bad-axis, bad-dims, or bad-attribute in input.nml.
   character(len=32) :: mode = "normal"
@@ -65,18 +68,21 @@ program test_io_offloading
     allocate(model_data(is:ie, js:je))
     allocate(model_data_r4(is:ie, js:je))
     call send_domain_metadata(domain)
-    call open_offloaded_file(filename)
+    call open_offloaded_file(filename, offload_file)
+    call open_offloaded_file(second_filename, second_file)
     ! Deliberately register y before x to exercise transmitted dimension indices.
-    call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain)
-    if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", "z", nx)
-    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/))
-    if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true.)
-    call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind)
-    call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind)
-    call global_metadata_offload("pi", 3.141592653589793_r8_kind)
-    call register_field_offloaded_file("temperature", (/2,1/))
-    call register_field_offloaded_file("rainfall", (/2,1/))
-    call register_field_offloaded_file("temperature_r4", (/2,1/), "float")
+    call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, offload_file)
+    call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, second_file)
+    if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", "z", nx, offload_file)
+    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/), fileobj=offload_file)
+    if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true., offload_file)
+    call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind, offload_file)
+    call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind, offload_file)
+    call global_metadata_offload("pi", 3.141592653589793_r8_kind, offload_file)
+    call register_field_offloaded_file("temperature", (/2,1/), fileobj=offload_file)
+    call register_field_offloaded_file("independent", (/2,1/), fileobj=second_file)
+    call register_field_offloaded_file("rainfall", (/2,1/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature_r4", (/2,1/), "float", offload_file)
     do step = 1, 3
       model_data = -999.
       do j = jsc, jec
@@ -84,7 +90,8 @@ program test_io_offloading
           model_data(i,j) = real(1000*step + 100*j + i)
         enddo
       enddo
-      call write_field_offloaded_file("temperature", model_data, domain)
+      call write_field_offloaded_file("temperature", model_data, domain, offload_file)
+      call write_field_offloaded_file("independent", model_data, domain, second_file)
     enddo
     model_data = -999.
     do j = jsc, jec
@@ -92,17 +99,19 @@ program test_io_offloading
         model_data(i,j) = real(-100*j - i)
       enddo
     enddo
-    call write_field_offloaded_file("rainfall", model_data, domain)
+    call write_field_offloaded_file("rainfall", model_data, domain, offload_file)
     model_data_r4 = -999.0_r4_kind
     do j = jsc, jec
       do i = isc, iec
         model_data_r4(i,j) = real(2000 + 100*j + i, r4_kind)
       enddo
     enddo
-    call write_field_offloaded_file("temperature_r4", model_data_r4, domain)
+    call write_field_offloaded_file("temperature_r4", model_data_r4, domain, offload_file)
     ! Registered after data writes to exercise switching the file back to define mode.
-    call global_metadata_offload("title", "offloading test")
-    call close_offloaded_file()
+    call global_metadata_offload("title", "offloading test", offload_file)
+    call close_offloaded_file(second_file)
+    call close_offloaded_file(offload_file)
+    call offloading_io_end()
 
   else ! writer PE
 
@@ -142,7 +151,17 @@ program test_io_offloading
     if (trim(str_att) /= "offloading test") &
       call mpp_error(FATAL, "test: incorrect string global attribute")
     call check_nc(nf90_close(ncid))
+    call check_nc(nf90_open(second_filename, nf90_nowrite, ncid))
+    call check_nc(nf90_inq_varid(ncid, "independent", varid))
     allocate(actual(nx,ny))
+    call check_nc(nf90_get_var(ncid, varid, actual))
+    do j = 1, ny
+      do i = 1, nx
+        if (actual(i,j) /= real(3000 + 100*j + i)) &
+          call mpp_error(FATAL, "test: independent file data mismatch")
+      enddo
+    enddo
+    call check_nc(nf90_close(ncid))
     if (.not. open_file(fileobj, filename, "read")) call mpp_error(FATAL, "test: output file missing")
     call read_data(fileobj, "temperature", actual)
     do j = 1, ny

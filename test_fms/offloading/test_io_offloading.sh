@@ -31,13 +31,26 @@ test_expect_success "io offload with one model PE and one writer" '
 '
 
 cat > input.nml << _EOF
+&offloading_io_nml
+  max_files = 2
+/
 &test_io_offloading_nml
   mode = "normal"
 /
 _EOF
 
 test_expect_success "io offload with 4 model pes and one writer" '
-  mpirun -n 5 ./test_io_offloading
+  rm -f offloaded_output*.nc && mpirun -n 5 ./test_io_offloading
+'
+
+cat > input.nml << _EOF
+&offloading_io_nml
+  max_files = 1
+/
+_EOF
+
+test_expect_failure "io offload rejects more open files than max_files" '
+  mpirun -n 2 ./test_io_offloading
 '
 
 # check error on bad input during register/attribute routines
