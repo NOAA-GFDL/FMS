@@ -33,6 +33,7 @@ program test_io_offloading
   integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
   integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims
   real, allocatable :: model_data(:,:), actual(:,:)
+  real(kind=r4_kind), allocatable :: model_data_r4(:,:)
   real(kind=r4_kind) :: r4_att
   real(kind=r8_kind) :: r8_att
   integer(kind=i4_kind) :: i4_att
@@ -62,6 +63,7 @@ program test_io_offloading
     call mpp_get_data_domain(domain, is, ie, js, je)
     call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
     allocate(model_data(is:ie, js:je))
+    allocate(model_data_r4(is:ie, js:je))
     call send_domain_metadata(domain)
     call open_offloaded_file(filename)
     ! Deliberately register y before x to exercise transmitted dimension indices.
@@ -74,6 +76,7 @@ program test_io_offloading
     call global_metadata_offload("pi", 3.141592653589793_r8_kind)
     call register_field_offloaded_file("temperature", (/2,1/))
     call register_field_offloaded_file("rainfall", (/2,1/))
+    call register_field_offloaded_file("temperature_r4", (/2,1/), "float")
     do step = 1, 3
       model_data = -999.
       do j = jsc, jec
@@ -90,6 +93,13 @@ program test_io_offloading
       enddo
     enddo
     call write_field_offloaded_file("rainfall", model_data, domain)
+    model_data_r4 = -999.0_r4_kind
+    do j = jsc, jec
+      do i = isc, iec
+        model_data_r4(i,j) = real(2000 + 100*j + i, r4_kind)
+      enddo
+    enddo
+    call write_field_offloaded_file("temperature_r4", model_data_r4, domain)
     ! Registered after data writes to exercise switching the file back to define mode.
     call global_metadata_offload("title", "offloading test")
     call close_offloaded_file()
@@ -144,6 +154,13 @@ program test_io_offloading
     do j = 1, ny
       do i = 1, nx
         if (actual(i,j) /= real(-100*j - i)) call mpp_error(FATAL, "test: rainfall data mismatch")
+      enddo
+    enddo
+    call read_data(fileobj, "temperature_r4", actual)
+    do j = 1, ny
+      do i = 1, nx
+        if (actual(i,j) /= real(2000 + 100*j + i)) &
+          call mpp_error(FATAL, "test: r4 temperature data mismatch")
       enddo
     enddo
     call close_file(fileobj)
