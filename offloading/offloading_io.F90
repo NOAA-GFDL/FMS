@@ -57,8 +57,12 @@ module offloading_io_mod
   implicit none
   private
 
+  !! namelist variables
+  !> Max number of io messages that can be in flight to each writer
+  integer :: max_concurrent_messages = 64
+  !> Maximum number of offloaded files that can be open simultaneously.
   integer :: max_files = 10
-  namelist /offloading_io_nml/ max_files
+  namelist /offloading_io_nml/ max_files, max_concurrent_messages
 
   !> opcode enumerations to send the writers
   integer, parameter :: IO_OP_OPEN = 1, IO_OP_REGISTER_AXIS = 2, IO_OP_REGISTER_FIELD = 3
@@ -73,8 +77,6 @@ module offloading_io_mod
   integer, parameter :: string_words = (string_length + storage_size(0)/8) / (storage_size(0)/8)
   !> A control message holds an operation and at most two strings plus a few integer words.
   integer, parameter :: control_length = 2*string_words + 8
-  !> Number of control messages the model root can have in flight to each writer.
-  integer, parameter :: control_slots = 64
   !> Columns of the model layout table: tile, isc, iec, jsc, jec, tile x size, tile y size,
   !! number of tiles, writer layout (2), writer io_layout (2)
   integer, parameter :: layout_info_size = 12
@@ -215,8 +217,8 @@ contains
     send_requests = MPI_REQUEST_NULL
     next_send = 1
     if (mpp_pe() == model_pes(1)) then
-      allocate(control_buffers(control_length, control_slots))
-      allocate(control_requests(size(writer_pes), control_slots))
+      allocate(control_buffers(control_length, max_concurrent_messages))
+      allocate(control_requests(size(writer_pes), max_concurrent_messages))
       control_requests = MPI_REQUEST_NULL
       next_control = 1
     endif
@@ -622,7 +624,7 @@ contains
     call start_message(IO_OP_SHUTDOWN)
     call post_message()
     if (mpp_pe() == model_pes(1)) then
-      do w = 1, control_slots
+      do w = 1, max_concurrent_messages
         call MPI_Waitall(size(writer_pes), control_requests(:,w), MPI_STATUSES_IGNORE)
       enddo
       do w = 1, size(writer_pes)
@@ -874,14 +876,14 @@ contains
   end subroutine
 
   !> Send the current message from the model root to every writer without waiting for delivery.
-  !! Only waits if control_slots messages to a writer are still in flight.
+  !! Only waits if max_concurrent_messages messages to a writer are still in flight.
   subroutine post_message()
     integer :: k, w
 
     if (mpp_pe() /= model_pes(1)) return
     k = next_control
     call MPI_Waitall(size(writer_pes), control_requests(:,k), MPI_STATUSES_IGNORE)
-    next_control = mod(next_control, control_slots) + 1
+    next_control = mod(next_control, max_concurrent_messages) + 1
     control_buffers(:,k) = message
     do w = 1, size(writer_pes)
       call MPI_Isend(control_buffers(:,k), message_position, MPI_INTEGER, writer_ranks(w), protocol_tag, &
