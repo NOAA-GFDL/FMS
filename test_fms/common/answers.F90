@@ -74,7 +74,7 @@ module answers_mod
     ref = 0
 
     read (input_nml_file, nml=answers_nml, iostat=ierr)
-    if (check_nml_error(ierr, "answers_nml")) then
+    if (check_nml_error(ierr, "answers_nml").ne.0) then
       gen_ref_answers = .true.
       call mpp_error(NOTE, "Failed to read answers namelist. Generating reference answers instead.")
     else
