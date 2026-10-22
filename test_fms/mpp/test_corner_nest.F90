@@ -90,8 +90,8 @@ program test_nest_corner
   is_coarse = any(mpp_pe().eq.pelist_coarse)
   is_fine = any(mpp_pe().eq.pelist_fine)
 
-  if (.not.ieor(is_coarse, is_fine)) then
-    call mpp_error(FATAL, "PE "//string(mpp_pe())//" must be either coarse or fine")
+  if (is_coarse.eqv.is_fine) then
+    call mpp_error(FATAL, "PE "//string(mpp_pe())//" must be either coarse or fine (but not both)")
   endif
 
   call answers_mod_init(25)
