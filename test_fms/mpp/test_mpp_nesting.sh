@@ -101,4 +101,9 @@ test_expect_success "nested with regional top level domain" '
     mpirun -n 7 ../test_mpp_nesting
 '
 
+cp ../test_corner_nest.nml input.nml
+test_expect_success "Three-tile corner nest (C2F, halo update, F2C)" '
+    mpirun -n 36 ../test_corner_nest
+'
+
 test_done
