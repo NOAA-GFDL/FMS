@@ -29,10 +29,12 @@ AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 LDADD = ${top_builddir}/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_io_offloading test_metadata_transfer
+check_PROGRAMS = test_io_offloading test_io_offloading_cubic test_io_offloading_multi_writer test_metadata_transfer
 
 # This is the source code for the test.
 test_io_offloading_SOURCES = test_io_offloading.F90
+test_io_offloading_cubic_SOURCES = test_io_offloading_cubic.F90
+test_io_offloading_multi_writer_SOURCES = test_io_offloading_multi_writer.F90
 test_metadata_transfer_SOURCES= test_metadata_transfer.F90
 
 # Run the test program.
@@ -47,4 +49,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_io_offloading.sh
 
 # Clean up
-CLEANFILES = input.nml *.out
+CLEANFILES = input.nml *.out *.nc
