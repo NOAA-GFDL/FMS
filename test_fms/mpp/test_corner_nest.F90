@@ -367,8 +367,10 @@ contains
           enddo
         enddo
 
-        call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, 1, position=EAST)
-        call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, 1, position=NORTH)
+        call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, 1, &
+                               position=EAST)
+        call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, 1, &
+                               position=NORTH)
         if (iew_cx.ge.isw_cx.and.jew_cx.ge.jsw_cx) then
           allocate(wbufferx(isw_cx:iew_cx, jsw_cx:jew_cx, nz))
           allocate(wbuffery(isw_cy:iew_cy, jsw_cy:jew_cy, nz))
@@ -377,8 +379,10 @@ contains
           allocate(wbuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, 1, position=EAST)
-        call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, 1, position=NORTH)
+        call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, 1, &
+                               position=EAST)
+        call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, 1, &
+                               position=NORTH)
         if (iee_cx.ge.ise_cx.and.jee_cx.ge.jse_cx) then
           allocate(ebufferx(ise_cx:iee_cx, jse_cx:jee_cx, nz))
           allocate(ebuffery(ise_cy:iee_cy, jse_cy:jee_cy, nz))
@@ -387,8 +391,10 @@ contains
           allocate(ebuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, 1, position=EAST)
-        call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, 1, position=NORTH)
+        call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, 1, &
+                               position=EAST)
+        call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, 1, &
+                               position=NORTH)
         if (ies_cx.ge.iss_cx.and.jes_cx.ge.jss_cx) then
           allocate(sbufferx(iss_cx:ies_cx, jss_cx:jes_cx, nz))
           allocate(sbuffery(iss_cy:ies_cy, jss_cy:jes_cy, nz))
@@ -397,8 +403,10 @@ contains
           allocate(sbuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, 1, position=EAST)
-        call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, 1, position=NORTH)
+        call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, 1, &
+                               position=EAST)
+        call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, 1, &
+                               position=NORTH)
         if (ien_cx.ge.isn_cx.and.jen_cx.ge.jsn_cx) then
           allocate(nbufferx(isn_cx:ien_cx, jsn_cx:jen_cx, nz))
           allocate(nbuffery(isn_cy:ien_cy, jsn_cy:jen_cy, nz))
@@ -479,8 +487,10 @@ contains
       integer :: if0, if1, jf0, jf1
 
       if (is_fine) then
-        call mpp_get_f2c_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=1, position=EAST)
-        call mpp_get_f2c_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=1, position=NORTH)
+        call mpp_get_f2c_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=1, &
+                               position=EAST)
+        call mpp_get_f2c_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=1, &
+                               position=NORTH)
         allocate(x_f2c(is_cx:ie_cx, js_cx:je_cx, nz))
         allocate(y_f2c(is_cy:ie_cy, js_cy:je_cy, nz))
 
@@ -598,8 +608,10 @@ contains
           enddo
         enddo
 
-        call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, 1, position=NORTH)
-        call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, 1, position=EAST)
+        call mpp_get_C2F_index(nest_domain, isw_fx, iew_fx, jsw_fx, jew_fx, isw_cx, iew_cx, jsw_cx, jew_cx, WEST, 1, &
+                               position=NORTH)
+        call mpp_get_C2F_index(nest_domain, isw_fy, iew_fy, jsw_fy, jew_fy, isw_cy, iew_cy, jsw_cy, jew_cy, WEST, 1, &
+                               position=EAST)
         if (iew_cx.ge.isw_cx.and.jew_cx.ge.jsw_cx) then
           allocate(wbufferx(isw_cx:iew_cx, jsw_cx:jew_cx, nz))
           allocate(wbuffery(isw_cy:iew_cy, jsw_cy:jew_cy, nz))
@@ -608,8 +620,10 @@ contains
           allocate(wbuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, 1, position=NORTH)
-        call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, 1, position=EAST)
+        call mpp_get_C2F_index(nest_domain, ise_fx, iee_fx, jse_fx, jee_fx, ise_cx, iee_cx, jse_cx, jee_cx, EAST, 1, &
+                               position=NORTH)
+        call mpp_get_C2F_index(nest_domain, ise_fy, iee_fy, jse_fy, jee_fy, ise_cy, iee_cy, jse_cy, jee_cy, EAST, 1, &
+                               position=EAST)
         if (iee_cx.ge.ise_cx.and.jee_cx.ge.jse_cx) then
           allocate(ebufferx(ise_cx:iee_cx, jse_cx:jee_cx, nz))
           allocate(ebuffery(ise_cy:iee_cy, jse_cy:jee_cy, nz))
@@ -618,8 +632,10 @@ contains
           allocate(ebuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, 1, position=NORTH)
-        call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, 1, position=EAST)
+        call mpp_get_C2F_index(nest_domain, iss_fx, ies_fx, jss_fx, jes_fx, iss_cx, ies_cx, jss_cx, jes_cx, SOUTH, 1, &
+                               position=NORTH)
+        call mpp_get_C2F_index(nest_domain, iss_fy, ies_fy, jss_fy, jes_fy, iss_cy, ies_cy, jss_cy, jes_cy, SOUTH, 1, &
+                               position=EAST)
         if (ies_cx.ge.iss_cx.and.jes_cx.ge.jss_cx) then
           allocate(sbufferx(iss_cx:ies_cx, jss_cx:jes_cx, nz))
           allocate(sbuffery(iss_cy:ies_cy, jss_cy:jes_cy, nz))
@@ -628,8 +644,10 @@ contains
           allocate(sbuffery(1,1,1))
         endif
 
-        call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, 1, position=NORTH)
-        call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, 1, position=EAST)
+        call mpp_get_C2F_index(nest_domain, isn_fx, ien_fx, jsn_fx, jen_fx, isn_cx, ien_cx, jsn_cx, jen_cx, NORTH, 1, &
+                               position=NORTH)
+        call mpp_get_C2F_index(nest_domain, isn_fy, ien_fy, jsn_fy, jen_fy, isn_cy, ien_cy, jsn_cy, jen_cy, NORTH, 1, &
+                               position=EAST)
         if (ien_cx.ge.isn_cx.and.jen_cx.ge.jsn_cx) then
           allocate(nbufferx(isn_cx:ien_cx, jsn_cx:jen_cx, nz))
           allocate(nbuffery(isn_cy:ien_cy, jsn_cy:jen_cy, nz))
@@ -710,8 +728,10 @@ contains
       integer :: if0, if1, jf0, jf1
 
       if (is_fine) then
-        call mpp_get_f2c_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=1, position=NORTH)
-        call mpp_get_f2c_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=1, position=EAST)
+        call mpp_get_f2c_index(nest_domain, is_cx, ie_cx, js_cx, je_cx, is_fx, ie_fx, js_fx, je_fx, nest_level=1, &
+                               position=NORTH)
+        call mpp_get_f2c_index(nest_domain, is_cy, ie_cy, js_cy, je_cy, is_fy, ie_fy, js_fy, je_fy, nest_level=1, &
+                               position=EAST)
         allocate(x_f2c(is_cx:ie_cx, js_cx:je_cx, nz))
         allocate(y_f2c(is_cy:ie_cy, js_cy:je_cy, nz))
 
