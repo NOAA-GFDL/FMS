@@ -58,7 +58,8 @@ module answers_mod
 
     chksum = 0_i8_kind
     do i=1,size(arr)
-      chksum = ieor(chksum, ishc(arr_int8(i), i))
+      chksum = ishftc(chksum, 1)
+      chksum = ieor(chksum, arr_int8(i))
     enddo
   end function calc_chksum
 
