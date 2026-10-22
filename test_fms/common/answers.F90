@@ -36,7 +36,9 @@ module answers_mod
   use mpp_mod, only: input_nml_file, mpp_error, mpp_pe, mpp_root_pe, mpp_npes, mpp_comm, NOTE, FATAL
   use fms_mod, only: check_nml_error
   use fms_string_utils_mod, only: string
+#ifdef use_libMPI
   use mpi_f08, only: mpi_gather, MPI_INTEGER8
+#endif
 
   implicit none
 
@@ -86,6 +88,7 @@ module answers_mod
   subroutine answers_mod_end
     integer :: answers_out
 
+#ifdef use_libMPI
     if (gen_ref_answers) then
       call mpi_gather(ref, nmax, MPI_INTEGER8, answers, nmax, MPI_INTEGER8, 0, mpp_comm())
 
@@ -95,6 +98,7 @@ module answers_mod
         close(answers_out)
       endif
     endif
+#endif
   end subroutine answers_mod_end
 
   subroutine register_answer(arr, msg)
