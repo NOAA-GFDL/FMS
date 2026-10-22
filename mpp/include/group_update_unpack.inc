@@ -234,6 +234,8 @@ contains
     integer :: nd !< Number of dimensions
     integer :: i1, i2, i3, i4
     integer :: is0, js0
+    integer :: idx
+    integer :: val_ix, val_iy, val_iz1, val_iz2
 
     select case (field_type)
       case (FIELD_S)
@@ -308,49 +310,43 @@ contains
 
     select case (nd)
       case (2)
-        !$omp parallel do default(shared)
+        !$omp parallel do default(shared) private(idx, val_ix, val_iy)
         do i1=lb(1),ub(1)
           do i2=lb(2),ub(2)
-            block
-              integer :: i(2), idx
-
-              i = [i1, i2]
-              idx = n(ix)*(i(iy)-lb(iy)) + (i(ix)-lb(ix)) + 1
-              field2d(i1,i2) = buf(idx)
-            end block
+            val_ix = merge(i1, i2, ix == 1)
+            val_iy = merge(i1, i2, iy == 1)
+            idx = n(ix)*(val_iy-lb(iy)) + (val_ix-lb(ix)) + 1
+            field2d(i1,i2) = buf(idx)
           end do
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        !$omp parallel do default(shared)
+        !$omp parallel do default(shared) private(idx, val_ix, val_iy, val_iz1)
         do i1=lb(1),ub(1)
           do i2=lb(2),ub(2)
             do i3=lb(3),ub(3)
-              block
-                integer :: i(3), idx
-
-                i = [i1, i2, i3]
-                idx = n(ix)*( n(iy)*(i(iz1)-1) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-                field3d(i1,i2,i3) = buf(idx)
-              end block
+              val_ix = merge(i1, merge(i2, i3, ix == 2), ix == 1)
+              val_iy = merge(i1, merge(i2, i3, iy == 2), iy == 1)
+              val_iz1 = merge(i1, merge(i2, i3, iz1 == 2), iz1 == 1)
+              idx = n(ix)*( n(iy)*(val_iz1-1) + (val_iy-lb(iy))) + (val_ix-lb(ix)) + 1
+              field3d(i1,i2,i3) = buf(idx)
             end do
           end do
         end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
-        !$omp parallel do default(shared)
+        !$omp parallel do default(shared) private(idx, val_ix, val_iy, val_iz1, val_iz2)
         do i1=lb(1),ub(1)
           do i2=lb(2),ub(2)
             do i3=lb(3),ub(3)
               do i4=lb(4),ub(4)
-                block
-                  integer :: i(4), idx
-
-                  i = [i1, i2, i3, i4]
-                  idx = n(ix)*( n(iy)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-                  field4d(i1,i2,i3,i4) = buf(idx)
-                end block
+                val_ix = merge(i1, merge(i2, merge(i3, i4, ix == 3), ix == 2), ix == 1)
+                val_iy = merge(i1, merge(i2, merge(i3, i4, iy == 3), iy == 2), iy == 1)
+                val_iz1 = merge(i1, merge(i2, merge(i3, i4, iz1 == 3), iz1 == 2), iz1 == 1)
+                val_iz2 = merge(i1, merge(i2, merge(i3, i4, iz2 == 3), iz2 == 2), iz2 == 1)
+                idx = n(ix)*( n(iy)*( n(iz1)*(val_iz2-1) + (val_iz1-1)) + (val_iy-lb(iy))) + (val_ix-lb(ix)) + 1
+                field4d(i1,i2,i3,i4) = buf(idx)
               end do
             end do
           end do

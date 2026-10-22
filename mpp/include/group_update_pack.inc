@@ -802,6 +802,8 @@ contains
     integer :: i1, i2, i3, i4
     integer :: ij1, ij2
     integer :: is0, js0
+    integer :: idx
+    integer :: val_ij1, val_ij2, val_iz1, val_iz2
 
     select case (field_type)
       case (FIELD_S)
@@ -901,52 +903,49 @@ contains
 
     select case (nd)
       case (2)
-        !$omp parallel do default(shared)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
-            block
-              integer :: i(2), idx
-
-              i = [i1, i2]
-              idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
-                    stride(ij1)*(i(ij1)-lb(ij1)) + 1
-              buf(idx) = sgn * field2d(i1,i2)
-            end block
+        !$omp parallel do default(shared) private(idx, val_ij1, val_ij2)
+        do i1 = lb(1), ub(1), stride(1)
+          do i2 = lb(2), ub(2), stride(2)
+            val_ij1 = merge(i1, i2, ij1 == 1)
+            val_ij2 = merge(i1, i2, ij2 == 1)
+            idx = n(ij1)*stride(ij2)*(val_ij2 - lb(ij2)) + &
+                  stride(ij1)*(val_ij1 - lb(ij1)) + 1
+            buf(idx) = sgn * field2d(i1, i2)
           end do
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        !$omp parallel do default(shared)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
-            do i3=lb(3),ub(3),stride(3)
-              block
-                integer :: i(3), idx
-
-                i = [i1, i2, i3]
-                idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                      stride(ij1)*(i(ij1)-lb(ij1)) + 1
-                buf(idx) = sgn * field3d(i1,i2,i3)
-              end block
+        !$omp parallel do default(shared) private(idx, val_ij1, val_ij2, val_iz1)
+        do i1 = lb(1), ub(1), stride(1)
+          do i2 = lb(2), ub(2), stride(2)
+            do i3 = lb(3), ub(3), stride(3)
+              val_ij1 = merge(i1, merge(i2, i3, ij1 == 2), ij1 == 1)
+              val_ij2 = merge(i1, merge(i2, i3, ij2 == 2), ij2 == 1)
+              val_iz1 = merge(i1, merge(i2, i3, iz1 == 2), iz1 == 1)
+        
+              idx = n(ij1)*( n(ij2)*(val_iz1 - 1) + stride(ij2)*(val_ij2 - lb(ij2)) ) + &
+                    stride(ij1)*(val_ij1 - lb(ij1)) + 1
+              buf(idx) = sgn * field3d(i1, i2, i3)
             end do
           end do
         end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
-        !$omp parallel do default(shared)
-        do i1=lb(1),ub(1),stride(1)
-          do i2=lb(2),ub(2),stride(2)
-            do i3=lb(3),ub(3),stride(3)
-              do i4=lb(4),ub(4),stride(4)
-                block
-                  integer :: i(4), idx
-
-                  i = [i1, i2, i3, i4]
-                  idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                        stride(ij1)*(i(ij1)-lb(ij1)) + 1
-                  buf(idx) = sgn * field4d(i1,i2,i3,i4)
-                end block
+        !$omp parallel do default(shared) private(idx, val_ij1, val_ij2, val_iz1, val_iz2)
+        do i1 = lb(1), ub(1), stride(1)
+          do i2 = lb(2), ub(2), stride(2)
+            do i3 = lb(3), ub(3), stride(3)
+              do i4 = lb(4), ub(4), stride(4)
+                val_ij1 = merge(i1, merge(i2, merge(i3, i4, ij1 == 3), ij1 == 2), ij1 == 1)
+                val_ij2 = merge(i1, merge(i2, merge(i3, i4, ij2 == 3), ij2 == 2), ij2 == 1)
+                val_iz1 = merge(i1, merge(i2, merge(i3, i4, iz1 == 3), iz1 == 2), iz1 == 1)
+                val_iz2 = merge(i1, merge(i2, merge(i3, i4, iz2 == 3), iz2 == 2), iz2 == 1)
+        
+                idx = n(ij1)*( n(ij2)*( n(iz1)*(val_iz2 - 1) + (val_iz1 - 1) ) &
+                               + stride(ij2)*(val_ij2 - lb(ij2)) ) &
+                      + stride(ij1)*(val_ij1 - lb(ij1)) + 1
+                buf(idx) = sgn * field4d(i1, i2, i3, i4)
               end do
             end do
           end do
