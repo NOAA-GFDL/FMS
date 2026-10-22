@@ -49,7 +49,7 @@ program test_io_offloading_cubic
   call fms_init()
   read(input_nml_file, nml=test_io_offloading_cubic_nml, iostat=io_status)
   io_status = check_nml_error(io_status, "test_io_offloading_cubic_nml")
-  call setup_offloading_pelists(all_pes, model_pes, writer_pes, nwriters=nwriters)
+  call offloading_io_init(all_pes, model_pes, writer_pes, nwriters=nwriters)
 
   ! model pe
   if (any(model_pes == mpp_pe())) then

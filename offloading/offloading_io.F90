@@ -118,7 +118,7 @@ module offloading_io_mod
   real(kind=r4_kind), allocatable, asynchronous :: block_data_r4(:,:)
   real(kind=r8_kind), allocatable, asynchronous :: block_data_r8(:,:)
 
-  public :: setup_offloading_pelists, send_domain_metadata, recv_domain_metadata, run_offload_writer
+  public :: offloading_io_init, send_domain_metadata, recv_domain_metadata, run_offload_writer
   public :: open_offloaded_file, close_offloaded_file, offloading_io_end
   public :: register_axis_offloaded_file, register_axes_offloaded_file
   public :: register_field_offloaded_file, write_field_offloaded_file, global_metadata_offload
@@ -134,7 +134,7 @@ contains
 
   !> Collective on the initial pelist; reserve its last nwriters PEs for the writers.
   !! nwriters must be a multiple of the number of tiles in the model domain (6 for a cubed sphere).
-  subroutine setup_offloading_pelists(global_pelist, model_pelist, writer_pelist, nwriters)
+  subroutine offloading_io_init(global_pelist, model_pelist, writer_pelist, nwriters)
     integer, allocatable, intent(out) :: global_pelist(:), model_pelist(:), writer_pelist(:)
     integer, intent(in), optional :: nwriters !< number of writer PEs (default 1)
     integer :: n, comm_id, w, io_status
@@ -253,7 +253,12 @@ contains
   !! PE and a writer.
   subroutine exchange_layout(info)
     integer, intent(in) :: info(layout_info_size) !< this PE's layout information (zeros on writers)
-    integer, allocatable :: table(:,:), writer_table(:,:), global_indices(:,:), layouts(:,:)
+    integer, allocatable :: table(:,:), writer_table(:,:) !< holds domain information for the model and writer PEs
+                                                          !! first index is layout info element, second is PE 
+                                                          !! 1 = tile id, 2 = is, 3 = ie, 4 = js, 5 = je,
+                                                          !! 6 = global nx, 7 = global ny, 8 = ntiles,
+                                                          !! 9-10 = writer layout, 11-12 = writer io layout
+    integer, allocatable :: global_indices(:,:), layouts(:,:)
     integer, allocatable :: pe_start(:), pe_end(:)
     integer :: n, my_model, my_writer, ncells, writers_per_tile, overlap(4), no_contact(0)
     integer :: overlap_cells
@@ -644,7 +649,7 @@ contains
     integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(2), field_kind(1), n
     character(len=string_length) :: name, cart
 
-    ! checks for proper setup (setup_offloading_pelists,send/recv_domain_metadata)
+    ! checks for proper setup (offloading_io_init,send/recv_domain_metadata)
     call require_setup()
     ! error checking for module state
     if (.not. any(writer_pes == mpp_pe())) call mpp_error(FATAL, "offloading: consumer must run on a writer PE")
@@ -802,7 +807,7 @@ contains
   end subroutine
 
   subroutine require_setup()
-    if (.not. allocated(all_pes)) call mpp_error(FATAL, "offloading: call setup_offloading_pelists first")
+    if (.not. allocated(all_pes)) call mpp_error(FATAL, "offloading: call offloading_io_init first")
   end subroutine
 
   subroutine require_model()

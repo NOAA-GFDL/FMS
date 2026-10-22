@@ -49,4 +49,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 EXTRA_DIST = test_io_offloading.sh
 
 # Clean up
-CLEANFILES = input.nml *.out
+CLEANFILES = input.nml *.out *.nc

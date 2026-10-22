@@ -56,7 +56,7 @@ program test_io_offloading
   case default
     call mpp_error(FATAL, "test_io_offloading: unknown mode "//trim(mode))
   end select
-  call setup_offloading_pelists(all_pes, model_pes, writer_pes)
+  call offloading_io_init(all_pes, model_pes, writer_pes)
   ! model pes section: define domain and send metadata and i/o ops to the writer pe
   if (any(model_pes == mpp_pe())) then
     call mpp_set_current_pelist(model_pes)

@@ -52,7 +52,7 @@ program test_io_offloading_multi_writer
   call fms_init()
   read(input_nml_file, nml=test_io_offloading_multi_writer_nml, iostat=io_status)
   io_status = check_nml_error(io_status, "test_io_offloading_multi_writer_nml")
-  call setup_offloading_pelists(all_pes, model_pes, writer_pes, nwriters=nwriters)
+  call offloading_io_init(all_pes, model_pes, writer_pes, nwriters=nwriters)
   writers_per_tile = nwriters / ntiles
 
   if (any(model_pes == mpp_pe())) then
