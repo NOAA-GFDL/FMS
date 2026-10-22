@@ -2850,7 +2850,8 @@ contains
   subroutine test_group_update( type, use_omp_offload )
     character(len=*), intent(in) :: type
     logical, intent(in), optional :: use_omp_offload
-
+! this test doesn't compile with old intel compiler due to not supporting the openmp directives for offloading
+#ifdef __INTEL_COMPILER
     type(domain2D) :: domain
     integer        :: num_contact, ntiles, npes_per_tile
     integer        :: i, j, k, l, n, shift
@@ -3444,7 +3445,7 @@ contains
     deallocate(a2, x2, y2)
     deallocate(base)
     call mpp_deallocate_domain(domain)
-
+#endif
 end subroutine test_group_update
 
 
