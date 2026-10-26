@@ -2851,7 +2851,7 @@ contains
     character(len=*), intent(in) :: type
     logical, intent(in), optional :: use_omp_offload
 ! this test doesn't compile with old intel compiler due to not supporting the openmp directives for offloading
-#ifdef __INTEL_COMPILER
+#ifndef __INTEL_COMPILER
     type(domain2D) :: domain
     integer        :: num_contact, ntiles, npes_per_tile
     integer        :: i, j, k, l, n, shift
