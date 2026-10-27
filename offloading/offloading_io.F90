@@ -112,8 +112,13 @@ module offloading_io_mod
   ! Writer PE state: its part of the tile, the model ranks that overlap it and where their parts go.
   type(domain2d), save :: writer_domain
   type(FmsNetcdfDomainFile_t), allocatable :: writer_fileobjs(:)
-  integer, allocatable :: writer_naxes(:), writer_axis_directions(:,:)
-  character(len=string_length), allocatable :: writer_axis_names(:,:)
+
+  !> Private type to store information about the axes for each writer's files
+  type :: writer_axes_t
+    integer, allocatable :: directions(:)
+    character(len=string_length), allocatable :: names(:)
+  end type
+  type(writer_axes_t), allocatable :: writer_axes(:)
   integer, allocatable :: source_ranks(:)
   type(MPI_Datatype), allocatable :: recv_types(:,:)
   type(MPI_Request), allocatable, asynchronous :: recv_requests(:)
@@ -240,11 +245,7 @@ contains
     call mpp_broadcast_domain(model_domain)
     info = 0
     call exchange_layout(info)
-    allocate(writer_fileobjs(max_files), writer_naxes(max_files), &
-         writer_axis_directions(2,max_files), writer_axis_names(2,max_files))
-    writer_naxes = 0
-    writer_axis_directions = 0
-    writer_axis_names = ""
+        allocate(writer_fileobjs(max_files), writer_axes(max_files))
     global_domain_size = global_size
     call mpp_set_current_pelist(writer_pes, no_sync=.true.)
     metadata_ready = .true.
@@ -388,28 +389,40 @@ contains
     call post_message()
   end subroutine
 
-  !> axis_size is the size of one tile in the cart_name direction.
+  !> For x/y, axis_size is the tile size. Omit cart_name or pass a blank for other axes;
+  !! axis_size is then a fixed length or fms2_io_mod's unlimited value.
   subroutine register_axis_offloaded_file(axis_name, cart_name, axis_size, fileobj)
-    character(len=*), intent(in) :: axis_name, cart_name
+    character(len=*), intent(in) :: axis_name
+    character(len=*), intent(in), optional :: cart_name
     integer, intent(in) :: axis_size
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer :: direction, file_id
+    character(len=1) :: cart
 
     file_id = require_file(fileobj)
     call check_string(axis_name)
-    select case (cart_name)
+    cart = ""
+    if (present(cart_name)) then
+      if (len_trim(cart_name) > 1) call mpp_error(FATAL, "offloading: axis cart_name must be x, y or blank")
+      cart = cart_name
+    endif
+    direction = 0
+    select case (cart)
     case ("x")
       direction = 1
     case ("y")
       direction = 2
+    case ("")
     case default
-      call mpp_error(FATAL, "offloading: axis cart_name must be x or y")
+      call mpp_error(FATAL, "offloading: axis cart_name must be x, y or blank")
     end select
-    if (axis_size /= global_size(direction)) call mpp_error(FATAL, "offloading: axis size differs from domain")
+    if (direction /= 0) then
+      if (axis_size /= global_size(direction)) call mpp_error(FATAL, "offloading: axis size differs from domain")
+    endif
     call start_message(IO_OP_REGISTER_AXIS)
     call pack_words((/file_id/))
     call pack_string(axis_name)
-    call pack_string(cart_name)
+    call pack_string(cart)
     call pack_words((/axis_size/))
     call post_message()
   end subroutine
@@ -444,8 +457,7 @@ contains
     file_id = require_file(fileobj)
     call check_string(field_name)
     if (size(field_dims) /= 2) call mpp_error(FATAL, "offloading: only 2-D fields are supported")
-    if (any(field_dims < 1) .or. any(field_dims > 2)) &
-      call mpp_error(FATAL, "offloading: field dimension indices must be 1 or 2")
+    if (any(field_dims < 1)) call mpp_error(FATAL, "offloading: field dimension indices must be positive")
     field_kind = FIELD_R8
     if (present(field_type)) then
       select case (trim(field_type))
@@ -673,8 +685,7 @@ contains
         if (.not. open_file(writer_fileobjs(file_id), trim(name), "overwrite", domain=writer_domain)) &
           call mpp_error(FATAL, "offloading: unable to open "//trim(name))
         file_is_open(file_id) = .true.
-        writer_naxes(file_id) = 0
-        writer_axis_directions(:,file_id) = 0
+        allocate(writer_axes(file_id)%directions(0), writer_axes(file_id)%names(0))
       case (IO_OP_REGISTER_AXIS)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
@@ -682,22 +693,27 @@ contains
         call unpack_string(name)
         call unpack_string(cart)
         call unpack_words(axis_size)
-        if (writer_naxes(file_id) == 2) call mpp_error(FATAL, "offloading: only two axes are supported")
         select case (trim(cart))
         case ("x")
           direction = 1
         case ("y")
           direction = 2
+        case ("")
+          direction = 0
         case default
           call mpp_error(FATAL, "offloading: invalid axis direction received")
         end select
-        if (axis_size(1) /= global_size(direction)) call mpp_error(FATAL, "offloading: invalid axis size received")
-        if (any(writer_axis_directions(:writer_naxes(file_id),file_id) == direction)) &
-          call mpp_error(FATAL, "offloading: duplicate axis direction")
-        writer_naxes(file_id) = writer_naxes(file_id) + 1
-        writer_axis_names(writer_naxes(file_id),file_id) = name
-        writer_axis_directions(writer_naxes(file_id),file_id) = direction
-        call register_axis(writer_fileobjs(file_id), trim(name), trim(cart))
+        if (direction /= 0) then
+          if (axis_size(1) /= global_size(direction)) &
+            call mpp_error(FATAL, "offloading: invalid axis size received")
+          if (any(writer_axes(file_id)%directions == direction)) &
+            call mpp_error(FATAL, "offloading: duplicate axis direction")
+          call register_axis(writer_fileobjs(file_id), trim(name), trim(cart))
+        else
+          call register_axis(writer_fileobjs(file_id), trim(name), axis_size(1))
+        endif
+        writer_axes(file_id)%names = [writer_axes(file_id)%names, name]
+        writer_axes(file_id)%directions = [writer_axes(file_id)%directions, direction]
       case (IO_OP_REGISTER_FIELD)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
@@ -705,14 +721,14 @@ contains
         call unpack_string(name)
         call unpack_words(field_dims)
         call unpack_words(field_kind)
-        if (any(field_dims < 1) .or. any(field_dims > writer_naxes(file_id))) &
+        if (any(field_dims < 1) .or. any(field_dims > size(writer_axes(file_id)%names))) &
           call mpp_error(FATAL, "offloading: field refers to unregistered axes")
-        if (any(writer_axis_directions(field_dims,file_id) /= (/1,2/))) &
+        if (any(writer_axes(file_id)%directions(field_dims) /= (/1,2/))) &
           call mpp_error(FATAL, "offloading: field dimensions must describe x then y")
         if (field_kind(1) == FIELD_R4) then
-          call register_field(writer_fileobjs(file_id), trim(name), "float", writer_axis_names(field_dims,file_id))
+          call register_field(writer_fileobjs(file_id), trim(name), "float", writer_axes(file_id)%names(field_dims))
         else if (field_kind(1) == FIELD_R8) then
-          call register_field(writer_fileobjs(file_id), trim(name), "double", writer_axis_names(field_dims,file_id))
+          call register_field(writer_fileobjs(file_id), trim(name), "double", writer_axes(file_id)%names(field_dims))
         else
           call mpp_error(FATAL, "offloading: invalid field type received")
         endif
@@ -752,7 +768,7 @@ contains
         call require_writer_file(file_id)
         call close_file(writer_fileobjs(file_id))
         file_is_open(file_id) = .false.
-        writer_naxes(file_id) = 0
+        deallocate(writer_axes(file_id)%directions, writer_axes(file_id)%names)
       case (IO_OP_SHUTDOWN)
         do file_id = 1, max_files
           if (file_is_open(file_id)) call close_file(writer_fileobjs(file_id))
@@ -770,7 +786,7 @@ contains
       call MPI_Type_free(recv_types(2,n))
     enddo
     deallocate(source_ranks, recv_types, recv_requests, block_data_r4, block_data_r8)
-    deallocate(writer_fileobjs, writer_naxes, writer_axis_directions, writer_axis_names)
+    deallocate(writer_fileobjs, writer_axes)
     deallocate(file_is_open)
   end subroutine
 

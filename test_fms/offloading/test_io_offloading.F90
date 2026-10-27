@@ -20,7 +20,7 @@ program test_io_offloading
   use mpp_mod, only: mpp_pe, mpp_set_current_pelist, mpp_sync, mpp_error, FATAL, input_nml_file
   use mpp_domains_mod, only: domain2d, mpp_define_layout, mpp_define_domains, mpp_define_io_domain, &
                             mpp_get_data_domain, mpp_get_compute_domain, mpp_deallocate_domain
-  use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, open_file, close_file, read_data
+  use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, open_file, close_file, read_data, unlimited
   use offloading_io_mod
   use platform_mod, only: r4_kind, r8_kind, i4_kind
   use netcdf
@@ -33,7 +33,7 @@ program test_io_offloading
   type(FmsNetcdfDomainFile_t) :: offload_file
   type(FmsNetcdfDomainFile_t) :: second_file
   integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
-  integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims
+  integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims, unlimited_dimid
   real, allocatable :: model_data(:,:), actual(:,:)
   real(kind=r4_kind), allocatable :: model_data_r4(:,:)
   real(kind=r4_kind) :: r4_att
@@ -70,19 +70,22 @@ program test_io_offloading
     call send_domain_metadata(domain)
     call open_offloaded_file(filename, offload_file)
     call open_offloaded_file(second_filename, second_file)
+    call register_axis_offloaded_file("level", axis_size=3, fileobj=offload_file)
     ! Deliberately register y before x to exercise transmitted dimension indices.
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, offload_file)
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, second_file)
+    call register_axis_offloaded_file("member", "", 2, offload_file)
+    call register_axis_offloaded_file("time", axis_size=unlimited, fileobj=offload_file)
     if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", "z", nx, offload_file)
     if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/), fileobj=offload_file)
     if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true., offload_file)
     call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind, offload_file)
     call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind, offload_file)
     call global_metadata_offload("pi", 3.141592653589793_r8_kind, offload_file)
-    call register_field_offloaded_file("temperature", (/2,1/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature", (/3,2/), fileobj=offload_file)
     call register_field_offloaded_file("independent", (/2,1/), fileobj=second_file)
-    call register_field_offloaded_file("rainfall", (/2,1/), fileobj=offload_file)
-    call register_field_offloaded_file("temperature_r4", (/2,1/), "float", offload_file)
+    call register_field_offloaded_file("rainfall", (/3,2/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature_r4", (/3,2/), "float", offload_file)
     do step = 1, 3
       model_data = -999.
       do j = jsc, jec
@@ -140,6 +143,17 @@ program test_io_offloading
     if (varid /= dimids(1)) call mpp_error(FATAL, "test: incorrect x dimension name/order")
     call check_nc(nf90_inq_dimid(ncid, "latitude", varid))
     if (varid /= dimids(2)) call mpp_error(FATAL, "test: incorrect y dimension name/order")
+    call check_nc(nf90_inq_dimid(ncid, "level", varid))
+    call check_nc(nf90_inquire_dimension(ncid, varid, len=dimlen))
+    if (dimlen /= 3) call mpp_error(FATAL, "test: incorrect non-spatial dimension size")
+    call check_nc(nf90_inq_dimid(ncid, "member", varid))
+    call check_nc(nf90_inquire_dimension(ncid, varid, len=dimlen))
+    if (dimlen /= 2) call mpp_error(FATAL, "test: incorrect blank-cartesian dimension size")
+    call check_nc(nf90_inq_dimid(ncid, "time", varid))
+    call check_nc(nf90_inquire(ncid, unlimiteddimid=unlimited_dimid))
+    if (varid /= unlimited_dimid) call mpp_error(FATAL, "test: time dimension is not unlimited")
+    call check_nc(nf90_inquire_dimension(ncid, varid, len=dimlen))
+    if (dimlen /= 0) call mpp_error(FATAL, "test: unexpected unlimited dimension length")
     call check_nc(nf90_get_att(ncid, nf90_global, "Number of times Fortran made you cry", i4_att))
     if (i4_att /= 20_i4_kind) call mpp_error(FATAL, "test: incorrect i4 global attribute")
     call check_nc(nf90_get_att(ncid, nf90_global, "Number of lines of code", r4_att))
