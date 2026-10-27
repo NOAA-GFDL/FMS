@@ -51,7 +51,7 @@ module offloading_io_mod
   use fms_mod, only: check_nml_error
   use mpp_domains_mod
   use fms2_io_mod, only: FmsNetcdfDomainFile_t, open_file, close_file, register_axis, register_field, write_data, &
-                         register_global_attribute
+                         register_global_attribute, unlimited
   use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
 
   implicit none
@@ -116,6 +116,7 @@ module offloading_io_mod
   !> Private type to store information about the axes for each writer's files
   type :: writer_axes_t
     integer, allocatable :: directions(:)
+    integer, allocatable :: sizes(:)
     character(len=string_length), allocatable :: names(:)
   end type
   type(writer_axes_t), allocatable :: writer_axes(:)
@@ -391,11 +392,11 @@ contains
 
   !> For x/y, axis_size is the tile size. Omit cart_name or pass a blank for other axes;
   !! axis_size is then a fixed length or fms2_io_mod's unlimited value.
-  subroutine register_axis_offloaded_file(axis_name, cart_name, axis_size, fileobj)
+  subroutine register_axis_offloaded_file(axis_name, axis_size, fileobj, cart_name)
     character(len=*), intent(in) :: axis_name
-    character(len=*), intent(in), optional :: cart_name
     integer, intent(in) :: axis_size
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    character(len=*), intent(in), optional :: cart_name
     integer :: direction, file_id
     character(len=1) :: cart
 
@@ -440,23 +441,24 @@ contains
     call mpp_get_global_domain(domain, xsize=nx, ysize=ny)
     if (any(global_size /= (/nx, ny/))) call mpp_error(FATAL, "offloading: axis domain differs from metadata")
     do i = 1, size(axis_names)
-      call register_axis_offloaded_file(axis_names(i), cart_names(i), axis_sizes(i), fileobj)
+      call register_axis_offloaded_file(axis_names(i), axis_sizes(i), fileobj, cart_names(i))
     enddo
   end subroutine
 
-  !> Dimension indices refer to registration order, and must describe x then y.
+  !> Dimension indices refer to registration order: x, y, then optionally an unlimited axis.
   !! TODO, should field type/kind argument be required? r8 default currently if not given
-  subroutine register_field_offloaded_file(field_name, field_dims, field_type, fileobj)
+  subroutine register_field_offloaded_file(field_name, field_dims, fileobj, field_type)
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: field_dims(:)
-    character(len=*), intent(in), optional :: field_type
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    character(len=*), intent(in), optional :: field_type
     integer :: field_kind
     integer :: file_id
 
     file_id = require_file(fileobj)
     call check_string(field_name)
-    if (size(field_dims) /= 2) call mpp_error(FATAL, "offloading: only 2-D fields are supported")
+    if (size(field_dims) < 2 .or. size(field_dims) > 3) &
+      call mpp_error(FATAL, "offloading: fields require x/y and optionally an unlimited dimension")
     if (any(field_dims < 1)) call mpp_error(FATAL, "offloading: field dimension indices must be positive")
     field_kind = FIELD_R8
     if (present(field_type)) then
@@ -472,6 +474,7 @@ contains
     call start_message(IO_OP_REGISTER_FIELD)
     call pack_words((/file_id/))
     call pack_string(field_name)
+    call pack_words((/size(field_dims)/))
     call pack_words(field_dims)
     call pack_words((/field_kind/))
     call post_message()
@@ -518,16 +521,23 @@ contains
   !> Collective on model PEs, but no PE waits on the others or on the writer. Field data can cover
   !! the compute or the data domain; halos are not sent. Returns once the data is copied into a
   !! send buffer, so the caller can reuse field_data right away.
-  subroutine write_field_offloaded_file_r4(field_name, field_data, domain, fileobj)
+  !! unlim_dim_level selects a positive record index; omission preserves write_data's default.
+  subroutine write_field_offloaded_file_r4(field_name, field_data, domain, fileobj, unlim_dim_level)
     character(len=*), intent(in) :: field_name
     real(kind=r4_kind), intent(in) :: field_data(:,:)
     type(domain2d), intent(inout) :: domain
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
     integer :: ioff, joff, nx, ny, k, d
-    integer :: file_id
+    integer :: file_id, level
 
     file_id = require_file(fileobj)
     call check_string(field_name)
+    level = 0
+    if (present(unlim_dim_level)) then
+      if (unlim_dim_level < 1) call mpp_error(FATAL, "offloading: unlim_dim_level must be positive")
+      level = unlim_dim_level
+    endif
     !! TODO, this might only be needed when writer PEs > 1. can probably optimize for single writer case
     call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
 
@@ -543,20 +553,26 @@ contains
     call start_message(IO_OP_WRITE)
     call pack_words((/file_id/))
     call pack_string(field_name)
-    call pack_words((/FIELD_R4/))
+    call pack_words((/FIELD_R4, level/))
     call post_message()
   end subroutine
 
-  subroutine write_field_offloaded_file_r8(field_name, field_data, domain, fileobj)
+  subroutine write_field_offloaded_file_r8(field_name, field_data, domain, fileobj, unlim_dim_level)
     character(len=*), intent(in) :: field_name
     real(kind=r8_kind), intent(in) :: field_data(:,:)
     type(domain2d), intent(inout) :: domain
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
     integer :: ioff, joff, nx, ny, k, d
-    integer :: file_id
+    integer :: file_id, level
 
     file_id = require_file(fileobj)
     call check_string(field_name)
+    level = 0
+    if (present(unlim_dim_level)) then
+      if (unlim_dim_level < 1) call mpp_error(FATAL, "offloading: unlim_dim_level must be positive")
+      level = unlim_dim_level
+    endif
     call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
 
     k = next_send
@@ -570,7 +586,7 @@ contains
     call start_message(IO_OP_WRITE)
     call pack_words((/file_id/))
     call pack_string(field_name)
-    call pack_words((/FIELD_R8/))
+    call pack_words((/FIELD_R8, level/))
     call post_message()
   end subroutine
 
@@ -660,7 +676,8 @@ contains
   !> Enters the main write loop for offloaded writer PE's to receive data and control messages from the model PEs
   !! To be called by every writer after recv_domain_metadata.
   subroutine run_offload_writer()
-    integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(2), field_kind(1), n
+    integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(3), field_kind(1), n
+    integer :: nfield_dims(1), level(1)
     character(len=string_length) :: name, cart
 
     ! checks for proper setup (offloading_io_init,send/recv_domain_metadata)
@@ -685,7 +702,7 @@ contains
         if (.not. open_file(writer_fileobjs(file_id), trim(name), "overwrite", domain=writer_domain)) &
           call mpp_error(FATAL, "offloading: unable to open "//trim(name))
         file_is_open(file_id) = .true.
-        allocate(writer_axes(file_id)%directions(0), writer_axes(file_id)%names(0))
+        allocate(writer_axes(file_id)%directions(0), writer_axes(file_id)%sizes(0), writer_axes(file_id)%names(0))
       case (IO_OP_REGISTER_AXIS)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
@@ -714,21 +731,33 @@ contains
         endif
         writer_axes(file_id)%names = [writer_axes(file_id)%names, name]
         writer_axes(file_id)%directions = [writer_axes(file_id)%directions, direction]
+        writer_axes(file_id)%sizes = [writer_axes(file_id)%sizes, axis_size(1)]
       case (IO_OP_REGISTER_FIELD)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
         call require_writer_file(file_id)
         call unpack_string(name)
-        call unpack_words(field_dims)
+        call unpack_words(nfield_dims)
+        if (nfield_dims(1) < 2 .or. nfield_dims(1) > 3) &
+          call mpp_error(FATAL, "offloading: invalid field dimension count received")
+        call unpack_words(field_dims(:nfield_dims(1)))
         call unpack_words(field_kind)
-        if (any(field_dims < 1) .or. any(field_dims > size(writer_axes(file_id)%names))) &
+        if (any(field_dims(:nfield_dims(1)) < 1) .or. &
+            any(field_dims(:nfield_dims(1)) > size(writer_axes(file_id)%names))) &
           call mpp_error(FATAL, "offloading: field refers to unregistered axes")
-        if (any(writer_axes(file_id)%directions(field_dims) /= (/1,2/))) &
+        if (any(writer_axes(file_id)%directions(field_dims(:2)) /= (/1,2/))) &
           call mpp_error(FATAL, "offloading: field dimensions must describe x then y")
+        if (nfield_dims(1) == 3) then
+          if (writer_axes(file_id)%directions(field_dims(3)) /= 0 .or. &
+              writer_axes(file_id)%sizes(field_dims(3)) /= unlimited) &
+            call mpp_error(FATAL, "offloading: third field dimension must be unlimited")
+        endif
         if (field_kind(1) == FIELD_R4) then
-          call register_field(writer_fileobjs(file_id), trim(name), "float", writer_axes(file_id)%names(field_dims))
+          call register_field(writer_fileobjs(file_id), trim(name), "float", &
+                              writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
         else if (field_kind(1) == FIELD_R8) then
-          call register_field(writer_fileobjs(file_id), trim(name), "double", writer_axes(file_id)%names(field_dims))
+          call register_field(writer_fileobjs(file_id), trim(name), "double", &
+                              writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
         else
           call mpp_error(FATAL, "offloading: invalid field type received")
         endif
@@ -738,6 +767,7 @@ contains
         call require_writer_file(file_id)
         call unpack_string(name)
         call unpack_words(field_kind)
+        call unpack_words(level)
         select case (field_kind(1))
         case (FIELD_R4)
           !! TODO: can probably send the whole array at once instead of looping over source ranks
@@ -746,14 +776,22 @@ contains
                            recv_requests(n))
           enddo
           call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          call write_data(writer_fileobjs(file_id), trim(name), block_data_r4)
+          if (level(1) > 0) then
+            call write_data(writer_fileobjs(file_id), trim(name), block_data_r4, unlim_dim_level=level(1))
+          else
+            call write_data(writer_fileobjs(file_id), trim(name), block_data_r4)
+          endif
         case (FIELD_R8)
           do n = 1, size(source_ranks)
             call MPI_Irecv(block_data_r8, 1, recv_types(2,n), source_ranks(n), data_tag, offload_comm, &
                            recv_requests(n))
           enddo
           call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          call write_data(writer_fileobjs(file_id), trim(name), block_data_r8)
+          if (level(1) > 0) then
+            call write_data(writer_fileobjs(file_id), trim(name), block_data_r8, unlim_dim_level=level(1))
+          else
+            call write_data(writer_fileobjs(file_id), trim(name), block_data_r8)
+          endif
         case default
           call mpp_error(FATAL, "offloading: invalid field type received")
         end select
@@ -768,7 +806,7 @@ contains
         call require_writer_file(file_id)
         call close_file(writer_fileobjs(file_id))
         file_is_open(file_id) = .false.
-        deallocate(writer_axes(file_id)%directions, writer_axes(file_id)%names)
+        deallocate(writer_axes(file_id)%directions, writer_axes(file_id)%sizes, writer_axes(file_id)%names)
       case (IO_OP_SHUTDOWN)
         do file_id = 1, max_files
           if (file_is_open(file_id)) call close_file(writer_fileobjs(file_id))

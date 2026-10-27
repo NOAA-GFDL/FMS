@@ -34,6 +34,7 @@ program test_io_offloading
   type(FmsNetcdfDomainFile_t) :: second_file
   integer :: layout(2), is, ie, js, je, isc, iec, jsc, jec
   integer :: i, j, step, global_size(2), ncid, varid, dimids(2), dimlen, ndims, unlimited_dimid
+  integer :: record_dimids(3)
   real, allocatable :: model_data(:,:), actual(:,:)
   real(kind=r4_kind), allocatable :: model_data_r4(:,:)
   real(kind=r4_kind) :: r4_att
@@ -52,7 +53,7 @@ program test_io_offloading
   read(input_nml_file, nml=test_io_offloading_nml, iostat=io_status)
   io_status = check_nml_error(io_status, "test_io_offloading_nml")
   select case (trim(mode))
-  case ("normal", "bad-axis", "bad-dims", "bad-attribute")
+  case ("normal", "bad-axis", "bad-dims", "bad-attribute", "bad-level")
   case default
     call mpp_error(FATAL, "test_io_offloading: unknown mode "//trim(mode))
   end select
@@ -70,31 +71,38 @@ program test_io_offloading
     call send_domain_metadata(domain)
     call open_offloaded_file(filename, offload_file)
     call open_offloaded_file(second_filename, second_file)
-    call register_axis_offloaded_file("level", axis_size=3, fileobj=offload_file)
+    call register_axis_offloaded_file("level", 3, offload_file)
     ! Deliberately register y before x to exercise transmitted dimension indices.
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, offload_file)
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, second_file)
-    call register_axis_offloaded_file("member", "", 2, offload_file)
+    call register_axis_offloaded_file("member", 2, offload_file, "")
     call register_axis_offloaded_file("time", axis_size=unlimited, fileobj=offload_file)
-    if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", "z", nx, offload_file)
+    if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", nx, offload_file, "z")
     if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/), fileobj=offload_file)
     if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true., offload_file)
     call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind, offload_file)
     call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind, offload_file)
     call global_metadata_offload("pi", 3.141592653589793_r8_kind, offload_file)
-    call register_field_offloaded_file("temperature", (/3,2/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature", (/3,2/), offload_file)
     call register_field_offloaded_file("independent", (/2,1/), fileobj=second_file)
     call register_field_offloaded_file("rainfall", (/3,2/), fileobj=offload_file)
-    call register_field_offloaded_file("temperature_r4", (/3,2/), "float", offload_file)
+    call register_field_offloaded_file("temperature_r4", (/3,2/), offload_file, "float")
+    call register_field_offloaded_file("history", (/3,2,5/), fileobj=offload_file)
+    call register_field_offloaded_file("history_r4", (/3,2,5/), offload_file, "float")
+    if (trim(mode) == "bad-level") &
+      call write_field_offloaded_file("history", model_data, domain, offload_file, unlim_dim_level=0)
     do step = 1, 3
       model_data = -999.
       do j = jsc, jec
         do i = isc, iec
           model_data(i,j) = real(1000*step + 100*j + i)
+          model_data_r4(i,j) = real(2000*step + 100*j + i, r4_kind)
         enddo
       enddo
       call write_field_offloaded_file("temperature", model_data, domain, offload_file)
       call write_field_offloaded_file("independent", model_data, domain, second_file)
+      call write_field_offloaded_file("history", model_data, domain, offload_file, unlim_dim_level=4-step)
+      call write_field_offloaded_file("history_r4", model_data_r4, domain, offload_file, unlim_dim_level=4-step)
     enddo
     model_data = -999.
     do j = jsc, jec
@@ -103,6 +111,7 @@ program test_io_offloading
       enddo
     enddo
     call write_field_offloaded_file("rainfall", model_data, domain, offload_file)
+    call write_field_offloaded_file("history", model_data, domain, offload_file)
     model_data_r4 = -999.0_r4_kind
     do j = jsc, jec
       do i = isc, iec
@@ -153,7 +162,13 @@ program test_io_offloading
     call check_nc(nf90_inquire(ncid, unlimiteddimid=unlimited_dimid))
     if (varid /= unlimited_dimid) call mpp_error(FATAL, "test: time dimension is not unlimited")
     call check_nc(nf90_inquire_dimension(ncid, varid, len=dimlen))
-    if (dimlen /= 0) call mpp_error(FATAL, "test: unexpected unlimited dimension length")
+    if (dimlen /= 3) call mpp_error(FATAL, "test: incorrect unlimited dimension length")
+    call check_nc(nf90_inq_varid(ncid, "history", varid))
+    call check_nc(nf90_inquire_variable(ncid, varid, ndims=ndims))
+    if (ndims /= 3) call mpp_error(FATAL, "test: incorrect record field rank")
+    call check_nc(nf90_inquire_variable(ncid, varid, dimids=record_dimids))
+    if (any(record_dimids(:2) /= dimids) .or. record_dimids(3) /= unlimited_dimid) &
+      call mpp_error(FATAL, "test: incorrect record field dimension order")
     call check_nc(nf90_get_att(ncid, nf90_global, "Number of times Fortran made you cry", i4_att))
     if (i4_att /= 20_i4_kind) call mpp_error(FATAL, "test: incorrect i4 global attribute")
     call check_nc(nf90_get_att(ncid, nf90_global, "Number of lines of code", r4_att))
@@ -194,6 +209,27 @@ program test_io_offloading
       do i = 1, nx
         if (actual(i,j) /= real(2000 + 100*j + i)) &
           call mpp_error(FATAL, "test: r4 temperature data mismatch")
+      enddo
+    enddo
+    do step = 1, 3
+      call read_data(fileobj, "history", actual, unlim_dim_level=step)
+      do j = 1, ny
+        do i = 1, nx
+          if (step == 1) then
+            if (actual(i,j) /= real(-100*j - i)) &
+              call mpp_error(FATAL, "test: default record level data mismatch")
+          else
+            if (actual(i,j) /= real(1000*(4-step) + 100*j + i)) &
+              call mpp_error(FATAL, "test: r8 record data mismatch")
+          endif
+        enddo
+      enddo
+      call read_data(fileobj, "history_r4", actual, unlim_dim_level=step)
+      do j = 1, ny
+        do i = 1, nx
+          if (actual(i,j) /= real(2000*(4-step) + 100*j + i)) &
+            call mpp_error(FATAL, "test: r4 record data mismatch")
+        enddo
       enddo
     enddo
     call close_file(fileobj)

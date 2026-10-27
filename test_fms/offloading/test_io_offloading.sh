@@ -54,7 +54,7 @@ test_expect_failure "io offload rejects more open files than max_files" '
 '
 
 # check error on bad input during register/attribute routines
-for mode in bad-axis bad-dims bad-attribute; do
+for mode in bad-axis bad-dims bad-attribute bad-level; do
   cat > input.nml << _EOF
 &test_io_offloading_nml
   mode = "$mode"
