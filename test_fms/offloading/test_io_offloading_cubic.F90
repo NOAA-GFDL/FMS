@@ -68,9 +68,9 @@ program test_io_offloading_cubic
     ! register axes/fields and send writing data 
     call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain, offload_file)
     call global_metadata_offload("ntiles", int(ntiles, i4_kind), offload_file)
-    call register_field_offloaded_file("temperature", (/1,2/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature", offload_file, axis_names=["grid_xt", "grid_yt"])
     do k = 1, nextra
-      call register_field_offloaded_file(extra_name(k), (/1,2/), fileobj=offload_file)
+      call register_field_offloaded_file(extra_name(k), offload_file, axis_names=["grid_xt", "grid_yt"])
     enddo
     do step = 1, nsteps
       data_domain = -999.

@@ -82,8 +82,8 @@ module offloading_io_mod
   integer, parameter :: default_max_pending_writes = 4
   !> Strings are packed into integers, 4 characters per word for 4 byte integers.
   integer, parameter :: string_words = (string_length + storage_size(0)/8) / (storage_size(0)/8)
-  !> A control message holds an operation and at most two strings plus a few integer words.
-  integer, parameter :: control_length = 2*string_words + 16
+  !> A control message holds a field name, storage type, up to five axis names and integer words.
+  integer, parameter :: control_length = 7*string_words + 16
   !> Columns of the model layout table: tile, isc, iec, jsc, jec, tile x size, tile y size,
   !! number of tiles, writer layout (2), writer io_layout (2)
   integer, parameter :: layout_info_size = 12
@@ -451,29 +451,37 @@ contains
     enddo
   end subroutine
 
-  !> Dimension indices refer to registration order. Decomposed fields use x, y, extra axes,
+  !> axis_names identifies previously registered axes. Decomposed fields use x, y, extra axes,
   !! then optionally an unlimited axis; scalar/vector fields use their own registered axes.
-  !! field_type is an fms2_io storage type, defaulting to double.
-  subroutine register_field_offloaded_file(field_name, field_dims, fileobj, field_type)
+  !! field_type defaults to double. Omitting axis_names registers a scalar field.
+  subroutine register_field_offloaded_file(field_name, fileobj, field_type, axis_names)
     character(len=*), intent(in) :: field_name
-    integer, intent(in) :: field_dims(:)
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     character(len=*), intent(in), optional :: field_type
-    integer :: file_id
+    character(len=*), intent(in), optional :: axis_names(:)
+    integer :: file_id, ndims, dims
     character(len=string_length) :: storage_type
 
     file_id = require_file(fileobj)
     call check_string(field_name)
-    if (size(field_dims) > 5) call mpp_error(FATAL, "offloading: fields support at most five dimensions")
-    if (any(field_dims < 1)) call mpp_error(FATAL, "offloading: field dimension indices must be positive")
+    ndims = 0
+    if (present(axis_names)) then
+      ndims = size(axis_names)
+      if (ndims > 5) call mpp_error(FATAL, "offloading: fields support at most five dimensions")
+      do dims = 1, ndims
+        call check_string(axis_names(dims))
+      enddo
+    endif
     storage_type = "double"
     if (present(field_type)) storage_type = field_type
     call check_string(storage_type)
     call start_message(IO_OP_REGISTER_FIELD)
     call pack_words((/file_id/))
     call pack_string(field_name)
-    call pack_words((/size(field_dims)/))
-    call pack_words(field_dims)
+    call pack_words([ndims])
+    do dims = 1, ndims
+      call pack_string(axis_names(dims))
+    enddo
     call pack_string(storage_type)
     call post_message()
   end subroutine
@@ -757,7 +765,7 @@ contains
   subroutine run_offload_writer()
     integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(5), field_kind(1), n
     integer :: nfield_dims(1), level(1), data_info(6), field_kind_index
-    character(len=string_length) :: name, cart
+    character(len=string_length) :: name, cart, dimensions(5)
 
     ! checks for proper setup (offloading_io_init,send/recv_domain_metadata)
     call require_setup()
@@ -819,11 +827,13 @@ contains
         call unpack_words(nfield_dims)
         if (nfield_dims(1) < 0 .or. nfield_dims(1) > 5) &
           call mpp_error(FATAL, "offloading: invalid field dimension count received")
-        call unpack_words(field_dims(:nfield_dims(1)))
+        do n = 1, nfield_dims(1)
+          call unpack_string(dimensions(n))
+          field_dims(n) = findloc(writer_axes(file_id)%names, dimensions(n), dim=1)
+          if (field_dims(n) == 0) &
+            call mpp_error(FATAL, "offloading: field refers to unregistered axis "//trim(dimensions(n)))
+        enddo
         call unpack_string(cart)
-        if (any(field_dims(:nfield_dims(1)) < 1) .or. &
-            any(field_dims(:nfield_dims(1)) > size(writer_axes(file_id)%names))) &
-          call mpp_error(FATAL, "offloading: field refers to unregistered axes")
         if (nfield_dims(1) >= 2) then
           if (any(writer_axes(file_id)%directions(field_dims(:nfield_dims(1))) /= 0)) then
             if (any(writer_axes(file_id)%directions(field_dims(:2)) /= [1,2])) &
@@ -838,8 +848,11 @@ contains
           if (writer_axes(file_id)%sizes(field_dims(5)) /= unlimited) &
             call mpp_error(FATAL, "offloading: fifth field dimension must be unlimited")
         endif
-        call register_field(writer_fileobjs(file_id), trim(name), trim(cart), &
-                            writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
+        if (nfield_dims(1) == 0) then
+          call register_field(writer_fileobjs(file_id), trim(name), trim(cart))
+        else
+          call register_field(writer_fileobjs(file_id), trim(name), trim(cart), dimensions(:nfield_dims(1)))
+        endif
       case (IO_OP_WRITE)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)

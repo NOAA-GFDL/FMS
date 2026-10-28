@@ -73,23 +73,26 @@ program test_io_offloading
     call open_offloaded_file(filename, offload_file)
     call open_offloaded_file(second_filename, second_file)
     call register_axis_offloaded_file("level", 3, offload_file)
-    ! Deliberately register y before x to exercise transmitted dimension indices.
+    ! Deliberately register y before x to exercise named-axis ordering.
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, offload_file)
     call register_axes_offloaded_file(axes, (/"y", "x"/), (/ny, nx/), domain, second_file)
     call register_axis_offloaded_file("member", 2, offload_file, "")
     call register_axis_offloaded_file("time", axis_size=unlimited, fileobj=offload_file)
     if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", nx, offload_file, "z")
-    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/0/), fileobj=offload_file)
+    if (trim(mode) == "bad-dims") &
+      call register_field_offloaded_file("bad", offload_file, axis_names=["missing"])
     if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true., offload_file)
     call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind, offload_file)
     call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind, offload_file)
     call global_metadata_offload("pi", 3.141592653589793_r8_kind, offload_file)
-    call register_field_offloaded_file("temperature", (/3,2/), offload_file)
-    call register_field_offloaded_file("independent", (/2,1/), fileobj=second_file)
-    call register_field_offloaded_file("rainfall", (/3,2/), fileobj=offload_file)
-    call register_field_offloaded_file("temperature_r4", (/3,2/), offload_file, "float")
-    call register_field_offloaded_file("history", (/3,2,5/), fileobj=offload_file)
-    call register_field_offloaded_file("history_r4", (/3,2,5/), offload_file, "float")
+    call register_field_offloaded_file("temperature", offload_file, axis_names=axes(2:1:-1))
+    call register_field_offloaded_file("independent", second_file, axis_names=axes(2:1:-1))
+    call register_field_offloaded_file("rainfall", offload_file, axis_names=axes(2:1:-1))
+    call register_field_offloaded_file("temperature_r4", offload_file, "float", axes(2:1:-1))
+    call register_field_offloaded_file("history", offload_file, &
+                       axis_names=[character(len=9) :: "longitude", "latitude", "time"])
+    call register_field_offloaded_file("history_r4", offload_file, "float", &
+                       [character(len=9) :: "longitude", "latitude", "time"])
     if (trim(mode) == "bad-level") &
       call write_field_offloaded_file("history", model_data, domain, offload_file, unlim_dim_level=0)
     if (trim(mode) == "bad-type") call write_field_offloaded_file("history", .true., domain, offload_file)
@@ -121,10 +124,10 @@ program test_io_offloading
       enddo
     enddo
     call write_field_offloaded_file("temperature_r4", model_data_r4, domain, offload_file)
-    call exercise_numeric_fields(.true.)
+    call generate_fields(.true.)
     call register_axis_offloaded_file("strlen", 12, offload_file)
-    call register_field_offloaded_file("label", [6], offload_file, "char")
-    call register_field_offloaded_file("labels", [6,4], offload_file, "char")
+    call register_field_offloaded_file("label", offload_file, "char", ["strlen"])
+    call register_field_offloaded_file("labels", offload_file, "char", ["strlen", "member"])
     call write_field_offloaded_file("label", "offloaded", domain, offload_file)
     call write_field_offloaded_file("labels", [character(len=12) :: "first", "second"], domain, offload_file)
     ! Registered after data writes to exercise switching the file back to define mode.
@@ -240,7 +243,7 @@ program test_io_offloading
         enddo
       enddo
     enddo
-    call exercise_numeric_fields(.false.)
+    call generate_fields(.false.)
     block
       character(len=12) :: label, labels(2)
       call read_data(fileobj, "label", label)
@@ -254,11 +257,13 @@ program test_io_offloading
   call mpp_set_current_pelist(all_pes, no_sync=.true.)
   call fms_end()
 contains
-  subroutine exercise_numeric_fields(writing)
+
+  !> Generate the data to write, and either write it to the offloaded file or check an existing file for validity
+  subroutine generate_fields(writing)
     logical, intent(in) :: writing
     character(len=6), parameter :: storage_types(4) = [character(len=6) :: "float", "double", "int", "int64"]
-    integer, parameter :: axes_by_rank(4,4) = reshape([1,0,0,0, 3,2,0,0, 3,2,1,0, 3,2,1,4], [4,4])
-    integer :: kind_index, data_rank, record, dims(4), field_axes(5), xstart, ystart
+    integer :: kind_index, data_rank, record, dims(4), xstart, ystart
+    character(len=9) :: field_axes(5)
     integer :: ix, iy, iz, member
     integer, allocatable :: level
     character(len=32) :: field_name
@@ -293,12 +298,15 @@ contains
           allocate(integer(kind=i8_kind) :: values(dims(1),dims(2),dims(3),dims(4)))
         end select
         allocate(expected(dims(1),dims(2),dims(3),dims(4)))
-        field_axes = 0
-        if (data_rank > 0) field_axes(:data_rank) = axes_by_rank(:data_rank,data_rank)
-        field_axes(data_rank+1) = 5
+        field_axes = ""
+        if (data_rank == 1) field_axes(1) = "level"
+        if (data_rank >= 2) field_axes(:2) = axes(2:1:-1)
+        if (data_rank >= 3) field_axes(3) = "level"
+        if (data_rank == 4) field_axes(4) = "member"
+        field_axes(data_rank+1) = "time"
         if (writing) &
-          call register_field_offloaded_file(field_name, field_axes(:data_rank+1), &
-                                             offload_file, trim(storage_types(kind_index)))
+          call register_field_offloaded_file(field_name, offload_file, &
+                                             trim(storage_types(kind_index)), field_axes(:data_rank+1))
         do record = 2, 0, -1
           if (record > 0) then
             if (.not. allocated(level)) allocate(level)
@@ -306,9 +314,14 @@ contains
           else
             deallocate(level)
             field_name = trim(field_name)//"_static"
-            if (writing) &
-              call register_field_offloaded_file(field_name, field_axes(:data_rank), &
-                                                 offload_file, trim(storage_types(kind_index)))
+            if (writing) then
+              if (data_rank == 0) then
+                call register_field_offloaded_file(field_name, offload_file, trim(storage_types(kind_index)))
+              else
+                call register_field_offloaded_file(field_name, offload_file, &
+                                                   trim(storage_types(kind_index)), field_axes(:data_rank))
+              endif
+            endif
           endif
           do member = 1, dims(4)
             do iz = 1, dims(3)

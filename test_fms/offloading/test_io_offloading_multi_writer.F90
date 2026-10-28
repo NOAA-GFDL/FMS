@@ -76,7 +76,7 @@ program test_io_offloading_multi_writer
     endif
     call open_offloaded_file(filename, offload_file)
     call register_axes_offloaded_file((/"grid_xt", "grid_yt"/), (/"x", "y"/), (/n, n/), domain, offload_file)
-    call register_field_offloaded_file("temperature", (/1,2/), fileobj=offload_file)
+    call register_field_offloaded_file("temperature", offload_file, axis_names=["grid_xt", "grid_yt"])
     do step = 1, nsteps
       model_data = -999.
       do j = jsc, jec
