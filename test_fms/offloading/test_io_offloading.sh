@@ -24,6 +24,9 @@
 . ../test-lib.sh
 
 cat > input.nml << _EOF
+&fms2_io_nml
+  netcdf_default_format = 'netcdf4'
+/
 _EOF
 
 test_expect_success "io offload with one model PE and one writer" '
@@ -31,6 +34,9 @@ test_expect_success "io offload with one model PE and one writer" '
 '
 
 cat > input.nml << _EOF
+&fms2_io_nml
+  netcdf_default_format = 'netcdf4'
+/
 &offloading_io_nml
   max_files = 2
 /
@@ -44,6 +50,19 @@ test_expect_success "io offload with 4 model pes and one writer" '
 '
 
 cat > input.nml << _EOF
+&fms2_io_nml
+  netcdf_default_format = 'netcdf4'
+/
+&test_io_offloading_nml
+  nwriters = 4
+/
+_EOF
+
+test_expect_success "all offloaded types and ranks with 4 model pes and 4 writers" '
+  rm -f offloaded_output*.nc && mpirun -n 8 ./test_io_offloading
+'
+
+cat > input.nml << _EOF
 &offloading_io_nml
   max_files = 1
 /
@@ -54,7 +73,7 @@ test_expect_failure "io offload rejects more open files than max_files" '
 '
 
 # check error on bad input during register/attribute routines
-for mode in bad-axis bad-dims bad-attribute bad-level; do
+for mode in bad-axis bad-dims bad-attribute bad-level bad-type; do
   cat > input.nml << _EOF
 &test_io_offloading_nml
   mode = "$mode"

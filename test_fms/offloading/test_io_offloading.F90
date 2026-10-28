@@ -22,7 +22,7 @@ program test_io_offloading
                             mpp_get_data_domain, mpp_get_compute_domain, mpp_deallocate_domain
   use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, open_file, close_file, read_data, unlimited
   use offloading_io_mod
-  use platform_mod, only: r4_kind, r8_kind, i4_kind
+  use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
   use netcdf
   implicit none
 
@@ -45,19 +45,20 @@ program test_io_offloading
   character(len=*), parameter :: filename = "offloaded_output.nc"
   character(len=*), parameter :: second_filename = "offloaded_output_second.nc"
   integer :: io_status
+  integer :: nwriters = 1
   ! Select normal, bad-axis, bad-dims, or bad-attribute in input.nml.
   character(len=32) :: mode = "normal"
-  namelist /test_io_offloading_nml/ mode
+  namelist /test_io_offloading_nml/ mode, nwriters
 
   call fms_init()
   read(input_nml_file, nml=test_io_offloading_nml, iostat=io_status)
   io_status = check_nml_error(io_status, "test_io_offloading_nml")
   select case (trim(mode))
-  case ("normal", "bad-axis", "bad-dims", "bad-attribute", "bad-level")
+  case ("normal", "bad-axis", "bad-dims", "bad-attribute", "bad-level", "bad-type")
   case default
     call mpp_error(FATAL, "test_io_offloading: unknown mode "//trim(mode))
   end select
-  call offloading_io_init(all_pes, model_pes, writer_pes)
+  call offloading_io_init(all_pes, model_pes, writer_pes, nwriters=nwriters)
   ! model pes section: define domain and send metadata and i/o ops to the writer pe
   if (any(model_pes == mpp_pe())) then
     call mpp_set_current_pelist(model_pes)
@@ -78,7 +79,7 @@ program test_io_offloading
     call register_axis_offloaded_file("member", 2, offload_file, "")
     call register_axis_offloaded_file("time", axis_size=unlimited, fileobj=offload_file)
     if (trim(mode) == "bad-axis") call register_axis_offloaded_file("bad", nx, offload_file, "z")
-    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/1/), fileobj=offload_file)
+    if (trim(mode) == "bad-dims") call register_field_offloaded_file("bad", (/0/), fileobj=offload_file)
     if (trim(mode) == "bad-attribute") call global_metadata_offload("bad", .true., offload_file)
     call global_metadata_offload("Number of times Fortran made you cry", 20_i4_kind, offload_file)
     call global_metadata_offload("Number of lines of code", 19.54326541_r4_kind, offload_file)
@@ -91,6 +92,7 @@ program test_io_offloading
     call register_field_offloaded_file("history_r4", (/3,2,5/), offload_file, "float")
     if (trim(mode) == "bad-level") &
       call write_field_offloaded_file("history", model_data, domain, offload_file, unlim_dim_level=0)
+    if (trim(mode) == "bad-type") call write_field_offloaded_file("history", .true., domain, offload_file)
     do step = 1, 3
       model_data = -999.
       do j = jsc, jec
@@ -119,6 +121,12 @@ program test_io_offloading
       enddo
     enddo
     call write_field_offloaded_file("temperature_r4", model_data_r4, domain, offload_file)
+    call exercise_numeric_fields(.true.)
+    call register_axis_offloaded_file("strlen", 12, offload_file)
+    call register_field_offloaded_file("label", [6], offload_file, "char")
+    call register_field_offloaded_file("labels", [6,4], offload_file, "char")
+    call write_field_offloaded_file("label", "offloaded", domain, offload_file)
+    call write_field_offloaded_file("labels", [character(len=12) :: "first", "second"], domain, offload_file)
     ! Registered after data writes to exercise switching the file back to define mode.
     call global_metadata_offload("title", "offloading test", offload_file)
     call close_offloaded_file(second_file)
@@ -232,11 +240,141 @@ program test_io_offloading
         enddo
       enddo
     enddo
+    call exercise_numeric_fields(.false.)
+    block
+      character(len=12) :: label, labels(2)
+      call read_data(fileobj, "label", label)
+      if (label /= "offloaded") call mpp_error(FATAL, "test: scalar character data mismatch")
+      call read_data(fileobj, "labels", labels)
+      if (any(labels /= [character(len=12) :: "first", "second"])) &
+        call mpp_error(FATAL, "test: vector character data mismatch")
+    end block
     call close_file(fileobj)
   endif
   call mpp_set_current_pelist(all_pes, no_sync=.true.)
   call fms_end()
 contains
+  subroutine exercise_numeric_fields(writing)
+    logical, intent(in) :: writing
+    character(len=6), parameter :: storage_types(4) = [character(len=6) :: "float", "double", "int", "int64"]
+    integer, parameter :: axes_by_rank(4,4) = reshape([1,0,0,0, 3,2,0,0, 3,2,1,0, 3,2,1,4], [4,4])
+    integer :: kind_index, data_rank, record, dims(4), field_axes(5), xstart, ystart
+    integer :: ix, iy, iz, member
+    integer, allocatable :: level
+    character(len=32) :: field_name
+    class(*), allocatable :: values(:,:,:,:)
+    real(kind=r8_kind), allocatable :: expected(:,:,:,:)
+
+    do kind_index = 1, 4
+      do data_rank = 0, 4
+        write(field_name, '(a,i0,a,i0)') "kind", kind_index, "_rank", data_rank
+        dims = 1
+        xstart = 1
+        ystart = 1
+        if (data_rank == 1) dims(1) = 3
+        if (data_rank >= 2) then
+          dims(:2) = [nx,ny]
+          if (writing) then
+            dims(:2) = [ie-is+1,je-js+1]
+            xstart = is
+            ystart = js
+          endif
+        endif
+        if (data_rank >= 3) dims(3) = 3
+        if (data_rank == 4) dims(4) = 2
+        select case (kind_index)
+        case (1)
+          allocate(real(kind=r4_kind) :: values(dims(1),dims(2),dims(3),dims(4)))
+        case (2)
+          allocate(real(kind=r8_kind) :: values(dims(1),dims(2),dims(3),dims(4)))
+        case (3)
+          allocate(integer(kind=i4_kind) :: values(dims(1),dims(2),dims(3),dims(4)))
+        case (4)
+          allocate(integer(kind=i8_kind) :: values(dims(1),dims(2),dims(3),dims(4)))
+        end select
+        allocate(expected(dims(1),dims(2),dims(3),dims(4)))
+        field_axes = 0
+        if (data_rank > 0) field_axes(:data_rank) = axes_by_rank(:data_rank,data_rank)
+        field_axes(data_rank+1) = 5
+        if (writing) &
+          call register_field_offloaded_file(field_name, field_axes(:data_rank+1), &
+                                             offload_file, trim(storage_types(kind_index)))
+        do record = 2, 0, -1
+          if (record > 0) then
+            if (.not. allocated(level)) allocate(level)
+            level = record
+          else
+            deallocate(level)
+            field_name = trim(field_name)//"_static"
+            if (writing) &
+              call register_field_offloaded_file(field_name, field_axes(:data_rank), &
+                                                 offload_file, trim(storage_types(kind_index)))
+          endif
+          do member = 1, dims(4)
+            do iz = 1, dims(3)
+              do iy = 1, dims(2)
+                do ix = 1, dims(1)
+                  expected(ix,iy,iz,member) = 100000*record + 10000*member + 1000*iz + &
+                                             100*(ystart+iy-1) + xstart+ix-1
+                enddo
+              enddo
+            enddo
+          enddo
+          if (kind_index == 2) expected = expected + 0.1234567890123_r8_kind
+          if (writing) then
+            select type (values)
+            type is (real(kind=r4_kind))
+              values = real(expected,r4_kind)
+            type is (real(kind=r8_kind))
+              values = expected
+            type is (integer(kind=i4_kind))
+              values = int(expected,i4_kind)
+            type is (integer(kind=i8_kind))
+              values = int(expected,i8_kind) + 2_i8_kind**60
+            end select
+            select case (data_rank)
+            case (0)
+              call write_field_offloaded_file(field_name, values(1,1,1,1), domain, offload_file, level)
+            case (1)
+              call write_field_offloaded_file(field_name, values(:,1,1,1), domain, offload_file, level)
+            case (2)
+              call write_field_offloaded_file(field_name, values(:,:,1,1), domain, offload_file, level)
+            case (3)
+              call write_field_offloaded_file(field_name, values(:,:,:,1), domain, offload_file, level)
+            case (4)
+              call write_field_offloaded_file(field_name, values, domain, offload_file, level)
+            end select
+          else
+            select case (data_rank)
+            case (0)
+              call read_data(fileobj, field_name, values(1,1,1,1), unlim_dim_level=level)
+            case (1)
+              call read_data(fileobj, field_name, values(:,1,1,1), unlim_dim_level=level)
+            case (2)
+              call read_data(fileobj, field_name, values(:,:,1,1), unlim_dim_level=level)
+            case (3)
+              call read_data(fileobj, field_name, values(:,:,:,1), unlim_dim_level=level)
+            case (4)
+              call read_data(fileobj, field_name, values, unlim_dim_level=level)
+            end select
+            select type (values)
+            type is (real(kind=r4_kind))
+              if (any(values /= real(expected,r4_kind))) call mpp_error(FATAL, "test: r4 mismatch in "//field_name)
+            type is (real(kind=r8_kind))
+              if (any(values /= expected)) call mpp_error(FATAL, "test: r8 mismatch in "//field_name)
+            type is (integer(kind=i4_kind))
+              if (any(values /= int(expected,i4_kind))) call mpp_error(FATAL, "test: i4 mismatch in "//field_name)
+            type is (integer(kind=i8_kind))
+              if (any(values /= int(expected,i8_kind) + 2_i8_kind**60)) &
+                call mpp_error(FATAL, "test: i8 mismatch in "//field_name)
+            end select
+          endif
+        enddo
+        deallocate(values, expected)
+      enddo
+    enddo
+  end subroutine
+
   subroutine check_nc(status)
     integer, intent(in) :: status
     if (status /= nf90_noerr) call mpp_error(FATAL, "test: "//trim(nf90_strerror(status)))

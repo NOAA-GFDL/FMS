@@ -39,12 +39,17 @@
 !! Writers receive field data straight into place through MPI subarray types, and all writers
 !! write at the same time. The number of simultaneously open files is set by max_files in
 !! offloading_io_nml; offloading_io_end ends the writer session.
+!! Numeric data may have up to four dimensions, plus an optional unlimited record dimension.
+!! Supported kinds are r4, r8, i4 and i8; character data may be scalar or one-dimensional.
+!! Scalar/vector data are replicated from the model root. Higher-rank data are decomposed in x/y.
+!! As in fms2_io, int64 storage requires the netcdf4 file format.
 module offloading_io_mod
 #ifdef use_libMPI
 !! TODO mpi calls should all go through mpp and have a non f08 interface ideally
   use mpi_f08, only: MPI_Comm, MPI_Request, MPI_Datatype, MPI_Isend, MPI_Irecv, MPI_Recv, MPI_Send, MPI_Wait, &
                      MPI_Waitall, MPI_Testall, MPI_Type_create_subarray, MPI_Type_commit, MPI_Type_free, &
-                     MPI_INTEGER, MPI_REAL4, MPI_REAL8, MPI_ORDER_FORTRAN, MPI_STATUS_IGNORE, MPI_DATATYPE_NULL, &
+                     MPI_INTEGER, MPI_INTEGER4, MPI_INTEGER8, MPI_CHARACTER, MPI_REAL4, MPI_REAL8, &
+                     MPI_ORDER_FORTRAN, MPI_STATUS_IGNORE, MPI_DATATYPE_NULL, &
                      MPI_STATUSES_IGNORE, MPI_REQUEST_NULL
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_declare_pelist, mpp_set_current_pelist, &
                     mpp_sync, mpp_sum, mpp_error, FATAL, input_nml_file
@@ -68,7 +73,9 @@ module offloading_io_mod
   integer, parameter :: IO_OP_OPEN = 1, IO_OP_REGISTER_AXIS = 2, IO_OP_REGISTER_FIELD = 3
   integer, parameter :: IO_OP_WRITE = 4, IO_OP_CLOSE = 5, IO_OP_GLOBAL_ATTRIBUTE = 6, IO_OP_SHUTDOWN = 7
   integer, parameter :: ATTRIBUTE_R4 = 1, ATTRIBUTE_R8 = 2, ATTRIBUTE_I4 = 3, ATTRIBUTE_I8 = 4, ATTRIBUTE_STR = 5
-  integer, parameter :: FIELD_R4 = 1, FIELD_R8 = 2
+  integer, parameter :: FIELD_R4 = 1, FIELD_R8 = 2, FIELD_I4 = 3, FIELD_I8 = 4, FIELD_STR = 5
+  integer, parameter :: numeric_types = 4
+  type(MPI_Datatype) :: field_mpi_types(numeric_types)
   !> These are arbitrary values used to tag the data flow in mpi communication
   !! protocol -> sending the opcodes, data -> sending the actual data to write
   integer, parameter :: protocol_tag = 24001, data_tag = 24002, string_length = 255
@@ -76,7 +83,7 @@ module offloading_io_mod
   !> Strings are packed into integers, 4 characters per word for 4 byte integers.
   integer, parameter :: string_words = (string_length + storage_size(0)/8) / (storage_size(0)/8)
   !> A control message holds an operation and at most two strings plus a few integer words.
-  integer, parameter :: control_length = 2*string_words + 8
+  integer, parameter :: control_length = 2*string_words + 16
   !> Columns of the model layout table: tile, isc, iec, jsc, jec, tile x size, tile y size,
   !! number of tiles, writer layout (2), writer io_layout (2)
   integer, parameter :: layout_info_size = 12
@@ -105,8 +112,10 @@ module offloading_io_mod
   integer :: compute_bounds(4) = 0, next_send = 1
   integer, allocatable :: dest_ranks(:)
   type(MPI_Datatype), allocatable :: send_types(:,:)
-  real(kind=r4_kind), allocatable, asynchronous :: send_buffers_r4(:,:,:)
-  real(kind=r8_kind), allocatable, asynchronous :: send_buffers_r8(:,:,:)
+  type :: field_buffer_t
+    class(*), allocatable :: values(:,:,:,:)
+  end type
+  type(field_buffer_t), allocatable, asynchronous :: send_buffers(:)
   type(MPI_Request), allocatable, asynchronous :: send_requests(:,:)
 
   ! Writer PE state: its part of the tile, the model ranks that overlap it and where their parts go.
@@ -123,19 +132,21 @@ module offloading_io_mod
   integer, allocatable :: source_ranks(:)
   type(MPI_Datatype), allocatable :: recv_types(:,:)
   type(MPI_Request), allocatable, asynchronous :: recv_requests(:)
-  real(kind=r4_kind), allocatable, asynchronous :: block_data_r4(:,:)
-  real(kind=r8_kind), allocatable, asynchronous :: block_data_r8(:,:)
+  integer :: writer_block_size(2) = 0
+  class(*), allocatable, asynchronous :: block_data(:,:,:,:)
 
   public :: offloading_io_init, send_domain_metadata, recv_domain_metadata, run_offload_writer
   public :: open_offloaded_file, close_offloaded_file, offloading_io_end
   public :: register_axis_offloaded_file, register_axes_offloaded_file
   public :: register_field_offloaded_file, write_field_offloaded_file, global_metadata_offload
 
-  !> Interface for writing fields to an offloaded file, supporting both real(kind=r4_kind) and real(kind=r8_kind) data
-  !! TODO: more data types
+  !> Write r4, r8, i4 and i8 data of rank zero through four, or scalar/1-D character data.
   interface write_field_offloaded_file
-    module procedure write_field_offloaded_file_r4
-    module procedure write_field_offloaded_file_r8
+    module procedure write_field_offloaded_file_0d
+    module procedure write_field_offloaded_file_1d
+    module procedure write_field_offloaded_file_2d
+    module procedure write_field_offloaded_file_3d
+    module procedure write_field_offloaded_file_4d
   end interface
 
 contains
@@ -157,6 +168,7 @@ contains
     if (max_files < 1) call mpp_error(FATAL, "offloading: max_files must be positive")
     allocate(file_is_open(max_files))
     file_is_open = .false.
+    field_mpi_types = [MPI_REAL4, MPI_REAL8, MPI_INTEGER4, MPI_INTEGER8]
     allocate(all_pes(mpp_npes()))
     call mpp_get_current_pelist(all_pes)
     model_pes = all_pes(:size(all_pes)-n)
@@ -217,9 +229,8 @@ contains
     call mpp_set_current_pelist(all_pes, no_sync=.true.)
     call mpp_broadcast_domain(model_domain)
     call exchange_layout(info)
-    allocate(send_buffers_r4(info(3)-info(2)+1, info(5)-info(4)+1, nslots))
-    allocate(send_buffers_r8(info(3)-info(2)+1, info(5)-info(4)+1, nslots))
-    allocate(send_requests(size(dest_ranks), nslots))
+    allocate(send_buffers(nslots))
+    allocate(send_requests(size(writer_pes), nslots))
     send_requests = MPI_REQUEST_NULL
     next_send = 1
     if (mpp_pe() == model_pes(1)) then
@@ -326,13 +337,11 @@ contains
     else
       ! Writer: one receive type per model PE that owns part of this writer's block.
       call find_overlaps(writer_table(:, my_writer), table, model_pes, source_ranks, recv_types)
-      allocate(recv_requests(size(source_ranks)))
+      allocate(recv_requests(max(1, size(source_ranks))))
       recv_requests = MPI_REQUEST_NULL
-      allocate(block_data_r4(writer_table(3,my_writer)-writer_table(2,my_writer)+1, &
-                 writer_table(5,my_writer)-writer_table(4,my_writer)+1))
-      allocate(block_data_r8(writer_table(3,my_writer)-writer_table(2,my_writer)+1, &
-                 writer_table(5,my_writer)-writer_table(4,my_writer)+1))
-      ncells = size(block_data_r4)
+      writer_block_size = [writer_table(3,my_writer)-writer_table(2,my_writer)+1, &
+               writer_table(5,my_writer)-writer_table(4,my_writer)+1]
+      ncells = product(writer_block_size)
     endif
     if (overlap_cells /= ncells) call mpp_error(FATAL, "offloading: model and writer domains do not match")
 
@@ -344,9 +353,9 @@ contains
       integer, intent(in) :: mine(:), others(:,:), other_pes(:)
       integer, allocatable, intent(out) :: ranks(:)
       type(MPI_Datatype), allocatable, intent(out) :: types(:,:)
-      integer :: m, k
+      integer :: m, k, field_kind
 
-      allocate(ranks(0), types(2,0))
+      allocate(ranks(0), types(numeric_types,0))
       overlap_cells = 0
       do m = 1, size(other_pes)
         if (others(1,m) /= mine(1)) cycle
@@ -355,17 +364,14 @@ contains
         if (overlap(1) > overlap(2) .or. overlap(3) > overlap(4)) cycle
         k = size(ranks) + 1
         ranks = (/ranks, rank_of(other_pes(m))/)
-        types = reshape([types, MPI_DATATYPE_NULL, MPI_DATATYPE_NULL], [2, k])
-        call MPI_Type_create_subarray(2, (/mine(3)-mine(2)+1, mine(5)-mine(4)+1/), &
-                                      (/overlap(2)-overlap(1)+1, overlap(4)-overlap(3)+1/), &
-                                      (/overlap(1)-mine(2), overlap(3)-mine(4)/), MPI_ORDER_FORTRAN, &
-                                      MPI_REAL4, types(1,k))
-        call MPI_Type_commit(types(1,k))
-        call MPI_Type_create_subarray(2, (/mine(3)-mine(2)+1, mine(5)-mine(4)+1/), &
-                    (/overlap(2)-overlap(1)+1, overlap(4)-overlap(3)+1/), &
-                    (/overlap(1)-mine(2), overlap(3)-mine(4)/), MPI_ORDER_FORTRAN, &
-                    MPI_REAL8, types(2,k))
-        call MPI_Type_commit(types(2,k))
+        types = reshape([types, (MPI_DATATYPE_NULL, field_kind=1,numeric_types)], [numeric_types, k])
+        do field_kind = 1, numeric_types
+          call MPI_Type_create_subarray(2, [mine(3)-mine(2)+1, mine(5)-mine(4)+1], &
+                                        [overlap(2)-overlap(1)+1, overlap(4)-overlap(3)+1], &
+                                        [overlap(1)-mine(2), overlap(3)-mine(4)], MPI_ORDER_FORTRAN, &
+                                        field_mpi_types(field_kind), types(field_kind,k))
+          call MPI_Type_commit(types(field_kind,k))
+        enddo
         overlap_cells = overlap_cells + (overlap(2)-overlap(1)+1) * (overlap(4)-overlap(3)+1)
       enddo
     end subroutine
@@ -445,38 +451,30 @@ contains
     enddo
   end subroutine
 
-  !> Dimension indices refer to registration order: x, y, then optionally an unlimited axis.
-  !! TODO, should field type/kind argument be required? r8 default currently if not given
+  !> Dimension indices refer to registration order. Decomposed fields use x, y, extra axes,
+  !! then optionally an unlimited axis; scalar/vector fields use their own registered axes.
+  !! field_type is an fms2_io storage type, defaulting to double.
   subroutine register_field_offloaded_file(field_name, field_dims, fileobj, field_type)
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: field_dims(:)
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     character(len=*), intent(in), optional :: field_type
-    integer :: field_kind
     integer :: file_id
+    character(len=string_length) :: storage_type
 
     file_id = require_file(fileobj)
     call check_string(field_name)
-    if (size(field_dims) < 2 .or. size(field_dims) > 3) &
-      call mpp_error(FATAL, "offloading: fields require x/y and optionally an unlimited dimension")
+    if (size(field_dims) > 5) call mpp_error(FATAL, "offloading: fields support at most five dimensions")
     if (any(field_dims < 1)) call mpp_error(FATAL, "offloading: field dimension indices must be positive")
-    field_kind = FIELD_R8
-    if (present(field_type)) then
-      select case (trim(field_type))
-      case ("float")
-        field_kind = FIELD_R4
-      case ("double")
-        field_kind = FIELD_R8
-      case default
-        call mpp_error(FATAL, "offloading: field_type must be float or double")
-      end select
-    endif
+    storage_type = "double"
+    if (present(field_type)) storage_type = field_type
+    call check_string(storage_type)
     call start_message(IO_OP_REGISTER_FIELD)
     call pack_words((/file_id/))
     call pack_string(field_name)
     call pack_words((/size(field_dims)/))
     call pack_words(field_dims)
-    call pack_words((/field_kind/))
+    call pack_string(storage_type)
     call post_message()
   end subroutine
 
@@ -518,53 +516,88 @@ contains
     call post_message()
   end subroutine
 
-  !> Collective on model PEs, but no PE waits on the others or on the writer. Field data can cover
-  !! the compute or the data domain; halos are not sent. Returns once the data is copied into a
-  !! send buffer, so the caller can reuse field_data right away.
-  !! unlim_dim_level selects a positive record index; omission preserves write_data's default.
-  subroutine write_field_offloaded_file_r4(field_name, field_data, domain, fileobj, unlim_dim_level)
+  !> Scalar and vector data are replicated from the model root to every writer.
+  subroutine write_field_offloaded_file_0d(field_name, field_data, domain, fileobj, unlim_dim_level)
     character(len=*), intent(in) :: field_name
-    real(kind=r4_kind), intent(in) :: field_data(:,:)
+    class(*), intent(in) :: field_data
     type(domain2d), intent(inout) :: domain
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer, intent(in), optional :: unlim_dim_level
-    integer :: ioff, joff, nx, ny, k, d
-    integer :: file_id, level
 
-    file_id = require_file(fileobj)
-    call check_string(field_name)
-    level = 0
-    if (present(unlim_dim_level)) then
-      if (unlim_dim_level < 1) call mpp_error(FATAL, "offloading: unlim_dim_level must be positive")
-      level = unlim_dim_level
-    endif
-    !! TODO, this might only be needed when writer PEs > 1. can probably optimize for single writer case
-    call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
-
-    ! Reuse the oldest buffer; this only waits if all max_pending_writes sends are still in flight.
-    k = next_send
-    call MPI_Waitall(size(dest_ranks), send_requests(:,k), MPI_STATUSES_IGNORE)
-    next_send = mod(next_send, size(send_requests, 2)) + 1
-    send_buffers_r4(:,:,k) = field_data(ioff+1:ioff+nx, joff+1:joff+ny)
-    do d = 1, size(dest_ranks)
-      call MPI_Isend(send_buffers_r4(:,:,k), 1, send_types(1,d), dest_ranks(d), data_tag, offload_comm, &
-                     send_requests(d,k))
-    enddo
-    call start_message(IO_OP_WRITE)
-    call pack_words((/file_id/))
-    call pack_string(field_name)
-    call pack_words((/FIELD_R4, level/))
-    call post_message()
+    select type (field_data)
+    type is (real(kind=r4_kind))
+      call post_field(field_name, reshape([field_data], [1,1,1,1]), 0, domain, fileobj, unlim_dim_level)
+    type is (real(kind=r8_kind))
+      call post_field(field_name, reshape([field_data], [1,1,1,1]), 0, domain, fileobj, unlim_dim_level)
+    type is (integer(kind=i4_kind))
+      call post_field(field_name, reshape([field_data], [1,1,1,1]), 0, domain, fileobj, unlim_dim_level)
+    type is (integer(kind=i8_kind))
+      call post_field(field_name, reshape([field_data], [1,1,1,1]), 0, domain, fileobj, unlim_dim_level)
+    type is (character(len=*))
+      call post_field(field_name, reshape([field_data], [1,1,1,1]), 0, domain, fileobj, unlim_dim_level)
+    class default
+      call mpp_error(FATAL, "offloading: unsupported field data type")
+    end select
   end subroutine
 
-  subroutine write_field_offloaded_file_r8(field_name, field_data, domain, fileobj, unlim_dim_level)
+  subroutine write_field_offloaded_file_1d(field_name, field_data, domain, fileobj, unlim_dim_level)
     character(len=*), intent(in) :: field_name
-    real(kind=r8_kind), intent(in) :: field_data(:,:)
+    class(*), contiguous, target, intent(in) :: field_data(:)
     type(domain2d), intent(inout) :: domain
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     integer, intent(in), optional :: unlim_dim_level
-    integer :: ioff, joff, nx, ny, k, d
-    integer :: file_id, level
+    class(*), pointer :: field4(:,:,:,:)
+
+    field4(1:size(field_data),1:1,1:1,1:1) => field_data
+    call post_field(field_name, field4, 1, domain, fileobj, unlim_dim_level)
+  end subroutine
+
+  !> Copy compute-domain data into a send ring. Only x/y are decomposed; halos are not sent.
+  !! unlim_dim_level selects a positive record index; omission preserves write_data's default.
+  subroutine write_field_offloaded_file_2d(field_name, field_data, domain, fileobj, unlim_dim_level)
+    character(len=*), intent(in) :: field_name
+    class(*), contiguous, target, intent(in) :: field_data(:,:)
+    type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
+    class(*), pointer :: field4(:,:,:,:)
+
+    field4(1:size(field_data,1),1:size(field_data,2),1:1,1:1) => field_data
+    call post_field(field_name, field4, 2, domain, fileobj, unlim_dim_level)
+  end subroutine
+
+  subroutine write_field_offloaded_file_3d(field_name, field_data, domain, fileobj, unlim_dim_level)
+    character(len=*), intent(in) :: field_name
+    class(*), contiguous, target, intent(in) :: field_data(:,:,:)
+    type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
+    class(*), pointer :: field4(:,:,:,:)
+
+    field4(1:size(field_data,1),1:size(field_data,2),1:size(field_data,3),1:1) => field_data
+    call post_field(field_name, field4, 3, domain, fileobj, unlim_dim_level)
+  end subroutine
+
+  subroutine write_field_offloaded_file_4d(field_name, field_data, domain, fileobj, unlim_dim_level)
+    character(len=*), intent(in) :: field_name
+    class(*), intent(in) :: field_data(:,:,:,:)
+    type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
+
+    call post_field(field_name, field_data, 4, domain, fileobj, unlim_dim_level)
+  end subroutine
+
+  subroutine post_field(field_name, field_data, data_rank, domain, fileobj, unlim_dim_level)
+    character(len=*), intent(in) :: field_name
+    class(*), intent(in) :: field_data(:,:,:,:)
+    integer, intent(in) :: data_rank
+    type(domain2d), intent(inout) :: domain
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    integer, intent(in), optional :: unlim_dim_level
+    integer :: file_id, level, field_kind, char_length, ioff, joff, nx, ny, slot, dest, count, destination
+    logical :: replicated
+    type(MPI_Datatype) :: datatype
 
     file_id = require_file(fileobj)
     call check_string(field_name)
@@ -573,20 +606,66 @@ contains
       if (unlim_dim_level < 1) call mpp_error(FATAL, "offloading: unlim_dim_level must be positive")
       level = unlim_dim_level
     endif
-    call get_field_offsets(shape(field_data), domain, ioff, joff, nx, ny)
+    char_length = 0
+    select type (field_data)
+    type is (real(kind=r4_kind))
+      field_kind = FIELD_R4
+    type is (real(kind=r8_kind))
+      field_kind = FIELD_R8
+    type is (integer(kind=i4_kind))
+      field_kind = FIELD_I4
+    type is (integer(kind=i8_kind))
+      field_kind = FIELD_I8
+    type is (character(len=*))
+      if (data_rank > 1) call mpp_error(FATAL, "offloading: character data must be scalar or one-dimensional")
+      if (level /= 0) call mpp_error(FATAL, "offloading: character writes do not support unlimited levels")
+      field_kind = FIELD_STR
+      char_length = len(field_data)
+    class default
+      call mpp_error(FATAL, "offloading: unsupported field data type")
+    end select
+    replicated = data_rank < 2
+    if (replicated .and. mpp_pe() /= model_pes(1)) return
+    ioff = 0
+    joff = 0
+    nx = size(field_data,1)
+    ny = size(field_data,2)
+    if (.not. replicated) call get_field_offsets([nx,ny], domain, ioff, joff, nx, ny)
 
-    k = next_send
-    call MPI_Waitall(size(dest_ranks), send_requests(:,k), MPI_STATUSES_IGNORE)
+    slot = next_send
+    call MPI_Waitall(size(send_requests,1), send_requests(:,slot), MPI_STATUSES_IGNORE)
     next_send = mod(next_send, size(send_requests, 2)) + 1
-    send_buffers_r8(:,:,k) = field_data(ioff+1:ioff+nx, joff+1:joff+ny)
-    do d = 1, size(dest_ranks)
-      call MPI_Isend(send_buffers_r8(:,:,k), 1, send_types(2,d), dest_ranks(d), data_tag, offload_comm, &
-                     send_requests(d,k))
+    if (allocated(send_buffers(slot)%values)) deallocate(send_buffers(slot)%values)
+    allocate(send_buffers(slot)%values, source=field_data(ioff+1:ioff+nx,joff+1:joff+ny,:,:))
+    count = size(field_data,3)*size(field_data,4)
+    if (replicated) count = size(field_data)
+    if (field_kind == FIELD_STR) count = count*char_length
+    do dest = 1, merge(size(writer_ranks), size(dest_ranks), replicated)
+      if (replicated) then
+        destination = writer_ranks(dest)
+        datatype = MPI_CHARACTER
+        if (field_kind /= FIELD_STR) datatype = field_mpi_types(field_kind)
+      else
+        destination = dest_ranks(dest)
+        datatype = send_types(field_kind,dest)
+      endif
+      select type (buffer => send_buffers(slot)%values)
+      type is (real(kind=r4_kind))
+        call MPI_Isend(buffer, count, datatype, destination, data_tag, offload_comm, send_requests(dest,slot))
+      type is (real(kind=r8_kind))
+        call MPI_Isend(buffer, count, datatype, destination, data_tag, offload_comm, send_requests(dest,slot))
+      type is (integer(kind=i4_kind))
+        call MPI_Isend(buffer, count, datatype, destination, data_tag, offload_comm, send_requests(dest,slot))
+      type is (integer(kind=i8_kind))
+        call MPI_Isend(buffer, count, datatype, destination, data_tag, offload_comm, send_requests(dest,slot))
+      type is (character(len=*))
+        call MPI_Isend(buffer, count, datatype, destination, data_tag, offload_comm, send_requests(dest,slot))
+      end select
     enddo
     call start_message(IO_OP_WRITE)
     call pack_words((/file_id/))
     call pack_string(field_name)
-    call pack_words((/FIELD_R8, level/))
+    call pack_words([field_kind, level, data_rank, nx, ny, size(field_data,3), size(field_data,4), char_length])
     call post_message()
   end subroutine
 
@@ -633,7 +712,7 @@ contains
     if (file_id < 1 .or. file_id > max_files) call mpp_error(FATAL, "offloading: invalid file id")
     if (.not. file_is_open(file_id)) call mpp_error(FATAL, "offloading: no open file")
     do w = 1, size(send_requests, 2)
-      call MPI_Waitall(size(dest_ranks), send_requests(:,w), MPI_STATUSES_IGNORE)
+      call MPI_Waitall(size(send_requests,1), send_requests(:,w), MPI_STATUSES_IGNORE)
     enddo
     call start_message(IO_OP_CLOSE)
     call pack_words((/file_id/))
@@ -664,11 +743,11 @@ contains
     endif
     call mpp_sync()
     do w = 1, size(send_types, 2)
-      do d = 1, 2
+      do d = 1, numeric_types
         call MPI_Type_free(send_types(d,w))
       enddo
     enddo
-    deallocate(send_buffers_r4, send_buffers_r8, send_requests, dest_ranks, send_types)
+    deallocate(send_buffers, send_requests, dest_ranks, send_types)
     deallocate(file_is_open)
     session_finished = .true.
   end subroutine
@@ -676,8 +755,8 @@ contains
   !> Enters the main write loop for offloaded writer PE's to receive data and control messages from the model PEs
   !! To be called by every writer after recv_domain_metadata.
   subroutine run_offload_writer()
-    integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(3), field_kind(1), n
-    integer :: nfield_dims(1), level(1)
+    integer :: operation, file_id, file_id_words(1), axis_size(1), direction, field_dims(5), field_kind(1), n
+    integer :: nfield_dims(1), level(1), data_info(6), field_kind_index
     character(len=string_length) :: name, cart
 
     ! checks for proper setup (offloading_io_init,send/recv_domain_metadata)
@@ -738,29 +817,29 @@ contains
         call require_writer_file(file_id)
         call unpack_string(name)
         call unpack_words(nfield_dims)
-        if (nfield_dims(1) < 2 .or. nfield_dims(1) > 3) &
+        if (nfield_dims(1) < 0 .or. nfield_dims(1) > 5) &
           call mpp_error(FATAL, "offloading: invalid field dimension count received")
         call unpack_words(field_dims(:nfield_dims(1)))
-        call unpack_words(field_kind)
+        call unpack_string(cart)
         if (any(field_dims(:nfield_dims(1)) < 1) .or. &
             any(field_dims(:nfield_dims(1)) > size(writer_axes(file_id)%names))) &
           call mpp_error(FATAL, "offloading: field refers to unregistered axes")
-        if (any(writer_axes(file_id)%directions(field_dims(:2)) /= (/1,2/))) &
-          call mpp_error(FATAL, "offloading: field dimensions must describe x then y")
-        if (nfield_dims(1) == 3) then
-          if (writer_axes(file_id)%directions(field_dims(3)) /= 0 .or. &
-              writer_axes(file_id)%sizes(field_dims(3)) /= unlimited) &
-            call mpp_error(FATAL, "offloading: third field dimension must be unlimited")
+        if (nfield_dims(1) >= 2) then
+          if (any(writer_axes(file_id)%directions(field_dims(:nfield_dims(1))) /= 0)) then
+            if (any(writer_axes(file_id)%directions(field_dims(:2)) /= [1,2])) &
+              call mpp_error(FATAL, "offloading: decomposed field dimensions must describe x then y")
+            if (any(writer_axes(file_id)%directions(field_dims(3:nfield_dims(1))) /= 0)) &
+              call mpp_error(FATAL, "offloading: only the first two field dimensions may be decomposed")
+          endif
         endif
-        if (field_kind(1) == FIELD_R4) then
-          call register_field(writer_fileobjs(file_id), trim(name), "float", &
-                              writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
-        else if (field_kind(1) == FIELD_R8) then
-          call register_field(writer_fileobjs(file_id), trim(name), "double", &
-                              writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
-        else
-          call mpp_error(FATAL, "offloading: invalid field type received")
+        if (any(writer_axes(file_id)%sizes(field_dims(:nfield_dims(1)-1)) == unlimited)) &
+          call mpp_error(FATAL, "offloading: unlimited dimension must be last")
+        if (nfield_dims(1) == 5) then
+          if (writer_axes(file_id)%sizes(field_dims(5)) /= unlimited) &
+            call mpp_error(FATAL, "offloading: fifth field dimension must be unlimited")
         endif
+        call register_field(writer_fileobjs(file_id), trim(name), trim(cart), &
+                            writer_axes(file_id)%names(field_dims(:nfield_dims(1))))
       case (IO_OP_WRITE)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
@@ -768,33 +847,13 @@ contains
         call unpack_string(name)
         call unpack_words(field_kind)
         call unpack_words(level)
-        select case (field_kind(1))
-        case (FIELD_R4)
-          !! TODO: can probably send the whole array at once instead of looping over source ranks
-          do n = 1, size(source_ranks)
-            call MPI_Irecv(block_data_r4, 1, recv_types(1,n), source_ranks(n), data_tag, offload_comm, &
-                           recv_requests(n))
-          enddo
-          call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          if (level(1) > 0) then
-            call write_data(writer_fileobjs(file_id), trim(name), block_data_r4, unlim_dim_level=level(1))
-          else
-            call write_data(writer_fileobjs(file_id), trim(name), block_data_r4)
-          endif
-        case (FIELD_R8)
-          do n = 1, size(source_ranks)
-            call MPI_Irecv(block_data_r8, 1, recv_types(2,n), source_ranks(n), data_tag, offload_comm, &
-                           recv_requests(n))
-          enddo
-          call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
-          if (level(1) > 0) then
-            call write_data(writer_fileobjs(file_id), trim(name), block_data_r8, unlim_dim_level=level(1))
-          else
-            call write_data(writer_fileobjs(file_id), trim(name), block_data_r8)
-          endif
-        case default
-          call mpp_error(FATAL, "offloading: invalid field type received")
-        end select
+        call unpack_words(data_info)
+        call receive_field(field_kind(1), data_info)
+        if (level(1) > 0) then
+          call write_received_field(writer_fileobjs(file_id), trim(name), data_info(1), level(1))
+        else
+          call write_received_field(writer_fileobjs(file_id), trim(name), data_info(1))
+        endif
       case (IO_OP_GLOBAL_ATTRIBUTE)
         call unpack_words(file_id_words)
         file_id = file_id_words(1)
@@ -820,12 +879,93 @@ contains
     enddo
     call mpp_deallocate_domain(writer_domain)
     do n = 1, size(recv_types, 2)
-      call MPI_Type_free(recv_types(1,n))
-      call MPI_Type_free(recv_types(2,n))
+      do field_kind_index = 1, numeric_types
+        call MPI_Type_free(recv_types(field_kind_index,n))
+      enddo
     enddo
-    deallocate(source_ranks, recv_types, recv_requests, block_data_r4, block_data_r8)
+    if (allocated(block_data)) deallocate(block_data)
+    deallocate(source_ranks, recv_types, recv_requests)
     deallocate(writer_fileobjs, writer_axes)
     deallocate(file_is_open)
+  end subroutine
+
+  subroutine receive_field(field_kind, data_info)
+    integer, intent(in) :: field_kind, data_info(6)
+    integer :: dims(4), count, source, source_rank, nsources
+    logical :: replicated
+    type(MPI_Datatype) :: datatype
+
+    if (data_info(1) < 0 .or. data_info(1) > 4) call mpp_error(FATAL, "offloading: invalid data rank received")
+    dims = data_info(2:5)
+    replicated = data_info(1) < 2
+    if (.not. replicated) dims(:2) = writer_block_size
+    if (any(dims < 1)) call mpp_error(FATAL, "offloading: empty field dimensions are not supported")
+    if (allocated(block_data)) deallocate(block_data)
+    select case (field_kind)
+    case (FIELD_R4)
+      allocate(real(kind=r4_kind) :: block_data(dims(1),dims(2),dims(3),dims(4)))
+    case (FIELD_R8)
+      allocate(real(kind=r8_kind) :: block_data(dims(1),dims(2),dims(3),dims(4)))
+    case (FIELD_I4)
+      allocate(integer(kind=i4_kind) :: block_data(dims(1),dims(2),dims(3),dims(4)))
+    case (FIELD_I8)
+      allocate(integer(kind=i8_kind) :: block_data(dims(1),dims(2),dims(3),dims(4)))
+    case (FIELD_STR)
+      if (.not. replicated) call mpp_error(FATAL, "offloading: invalid character data rank received")
+      allocate(character(len=data_info(6)) :: block_data(dims(1),dims(2),dims(3),dims(4)))
+    case default
+      call mpp_error(FATAL, "offloading: invalid field type received")
+    end select
+    count = dims(3)*dims(4)
+    nsources = size(source_ranks)
+    if (replicated) then
+      count = product(dims)
+      if (field_kind == FIELD_STR) count = count*data_info(6)
+      nsources = 1
+    endif
+    do source = 1, nsources
+      if (replicated) then
+        source_rank = model_root_rank
+        datatype = MPI_CHARACTER
+        if (field_kind /= FIELD_STR) datatype = field_mpi_types(field_kind)
+      else
+        source_rank = source_ranks(source)
+        datatype = recv_types(field_kind,source)
+      endif
+      select type (buffer => block_data)
+      type is (real(kind=r4_kind))
+        call MPI_Irecv(buffer, count, datatype, source_rank, data_tag, offload_comm, recv_requests(source))
+      type is (real(kind=r8_kind))
+        call MPI_Irecv(buffer, count, datatype, source_rank, data_tag, offload_comm, recv_requests(source))
+      type is (integer(kind=i4_kind))
+        call MPI_Irecv(buffer, count, datatype, source_rank, data_tag, offload_comm, recv_requests(source))
+      type is (integer(kind=i8_kind))
+        call MPI_Irecv(buffer, count, datatype, source_rank, data_tag, offload_comm, recv_requests(source))
+      type is (character(len=*))
+        call MPI_Irecv(buffer, count, datatype, source_rank, data_tag, offload_comm, recv_requests(source))
+      end select
+    enddo
+    call MPI_Waitall(size(recv_requests), recv_requests, MPI_STATUSES_IGNORE)
+  end subroutine
+
+  subroutine write_received_field(fileobj, field_name, data_rank, unlim_dim_level)
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    character(len=*), intent(in) :: field_name
+    integer, intent(in) :: data_rank
+    integer, intent(in), optional :: unlim_dim_level
+
+    select case (data_rank)
+    case (0)
+      call write_data(fileobj, field_name, block_data(1,1,1,1), unlim_dim_level=unlim_dim_level)
+    case (1)
+      call write_data(fileobj, field_name, block_data(:,1,1,1), unlim_dim_level=unlim_dim_level)
+    case (2)
+      call write_data(fileobj, field_name, block_data(:,:,1,1), unlim_dim_level=unlim_dim_level)
+    case (3)
+      call write_data(fileobj, field_name, block_data(:,:,:,1), unlim_dim_level=unlim_dim_level)
+    case (4)
+      call write_data(fileobj, field_name, block_data, unlim_dim_level=unlim_dim_level)
+    end select
   end subroutine
 
   !> Writer half of global_metadata_offload; unpacks the rest of the current message.
@@ -921,7 +1061,7 @@ contains
     ! Let MPI progress field data sends that are still in flight.
     if (allocated(send_requests)) then
       do k = 1, size(send_requests, 2)
-        call MPI_Testall(size(dest_ranks), send_requests(:,k), all_done, MPI_STATUSES_IGNORE)
+        call MPI_Testall(size(send_requests,1), send_requests(:,k), all_done, MPI_STATUSES_IGNORE)
       enddo
     endif
     message = 0
