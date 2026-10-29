@@ -41,8 +41,7 @@ program test_nest_corner
   integer, parameter :: layout_coarse(2) = [2,2] !< 2x2 PE layout for the coarse grid
   integer, parameter :: layout_fine(2) = [2,2] !< 2x2 PE layout for the fine grid
 
-  type(domain2d)         :: domain !< Cubed sphere (coarse PEs) or single-tile fine-grid (fine PEs) domain
-  type(domain2d)         :: domain_corner !< Domain representing the corner mosaic (only used on fine PEs)
+  type(domain2d)         :: domain !< Cubed sphere (coarse PEs) or corner mosaic (fine PEs) domain
   type(nest_domain_type) :: nest_domain !< Nest domain
 
   ! Nest parameters
@@ -103,18 +102,7 @@ program test_nest_corner
 
   if (is_fine) then
     call mpp_set_current_pelist(pelist_fine)
-    call define_corner_mosaic(domain_corner)
-
-    block
-      integer :: pelist_this_tile(product(layout_fine))
-
-      call mpp_get_tile_pelist(domain_corner, pelist_this_tile)
-      call mpp_declare_pelist(pelist_this_tile)
-      call mpp_set_current_pelist(pelist_this_tile)
-    end block
-
-    call mpp_define_domains([1,nf,1,nf], layout_fine, domain, whalo=halo, ehalo=halo, shalo=halo, nhalo=halo, &
-                            symmetry=.true., name="Fine single tile", tile_id=get_tid(domain_corner))
+    call define_corner_mosaic(domain)
   endif
 
   call mpp_set_current_pelist
@@ -248,7 +236,7 @@ contains
       end associate
 
       call mpp_set_current_pelist(pelist_fine)
-      call mpp_update_domains(x, domain_corner)
+      call mpp_update_domains(x, domain)
       call register_answer(x, "Fine data after domain update (scalar)")
     endif
 
@@ -467,7 +455,7 @@ contains
       end associate
 
       call mpp_set_current_pelist(pelist_fine)
-      call mpp_update_domains(x, y, domain_corner, gridtype=CGRID_NE)
+      call mpp_update_domains(x, y, domain, gridtype=CGRID_NE)
       call register_answer(x, "Fine data after domain update (cgrid, x)")
       call register_answer(y, "Fine data after domain update (cgrid, y)")
     endif
@@ -708,7 +696,7 @@ contains
       end associate
 
       call mpp_set_current_pelist(pelist_fine)
-      call mpp_update_domains(x, y, domain_corner, gridtype=DGRID_NE)
+      call mpp_update_domains(x, y, domain, gridtype=DGRID_NE)
       call register_answer(x, "Fine data after domain update (dgrid, x)")
       call register_answer(y, "Fine data after domain update (dgrid, y)")
     endif
