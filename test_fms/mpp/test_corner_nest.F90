@@ -38,7 +38,7 @@ program test_nest_corner
   integer, parameter :: ntiles_fine=3
   integer, parameter :: ntiles_all = ntiles_coarse+ntiles_fine
 
-  integer, parameter :: layout_coarse(2) = [2,2] !< 2x2 PE layout for the coarse grid
+  integer, parameter :: layout_coarse(2) = [1,1] !< 1x1 PE layout for the coarse grid
   integer, parameter :: layout_fine(2) = [2,2] !< 2x2 PE layout for the fine grid
 
   type(domain2d)         :: domain !< Cubed sphere (coarse PEs) or corner mosaic (fine PEs) domain
