@@ -40,7 +40,7 @@
 
     logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
-    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit
+    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit, west, east
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
     integer,parameter     :: kindl = FMS_HI_KIND_
@@ -82,15 +82,19 @@
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 
     if(src_is_modulo) then
-       if(lon_in(nlon_in) - lon_in(1) .gt. tpi + real(epsln, FMS_HI_KIND_)) &
+       if(abs(lon_in(nlon_in) - lon_in(1)) .gt. tpi + real(epsln, FMS_HI_KIND_)) &
             call mpp_error(FATAL,'horiz_interp_bilinear_mod: '// &
             'The range of source grid longitude should be no larger than tpi')
 
-       if(lon_in(1) .lt. 0.0_kindl .OR. lon_in(nlon_in) > tpi ) then
-          min_lon = lon_in(1)
-          max_lon = lon_in(nlon_in)
-       endif
     endif
+    west = 1
+    east = nlon_in
+    if (decreasing_lon) then
+      west = nlon_in
+      east = 1
+    endif
+    min_lon = lon_in(west)
+    max_lon = lon_in(east)
 
     do n = 1, nlat_out
        do m = 1, nlon_out
@@ -98,50 +102,35 @@
           lat = lat_out(m,n)
 
           if(src_is_modulo) then
-             if(lon .lt. min_lon) then
-                lon = lon + tpi
-             else if(lon .gt. max_lon) then
-                lon = lon - tpi
-             endif
-          else  ! when the input grid is in not cyclic, the output grid should located inside
-             ! the input grid
-             if((lon .lt. lon_in(1)) .or. (lon .gt. lon_in(nlon_in))) &
+             lon = min_lon + modulo(lon-min_lon,tpi)
+          else
+             if(lon < min_lon .or. lon > max_lon) &
                   call mpp_error(FATAL,'horiz_interp_bilinear_mod: ' //&
                   'when input grid is not modulo, output grid should locate inside input grid')
           endif
+          ! Preserve the existing endpoint clamping for either latitude orientation.
+          lat = max(min(lat_in(1),lat_in(nlat_in)),min(max(lat_in(1),lat_in(nlat_in)),lat))
 
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = nearest_index(lon, lon_in )
-          if (decreasing_lon) then
-            ! Lon_in is increasing
-            ! This is so that is is the lower bound.
-            ! For example, if the array is [50 40 30 20 10] and lon is 11, `is` is going to be 5 from `nearest_index`
-            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
-            if( lon_in(is) .lt. lon ) is = max(is-1,1)
-          else
-            ! Lon_in is increasing
-            ! This is so that is is the lower bound.
-            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
-            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
-            if( lon_in(is) .gt. lon ) is = max(is-1,1)
-          endif
-          if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
-          ie = min(is+1,nlon_in)
-          if(lon_in(is) .ne. lon_in(ie) .and. (decreasing_lon .or. lon_in(is) .le. lon)) then
-             wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
-          else
-             !     east or west of the last data value. this could be because a
-             !     cyclic condition is needed or the dataset is too small.
+          if (src_is_modulo .and. lon > max_lon) then
+             ! Physical east-to-west wrap, regardless of storage direction.
              ln_err = 1
-             ie = 1
-             is = nlon_in
-             if (lon_in(ie) .ge. lon ) then
-                wtw = (lon_in(ie) -lon)/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
+             is = east
+             ie = west
+             wtw = (min_lon+tpi-lon)/(min_lon+tpi-max_lon)
+          else
+             is = nearest_index(lon, lon_in)
+             ! Keep the existing storage-neighbor convention for interior cells.
+             if (decreasing_lon) then
+               if (lon_in(is) < lon) is = max(is-1,1)
              else
-                wtw = (lon_in(ie)-lon+tpi+real(epsln,FMS_HI_KIND_))/(lon_in(ie)-lon_in(is)+tpi+real(epsln,FMS_HI_KIND_))
+               if (lon_in(is) > lon) is = max(is-1,1)
              endif
+             if (is == nlon_in) is = max(is-1,1)
+             ie = min(is+1,nlon_in)
+             wtw = (lon_in(ie)-lon)/(lon_in(ie)-lon_in(is))
           endif
           wte = 1.0_kindl - wtw
 
