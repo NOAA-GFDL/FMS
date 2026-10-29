@@ -217,7 +217,7 @@ module mpp_domains_mod
 !----------
 
 !--- Helper routines for defining cubic (cubed-sphere) domains
-  public :: mpp_define_cubic_domain
+  public :: mpp_define_cubic_domain, mpp_define_lat_lon_domain
 
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 100
@@ -2475,6 +2475,27 @@ contains
 #include <mpp_pack.inc>
 #include <mpp_domains_reduce.inc>
 #include <mpp_unstruct_domain.inc>
+
+
+  !> Creates a standard rectangular lat-lon domain
+  function mpp_define_lat_lon_domain(nx_in, ny_in, halox, haloy, io_layout ) &
+    result(domain_out)
+    integer, intent(in) :: nx_in !< number of lat-lon grid points in x direction
+    integer, intent(in) :: ny_in !< number of lat-lon grid points in y direction
+    integer, intent(in), optional :: halox !< number of halo points in x direction
+    integer, intent(in), optional :: haloy !< number of halo points in y direction
+    integer, optional, intent(in) :: io_layout(2) !< layout for I/O operations
+    type(domain2d) :: domain_out
+    integer :: layout(2), io_layout_tmp(2)
+    if(present(io_layout)) then
+      io_layout_tmp = io_layout
+    else
+      io_layout_tmp = (/1,1/)
+    endif
+    call mpp_define_layout( (/1,nx_in,1,ny_in/), mpp_npes(), layout )
+    call mpp_define_domains( (/1,nx_in,1,ny_in/), layout, domain_out, xhalo=halox, yhalo=haloy)
+    call mpp_define_io_domain(domain_out, io_layout_tmp)
+  end function mpp_define_lat_lon_domain 
 
   !> Creates a cubic (ie. 6-faced) domain
   !! @param nx_in Number of grid points in x direction per tile
