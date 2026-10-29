@@ -36,11 +36,8 @@
 #undef BCUCOF_
 #define BCUCOF_ bcucof_r8
 
-#undef INDL_
-#define INDL_ indl_r8
-
-#undef INDU_
-#define INDU_ indu_r8
+#undef BICUBIC_INTERVAL_
+#define BICUBIC_INTERVAL_ bicubic_interval_r8
 
 #undef FILL_XY_
 #define FILL_XY_ fill_xy_r8

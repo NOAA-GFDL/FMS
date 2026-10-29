@@ -38,7 +38,6 @@
     logical, intent(in), optional :: src_modulo
       !< is true if boundary condition along zonal boundary is cyclic
     integer :: i, j, ip1, im1, jp1, jm1
-    logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out
     integer :: jcl, jcu, icl, icu, jj
     real(FMS_HI_KIND_) :: xz, yz
@@ -47,8 +46,7 @@
       !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
-    src_is_modulo = .false.
-    if (present(src_modulo)) src_is_modulo = src_modulo
+    ! Retain the historical periodic longitude behavior even when src_modulo is false.
 
     if(size(lon_out,1) /= size(lat_out,1) .or. size(lon_out,2) /= size(lat_out,2) ) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: when using bilinear ' // &
@@ -139,53 +137,12 @@
           yz  = lat_out(i,j)
           xz  = lon_out(i,j)
 
-          jcl = 0
-          jcu = 0
-          if( yz .le. Interp%HI_KIND_TYPE_%lat_in(1) ) then
-             jcl = 1
-             jcu = 1
-          else if( yz .ge. Interp%HI_KIND_TYPE_%lat_in(nlat_in) ) then
-             jcl = nlat_in
-             jcu = nlat_in
-          else
-             jcl = indl(Interp%HI_KIND_TYPE_%lat_in, yz)
-             jcu = indu(Interp%HI_KIND_TYPE_%lat_in, yz)
-          endif
-
-          icl = 0
-          icu = 0
-          !--- cyclic condition, do we need to use do while
-          if( xz .gt. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) xz = xz - real(tpi,FMS_HI_KIND_)
-          if( xz .le. Interp%HI_KIND_TYPE_%lon_in(1) ) xz = xz + real(tpi,FMS_HI_KIND_)
-          if( xz .ge. Interp%HI_KIND_TYPE_%lon_in(nlon_in) ) then
-            icl = nlon_in
-            icu = 1
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
-                                             & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
-          else
-            icl = indl(Interp%HI_KIND_TYPE_%lon_in, xz)
-            icu = indu(Interp%HI_KIND_TYPE_%lon_in, xz)
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
-                                             & - Interp%HI_KIND_TYPE_%lon_in(icl))
-          endif
+          call bicubic_interval(lat_in, yz, .false., jcl, jcu, Interp%HI_KIND_TYPE_%rat_y(i,j))
+          call bicubic_interval(lon_in, xz, .true., icl, icu, Interp%HI_KIND_TYPE_%rat_x(i,j))
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
-          if(jcl == jcu) then
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0_kindl
-          else
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz-Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
-                                              & - Interp%HI_KIND_TYPE_%lat_in(jcl))
-          endif
-!          if(yz.gt.Interp%HI_KIND_TYPE_%lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
-!          yf < ycl, no valid boundary point')
-!          if(yz.lt.Interp%HI_KIND_TYPE_%lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
-!          yf > ycu, no valid boundary point')
-!          if(xz.gt.Interp%HI_KIND_TYPE_%lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
-!          xf < xcl, no valid boundary point')
-!          if(xz.lt.Interp%HI_KIND_TYPE_%lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
-!          xf > xcu, no valid boundary point')
         enddo
       enddo
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
@@ -216,16 +173,14 @@
     logical, intent(in), optional :: src_modulo
       !< is true if boundary condition along zonal boundary is cyclic
     integer :: i, j, ip1, im1, jp1, jm1
-    logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out
     integer :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_) :: xz, yz
+    real(FMS_HI_KIND_) :: xz, yz, latitude_ratio
     integer :: iunit
     integer, parameter :: kindl = FMS_HI_KIND_ ! real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
-    src_is_modulo = .false.
-    if (present(src_modulo)) src_is_modulo = src_modulo
+    ! Retain the historical periodic longitude behavior even when src_modulo is false.
 
     !--- get the grid size
     nlon_in  = size(lon_in) ; nlat_in  = size(lat_in)
@@ -301,56 +256,15 @@
 !     the source grid
       do j=1, nlat_out
         yz  = lat_out(j)
-        jcl = 0
-        jcu = 0
-        if( yz .le. lat_in(1) ) then
-           jcl = 1
-           jcu = 1
-        else if( yz .ge. lat_in(nlat_in) ) then
-           jcl = nlat_in
-           jcu = nlat_in
-        else
-           jcl = indl(lat_in, yz)
-           jcu = indu(lat_in, yz)
-        endif
+        call bicubic_interval(lat_in, yz, .false., jcl, jcu, latitude_ratio)
         do i=1,nlon_out
           xz = lon_out(i)
-          icl = 0
-          icu = 0
-         !--- cyclic condition, do we need to use do while
-          if( xz .gt. lon_in(nlon_in) ) xz = xz - real(tpi,FMS_HI_KIND_)
-          if( xz .le. lon_in(1) ) xz = xz + real(tpi, FMS_HI_KIND_)
-          if( xz .ge. lon_in(nlon_in) ) then
-            icl = nlon_in
-            icu = 1
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
-                                            & - Interp%HI_KIND_TYPE_%lon_in(icl) + real(tpi,FMS_HI_KIND_))
-          else
-            icl = indl(lon_in, xz)
-            icu = indu(lon_in, xz)
-            Interp%HI_KIND_TYPE_%rat_x(i,j) = (xz - Interp%HI_KIND_TYPE_%lon_in(icl))/(Interp%HI_KIND_TYPE_%lon_in(icu)&
-                                            & - Interp%HI_KIND_TYPE_%lon_in(icl))
-          endif
-          icl = indl(lon_in, xz)
-          icu = indu(lon_in, xz)
+          Interp%HI_KIND_TYPE_%rat_y(i,j) = latitude_ratio
+          call bicubic_interval(lon_in, xz, .true., icl, icu, Interp%HI_KIND_TYPE_%rat_x(i,j))
           Interp%j_lat(i,j,1) = jcl
           Interp%j_lat(i,j,2) = jcu
           Interp%i_lon(i,j,1) = icl
           Interp%i_lon(i,j,2) = icu
-          if(jcl == jcu) then
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = 0.0_kindl
-          else
-             Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz- Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
-                                             & - Interp%HI_KIND_TYPE_%lat_in(jcl))
-          endif
-!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf <
-!          ycl, no valid boundary point')
-!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf >
-!          ycu, no valid boundary point')
-!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf <
-!          xcl, no valid boundary point')
-!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf >
-!          xcu, no valid boundary point')
         enddo
       enddo
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
@@ -400,17 +314,13 @@
         jcu = Interp%j_lat(i,j,2)
         icl = Interp%i_lon(i,j,1)
         icu = Interp%i_lon(i,j,2)
-        if( icl > icu ) then
-          iclp1 = icu
-          icum1 = icl
-          xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
-          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)+real(tpi, FMS_HI_KIND_)
-        else
-          iclp1 = min(icl+1,Interp%nlon_src)
-          icum1 = max(icu-1,1)
-          xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
-          xcu = Interp%HI_KIND_TYPE_%lon_in(icu)
-        endif
+        ! Derivatives use storage neighbors and signed coordinate differences.
+        ! A physical west/east pair has decreasing coordinate values only at the seam.
+        xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
+        xcu = Interp%HI_KIND_TYPE_%lon_in(icu)
+        if (xcu < xcl) xcu = xcu + real(tpi, FMS_HI_KIND_)
+        iclp1 = min(icl+1,Interp%nlon_src)
+        icum1 = max(icu-1,1)
         iclm1 = max(icl-1,1)
         icup1 = min(icu+1,Interp%nlon_src)
         jclp1 = min(jcl+1,Interp%nlat_src)
@@ -541,45 +451,50 @@
 
 !-----------------------------------------------------------------------
 
-   !> @parblock
-   !! Internally used subroutine to find the lower neighbor of xf in field xc, return is the index.
-   !! (TODO These routines are redundant, we can find the lower neighbor and add 1.)
-   !! xc, yc : co-ordinates of the coarse grid
-   !! xf, yf : co-ordinates of the fine grid
-   !! @endparblock
-    function INDL_(xc, xf)
-    real(FMS_HI_KIND_), intent(in) :: xc(1:)
-    real(FMS_HI_KIND_), intent(in) :: xf
-    integer :: INDL_
-    integer :: ii
-       INDL_ = 1
-       do ii=1, size(xc)
-         if(xc(ii).gt.xf) return
-         INDL_ = ii
-       enddo
-       call mpp_error(FATAL,'Error in INDL_')
-    return
-    end function INDL_
-
-!-----------------------------------------------------------------------
-
-    !> @parblock
-    !> Internally used subroutine to find the upper neighbour of xf in field xc, return is the index.
-    !! xc, yc : co-ordinates of the coarse grid
-    !! co-ordinates of the fine grid
-    !! @endparblock
-    function INDU_(xc, xf)
-    real(FMS_HI_KIND_), intent(in) :: xc(1:)
-    real(FMS_HI_KIND_), intent(in) :: xf
-    integer :: INDU_
-    integer :: ii
-       do ii=1, size(xc)
-         INDU_ = ii
-         if(xc(ii).gt.xf) return
-       enddo
-       call mpp_error(FATAL,'Error in INDU_')
-    return
-    end function INDU_
+   !> Select physical lower/upper neighbors, independently of storage direction.
+   !! Latitude is clamped; periodic longitude is reduced to [minimum,minimum+2*pi).
+   subroutine BICUBIC_INTERVAL_(xc, xf, cyclic, lower, upper, ratio)
+     real(FMS_HI_KIND_), intent(in) :: xc(:), xf
+     logical, intent(in) :: cyclic
+     integer, intent(out) :: lower, upper
+     real(FMS_HI_KIND_), intent(out) :: ratio
+     integer :: first, last, step, ii, next
+     real(FMS_HI_KIND_) :: x
+     first = 1
+     last = size(xc)
+     step = 1
+     if (xc(first) > xc(last)) then
+       first = size(xc)
+       last = 1
+       step = -1
+     endif
+     x = xf
+     if (cyclic) then
+       x = xc(first) + modulo(x-xc(first), real(tpi,FMS_HI_KIND_))
+       if (x > xc(last)) then
+         lower = last
+         upper = first
+         ratio = (x-xc(last))/(xc(first)+real(tpi,FMS_HI_KIND_)-xc(last))
+         return
+       endif
+     endif
+     lower = first
+     upper = first
+     ratio = real(0,FMS_HI_KIND_)
+     if (x <= xc(first)) return
+     lower = last
+     upper = last
+     if (x >= xc(last)) return
+     do ii = first, last-step, step
+       next = ii+step
+       if (x < xc(next)) then
+         lower = ii
+         upper = next
+         ratio = (x-xc(ii))/(xc(next)-xc(ii))
+         return
+       endif
+     enddo
+   end subroutine BICUBIC_INTERVAL_
 
 !-----------------------------------------------------------------------
 
