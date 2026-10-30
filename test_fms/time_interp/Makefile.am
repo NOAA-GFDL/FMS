@@ -29,12 +29,15 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
 check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 \
+                 test_time_interp_external_create_input_r4 test_time_interp_external_create_input_r8 \
                  test_time_interp_external_r4 test_time_interp_external_r8 \
                  test_time_interp_conservative_hi_r4 test_time_interp_conservative_hi_r8
 
 # These are the sources for the tests.
 test_time_interp_r4_SOURCES = test_time_interp.F90
 test_time_interp_r8_SOURCES = test_time_interp.F90
+test_time_interp_external_create_input_r4_SOURCES = test_time_interp_external_create_input.F90
+test_time_interp_external_create_input_r8_SOURCES = test_time_interp_external_create_input.F90
 test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
 test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
 test_time_interp_conservative_hi_r4_SOURCES = test_time_interp_conservative_hi.F90
@@ -44,6 +47,8 @@ test_time_interp_conservative_hi_r8_SOURCES = test_time_interp_conservative_hi.F
 # adds r8 flag, otherwise no-flag default is 4
 test_time_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
+test_time_interp_external_create_input_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_time_interp_external_create_input_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 test_time_interp_external_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_external_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 test_time_interp_conservative_hi_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
