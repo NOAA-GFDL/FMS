@@ -324,6 +324,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: gsize(3) !< Shape of global_buf
   integer :: dim_order(3) !< Order of the dimensions
   integer :: start(3), end(3)
+  integer :: nk_z !< Number of z levels, evaluated outside of the select type blocks
   integer :: ioff, joff
 
   if (fileobj%use_netcdf_mpi) then
@@ -420,6 +421,11 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   end(ydim_index) = start(ydim_index) + yc_size - 1
   end(zdim_index) = size(vdata, zdim_index)
 
+  ! Evaluate the number of z levels outside of the select type blocks below.  Calling
+  ! size(vdata, zdim_index) on the select type associate name, with a runtime dim, is
+  ! miscompiled by nvfortran at -O2 and above (it reads an uninitialized stack slot).
+  nk_z = size(vdata, zdim_index)
+
   ! Get offsets for buffer
   ioff = 1-xgmin
   joff = 1-ygmin
@@ -429,19 +435,19 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, nk_z, fileobj%pelist, &
                       vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_i4_kind, &
                       dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, nk_z, fileobj%pelist, &
                       vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_i8_kind, &
                       dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, nk_z, fileobj%pelist, &
                       vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_r4_kind, &
                       dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, nk_z, fileobj%pelist, &
                       vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_r8_kind, &
                       dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
