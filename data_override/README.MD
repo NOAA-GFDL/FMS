@@ -1,187 +1,282 @@
-@ingroup data_override_mod
-
 # Data_override
 
+`data_override_mod` reads forcing data described by a legacy `data_table` or a
+`data_table.yaml` file, interpolates it in space and time when requested, and
+stores the result into model arrays on ATM, OCN, LND, or ICE grids. It also
+handles the MPP domain decomposition. The public interfaces are
+`data_override` for structured grids and `data_override_UG` for unstructured
+land grids.
+
 ### Contents
-- [YAML Data Table format](README.MD#1-yaml-data-table-format)
-- [How to use it?](README.MD#2-how-to-use-it)
-- [Converting legacy data_table to data_table.yaml](README.MD#3-converting-legacy-data_table-to-data_tableyaml)
-- [Examples](README.MD#4-examples)
-- [External Weight File Structure](README.MD#5-external-weight-file-structure)
-- [Ensemble and Nest Support](README.MD#6-ensemble-and-nest-support)
+- [Basic usage](README.MD#1-basic-usage)
+- [YAML data table format](README.MD#2-yaml-data-table-format)
+- [Building with YAML support](README.MD#3-building-with-yaml-support)
+- [Converting a legacy data table](README.MD#4-converting-a-legacy-data-table)
+- [Examples](README.MD#5-examples)
+- [External weight file structure](README.MD#6-external-weight-file-structure)
+- [Ensemble and nest support](README.MD#7-ensemble-and-nest-support)
 
-#### 1. YAML Data Table format:
-Each entry in the data_table has the following key values:
-- **grid_name:** Name of the grid to interpolate the data to. The acceptable values are "ICE", "OCN", "ATM", and "LND"
-- **fieldname_in_model:** Name of the field as it is in the code to interpolate.
-- **override_file:** Optional subsection with key/value pairs defining how to override from a netcdf file.
-  - **file_name:** Name of the file where the variable is located, including the directory
-  - **fieldname_in_file:** Name of the field as it is writen in the file
-  - **interp_method:** Method used to interpolate the field. The acceptable values are "bilinear", "bicubic", and "none". "none" implies that the field in the file is already in the model grid. The LIMA format is no longer supported
-  - **multi_file:** Optional subsection with key/value pairs to use multiple(3) input netcdf files instead of 1. Note that **file_name** must be the second file in the set when using multiple input netcdf files
-    - **prev_file_name:** The name of the first file in the set
-    - **next_file_name:** The name of the third file in the set
-  - **external_weights:** Optional subsection with key/value pairs defining the external weights file to used for the interpolation.
-    - **file_name:** Name of the file where the external weights are located, including the directory
-    - **source:** Name of the source that generated the external weights. The only acceptable value is "fregrid"
-- **factor:** Factor that will be multiplied after the data is interpolated
-- **subregion:** Optional subsection with key/value pairs that define a subregion of the model grid to interpolate the data to.
-  - **type:** The region type. The acceptable values are "inside_region" and "outside_region"
-  - **lon_start:** The starting latitude in the same units as the grid data in the file
-  - **lon_end:** The ending latitude in the same units as the grid data in the file
-  - **lat_start:** The starting longitude in the same units as the grid data in the file
-  - **lon_end:** The ending longitude in the same units as the grid data in the file
+#### 1. Basic usage
 
-#### 2. How to use it?
-In order to use the yaml data format, [libyaml](https://github.com/yaml/libyaml) needs to be installed and linked with FMS. Additionally, FMS must be compiled with -Duse_yaml macro. If using autotools, you can add `--with-yaml`, which will add the macro for you and check that libyaml is linked correctly.
+Define and initialize the component domain, call `data_override_init` after
+the component model is initialized, then call `data_override` for each field
+and model time. `data_override_init` requires `INPUT/grid_spec.nc`, typically
+created by [FRE-NCtools](https://github.com/NOAA-GFDL/FRE-NCtools), to describe the component grid. The dimensions in
+that file must match the corresponding global MPP domain. Grid metadata may be
+read from classic `grid_spec.nc` variables or from the mosaic descriptions
+(`ocn_mosaic_file` and `gridfiles`).
+
+The table file is normally `data_table` for the legacy format or
+`data_table.yaml` for YAML. The selected table must be available in the run
+directory; the YAML option also requires a build with YAML support and the
+`use_data_table_yaml` namelist setting.
+
+For example, the following YAML table defines the `sst_obs` field used below.
+It reads `SST` from a NetCDF file, bilinearly interpolates it to the ocean
+grid, and applies a factor of `1.0`:
+
+```yaml
+data_table:
+  - grid_name: OCN
+    fieldname_in_model: sst_obs
+    factor: 1.0
+    override_file:
+      - file_name: INPUT/sst_ice_clim.nc
+        fieldname_in_file: SST
+        interp_method: bilinear
 ```
+
+```fortran
+use fms_mod,          only: fms_init, fms_end
+use mpp_domains_mod,  only: domain2d
+use time_manager_mod, only: time_type, set_date
+use data_override_mod, only: data_override_init, data_override
+use platform_mod,     only: r8_kind
+
+implicit none
+
+type(domain2d) :: Ocn_domain
+type(time_type) :: Time
+real(r8_kind), allocatable :: sst(:, :)
+logical :: override
+
+call fms_init()
+
+! Define and initialize Ocn_domain and allocate sst before this point.
+Time = set_date(2000, 1, 1, 0, 0, 0)
+call data_override_init(Ocean_domain_in=Ocn_domain)
+call data_override('OCN', 'sst_obs', sst, Time, override=override)
+
+if (.not. override) then
+  ! The (OCN, sst_obs) entry was not found in the selected table.
+endif
+
+call fms_end()
+```
+
+The first argument is the three-character model grid ID (`'ATM'`, `'OCN'`,
+`'LND'`, or `'ICE'`), and the second is the field name used by the model. The
+third argument is the output value or array. For an array, the call replaces
+the selected values with data from the table after spatial interpolation,
+temporal interpolation to `Time`, and multiplication by `factor`. Values excluded
+by the configured subregion type are retained. The optional
+`override` argument is set to `.true.` when the field is successfully read and
+interpolated, and `.false.` when no matching table entry is found.
+
+The generic `data_override` interface supports scalar, 2D, and 3D real values
+in both `r4_kind` and `r8_kind`. A single scalar call illustrates the type
+selection:
+
+```fortran
+real(r8_kind) :: co2
+logical :: override
+
+call data_override('OCN', 'co2_obs', co2, Time, override=override)
+```
+
+For threaded or multi-window calls, pass the window bounds relative to the
+compute-domain indices. The array section and the four bounds must describe
+the same window:
+
+```fortran
+call data_override('OCN', 'sst_obs', sst(isw:iew, jsw:jew), Time, &
+                   override=override, is_in=is_rel, ie_in=ie_rel, &
+                   js_in=js_rel, je_in=je_rel)
+```
+
+For an unstructured land grid, initialize with `Land_domainUG_in` and use
+`data_override_UG`. It supports 1D and 2D real arrays:
+
+```fortran
+use mpp_domains_mod, only: domainUG
+type(domainUG) :: Lnd_domain_ug
+real(r8_kind), allocatable :: ug_field(:)
+
+call data_override_init(Land_domainUG_in=Lnd_domain_ug)
+call data_override_UG('LND', 'soil_moisture_obs', ug_field, Time, &
+                      override=override)
+```
+
+If `mode` is omitted from `data_override_init`, both `r4_kind` and `r8_kind`
+implementations are initialized. To initialize only one precision, pass
+`mode=r4_kind` or `mode=r8_kind`.
+
+```fortran
+call data_override_init(Ocean_domain_in=Ocn_domain, mode=r8_kind)
+```
+
+When a structured-grid domain is no longer needed, release it with
+`data_override_unset_domains`. The optional `must_be_set` argument controls
+whether attempting to unset an unset domain is fatal.
+
+```fortran
+use data_override_mod, only: data_override_unset_domains
+
+call data_override_unset_domains(unset_Ocean=.true.)
+call data_override_unset_domains(unset_Land=.true., must_be_set=.false.)
+```
+
+#### 2. YAML data table format
+
+Each entry in `data_table.yaml` can have the following keys:
+
+- **grid_name:** Target grid. The accepted values are `ATM`, `OCN`, `LND`,
+  and `ICE`.
+- **fieldname_in_model:** Field name as it appears in model code.
+- **override_file:** Optional list describing data read from a NetCDF file.
+  - **file_name:** File containing the variable. For `multi_file`, this is
+    the middle file.
+  - **fieldname_in_file:** Variable name in the NetCDF file.
+  - **interp_method:** `bilinear`, `bicubic`, or `none`. Use `none` when the
+    source data is already on the model grid. The LIMA format is not supported.
+  - **multi_file:** Optional list with at most one entry. Use
+    **prev_file_name** and **next_file_name** to provide the neighboring files
+    needed for time interpolation across file boundaries.
+  - **external_weights:** Optional list describing an external interpolation
+    weight file.
+    - **file_name:** External weight file.
+    - **source:** Weight generator. The accepted value is `fregrid`.
+- **factor:** Multiplier applied after the field is interpolated. It can also
+  be used for unit conversion.
+- **subregion:** Optional list limiting where the override is applied.
+  - **type:** `inside_region` or `outside_region`.
+  - **lon_start**, **lon_end:** Longitude bounds in the source grid units.
+  - **lat_start**, **lat_end:** Latitude bounds in the source grid units.
+
+#### 3. Building with YAML support
+
+YAML tables require [libyaml](https://github.com/yaml/libyaml) to be installed
+and linked with FMS, and FMS must be compiled with the `use_yaml` macro. With
+Autotools:
+
+```text
 ./configure --with-yaml
 ```
 
-If using cmake, you can use `-DWITH_YAML`.
-```
-cmake -DWITH_YAML=on;
-```
-#### 3. Converting legacy data_table to data_table.yaml
-To convert legacy data_table to data_table.yaml, the python script, [`data_table_to_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/data_table_to_yaml.py), can be used. Additionally, the python script, [`is_valid_data_table_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/is_valid_data_table_yaml.py), can be used to check if your data_table.yaml file is valid.
+With CMake:
 
-#### 4. Examples
-**4.1** The following example is going to bilnearly interpolate `sic_obs` to the `ICE` grid using the `sic` data from the file: `INPUT/hadisst_ice.data.nc`, multiply by a factor of `0.01`, and interpolate to the model time.
-
-In the **legacy format**, the data_table will look like:
-```
-"ICE", "sic_obs", "sic", "INPUT/hadisst_ice.data.nc", "bilinear", 0.01
+```text
+cmake -DWITH_YAML=on
 ```
 
-In the **yaml format**, the data_table will look like
-```
+#### 4. Converting a legacy data table
+
+The scripts
+[`data_table_to_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/data_table_to_yaml.py)
+and
+[`is_valid_data_table_yaml.py`](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/main/data_table/is_valid_data_table_yaml.py)
+convert and validate YAML data tables.
+
+#### 5. Examples
+
+The following YAML entry bilinearly interpolates `sic` from a file to the ICE
+grid, interpolates it to the model time, and multiplies it by `0.01`. The
+result is written into the `icec` array by the corresponding call.
+
+```yaml
 data_table:
- - grid_name           : ICE
-   fieldname_in_model  : sic_obs
-   override_file:
-   - file_name         : INPUT/hadisst_ice.data.nc
-     fieldname_in_file : sic
-     interp_method     : bilinear
-   factor              : 0.01
+  - grid_name: ICE
+    fieldname_in_model: sic_obs
+    factor: 0.01
+    override_file:
+      - file_name: INPUT/hadisst_ice.data.nc
+        fieldname_in_file: sic
+        interp_method: bilinear
 ```
-Which corresponds to the following model code:
-```F90
+
+```fortran
 call data_override('ICE', 'sic_obs', icec, Spec_Time)
 ```
-where:
-- `ICE` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
-- `sic_obs` corresponds to the fieldname_in_model in the data_table
-- `icec` is the storage array that holds the interpolated data
-- `Spec_Time` is the time to interpolate the data to.
 
-Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file must also contain the coordinate information for the domain being used.
+A constant override omits `override_file`; `factor` is the value written to
+the model field:
 
-```F90
-call data_override_init(Ice_domain_in=Ice_domain)
-```
-
-**4.2** The following example is going to simply multiply `sic_obs` by a factor of 0.01.
-
-In the **legacy format**, the data_table will look like:
-```
-"ICE", "sit_obs", "", "INPUT/hadisst_ice.data.nc", "none",     2.0
-```
-
-In the **yaml format**, the data_table will look like:
-``` yaml
+```yaml
 data_table:
- - grid_name          : ICE
-   fieldname_in_model : sit_obs
-   factor             : 0.01
+  - grid_name: ICE
+    fieldname_in_model: sit_obs
+    factor: 0.01
 ```
 
-Which corresponds to the following model code:
-```F90
-call data_override('ICE', 'sit_obs', icec, Spec_Time)
-```
-where:
-- `ICE` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
-- `sit_obs` corresponds to the fieldname_in_model in the data_table
-- `icec` is the storage array that holds the interpolated data
-- `Spec_Time` is the time to interpolate the data to.
+An on-grid field uses `interp_method: none`:
 
-Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file is still required to initialize data_override with the ICE domain.
-
-```F90
-call data_override_init(Ice_domain_in=Ice_domain)
-```
-
-**4.3** The following example is an `ongrid` case where it will simply read the `runoff` data in the `./INPUT/runoff.daitren.clim.nc` file, multiply it by a factor of `1.0` and interpolate to the model time. It assumes that "runoff" in the netcdf file is in the ocean grid.
-
-In the **legacy format**, the data_table will look like:
-```
-"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.nc", "none" ,  1.0
-```
-
-In the **yaml format**, the data_table will look like:
-``` yaml
+```yaml
 data_table:
- - grid_name           : OCN
-   fieldname_in_model  : runoff
-   override_file:
-   - file_name         : INPUT/runoff.daitren.clim.nc
-     fieldname_in_file : runoff
-     interp_method     : none
-   factor              : 1.0
+  - grid_name: OCN
+    fieldname_in_model: runoff
+    factor: 1.0
+    override_file:
+      - file_name: INPUT/runoff.daitren.clim.nc
+        fieldname_in_file: runoff
+        interp_method: none
 ```
 
-Which corresponds to the following model code:
-```F90
-call data_override('OCN', 'runoff', runoff_data, Spec_Time)
-```
-where:
-- `OCN` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
-- `runoff` corresponds to the fieldname_in_model in the data_table
-- `runoff_data` is the storage array that holds the interpolated data
-- `Spec_Time` is the time to interpolate the data to.
+The equivalent legacy entries are:
 
-Additionally, it is required to call data_override_init (in this case with the ocean domain). The grid_spec.nc file is still required to initialize data_override with the ocean domain and to determine if the data in the file is in the same grid as the ocean.
-
-```F90
-call data_override_init(Ocn_domain_in=Ocn_domain)
+```text
+"ICE", "sic_obs", "sic", "INPUT/hadisst_ice.data.nc", "bilinear", 0.01
+"ICE", "sit_obs", "", "", "none", 0.01
+"OCN", "runoff", "runoff", "INPUT/runoff.daitren.clim.nc", "none", 1.0
 ```
 
-**4.4** The following example uses the multi-file capability
-``` yaml
+For a forcing period that crosses file boundaries, specify the previous and
+next files. `file_name` is the middle file:
+
+```yaml
 data_table:
- - grid_name           : ICE
-   fieldname_in_model  : sic_obs
-   override_file:
-   - file_name         : INPUT/hadisst_ice.data_yr1.nc
-     fieldname_in_file : sic
-     interp_method     : bilinear
-     multi_file:
-     - next_file_name: INPUT/hadisst_ice.data_yr2.nc
-       prev_file_name: INPUT/hadisst_ice.data_yr0.nc
-   factor              : 0.01
+  - grid_name: ICE
+    fieldname_in_model: sic_obs
+    factor: 0.01
+    override_file:
+      - file_name: INPUT/hadisst_ice.data_yr1.nc
+        fieldname_in_file: sic
+        interp_method: bilinear
+        multi_file:
+          - prev_file_name: INPUT/hadisst_ice.data_yr0.nc
+            next_file_name: INPUT/hadisst_ice.data_yr2.nc
 ```
-Data override determines which file to use depending on the model time. This is to prevent having to combine the 3 yearly files into one, since the end of the previous file and the beginning of the next file are needed for yearly simulations.
 
-**4.5** The following example uses the external weight file capability
-``` yaml
+External weights can be supplied for bilinear interpolation:
+
+```yaml
 data_table:
- - grid_name           : ICE
-   fieldname_in_model  : sic_obs
-   override_file:
-   - file_name         : INPUT/hadisst_ice.data.nc
-     fieldname_in_file : sic
-     interp_method     : bilinear
-     external_weights:
-     - file_name: INPUT/remamp_file.nc
-       source: fregrid
-   factor              : 0.01
+  - grid_name: ICE
+    fieldname_in_model: sic_obs
+    factor: 0.01
+    override_file:
+      - file_name: INPUT/hadisst_ice.data.nc
+        fieldname_in_file: sic
+        interp_method: bilinear
+        external_weights:
+          - file_name: INPUT/remap_file.nc
+            source: fregrid
 ```
 
-#### 5. External Weight File Structure
+#### 6. External weight file structure
 
-**5.1** Bilinear weight file example from fregrid
+A bilinear weight file from `fregrid` has this structure:
 
-```
+```text
 dimensions:
         nlon = 5 ;
         nlat = 6 ;
@@ -191,17 +286,22 @@ variables:
         int index(three, nlat, nlon) ;
         double weight(four, nlat, nlon) ;
 ```
-- `nlon` and `nlat` must be equal to the size of the global domain.
-- `index(1,:,:)` corresponds to the index (i) of the longitudes point in the data file, closest to each model lon, lat
-- `index(2,:,:)` corresponds to the index (j) of the lattidude point in the data file, closest to each model lon, lat
-- `index(3,:,:)` corresponds to the tile (it should be 1 since data_override does not support interpolation **from** cubesphere grids)
-  - From there the four corners are (i,j), (i,j+1) (i+1) (i+1,j+1)
-- The weights for the four corners
-  - weight(:,:,1) -> (i,j)
-  - weight(:,:,2) -> (i,j+1)
-  - weight(:,:,3) -> (i+1,j)
-  - weight(:,:,4) -> (i+1,j+1)
 
-#### 6. Ensemble and Nest Support
+- `nlon` and `nlat` must equal the global source-domain dimensions.
+- `index(1,:,:)` is the source longitude index `i` nearest each model point.
+- `index(2,:,:)` is the source latitude index `j` nearest each model point.
+- `index(3,:,:)` is the source tile. It must be `1`; data_override does not
+  support interpolation from cubed-sphere grids.
+- The four corners are `(i,j)`, `(i,j+1)`, `(i+1,j)`, and `(i+1,j+1)`.
+  Their weights are `weight(:,:,1)` through `weight(:,:,4)`, respectively.
 
-It may be desired to have each member of an ensemble use a different forcing file. In other to support this, FMS allows for each ensemble member to have its own data_table.yaml. For example, for a run with 2 ensemble members, fms will search for data_table_ens_01.yaml and data_table_ens_02.yaml. However, if both the data_table.yaml and the data_table_ens_* files are present, the code will crash as only 1 option is allowed. Similary, each nest can have its own data_table (data_table_nest_01.yaml), but in this case FMS will not crash if both data_table_nest_01.yaml and data_table.yaml are present. The main grid will use the data_table.yaml and the first nest will use the data_table_nest_01.yaml file.
+#### 7. Ensemble and nest support
+
+Each ensemble member can use its own YAML table. For two ensemble members, FMS
+looks for `data_table.ens_01.yaml` and `data_table.ens_02.yaml`. Do not provide
+both `data_table.yaml` and an ensemble-specific table: only one table choice is
+allowed and the run will fail.
+
+Nested domains can use `data_table_nest_01.yaml`, while the main grid uses
+`data_table.yaml`. Unlike ensemble tables, a nest-specific table may coexist
+with `data_table.yaml`.
