@@ -72,7 +72,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_nesting \
   test_mpp_chksum \
   test_stdlog \
-  test_corner_mosaic
+  test_corner_mosaic \
+  test_corner_nest
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -142,6 +143,8 @@ test_super_grid_SOURCES = test_super_grid.F90
 test_mpp_chksum_SOURCES = test_mpp_chksum.F90
 test_stdlog_SOURCES = test_stdlog.F90
 test_corner_mosaic_SOURCES = test_corner_mosaic.F90
+test_corner_nest_SOURCES = test_corner_nest.F90 \
+			   test_domains_utility_mod.F90
 
 test_mpp_global_field_r4_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r4_kind
 test_mpp_global_field_r8_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r8_kind
@@ -254,6 +257,7 @@ test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compar
 test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 test_mpp_nesting.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
+test_corner_nest.$(OBJEXT): test_domains_utility_mod.mod
 
 # Clean up
 CLEANFILES = *-files/* *.nml *.out* *.tst* \

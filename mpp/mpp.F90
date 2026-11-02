@@ -162,6 +162,7 @@ module mpp_mod
 #endif
 
   use iso_fortran_env,   only : INPUT_UNIT, OUTPUT_UNIT, ERROR_UNIT
+  use iso_c_binding,     only : c_loc, c_f_pointer
   use mpp_parameter_mod, only : MPP_VERBOSE, MPP_DEBUG, ALL_PES, ANY_PE, NULL_PE
   use mpp_parameter_mod, only : NOTE, WARNING, FATAL, MPP_CLOCK_DETAILED,MPP_CLOCK_SYNC
   use mpp_parameter_mod, only : CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE_DRIVER
@@ -709,25 +710,29 @@ private
   !!
   interface mpp_gather
      module procedure mpp_gather_logical4
-     module procedure mpp_gatherv_logical4
-     module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4
      module procedure mpp_gather_int8
-     module procedure mpp_gatherv_int4
-     module procedure mpp_gatherv_int8
-     module procedure mpp_gather_int4_1d
-     module procedure mpp_gather_int8_1d
      module procedure mpp_gather_real4
      module procedure mpp_gather_real8
+
+     module procedure mpp_gatherv_logical4
+     module procedure mpp_gatherv_int4
+     module procedure mpp_gatherv_int8
      module procedure mpp_gatherv_real4
      module procedure mpp_gatherv_real8
-     module procedure mpp_gather_real4_1d
-     module procedure mpp_gather_real8_1d
-     module procedure mpp_gather_logical_1dv
-     module procedure mpp_gather_int4_1dv
-     module procedure mpp_gather_int8_1dv
-     module procedure mpp_gather_real4_1dv
-     module procedure mpp_gather_real8_1dv
+
+     module procedure mpp_gather_wrap_logical
+     module procedure mpp_gather_wrap_int4
+     module procedure mpp_gather_wrap_int8
+     module procedure mpp_gather_wrap_real4
+     module procedure mpp_gather_wrap_real8
+
+     module procedure mpp_gatherv_wrap_logical
+     module procedure mpp_gatherv_wrap_int4
+     module procedure mpp_gatherv_wrap_int8
+     module procedure mpp_gatherv_wrap_real4
+     module procedure mpp_gatherv_wrap_real8
+
      module procedure mpp_gather_pelist_logical_2d
      module procedure mpp_gather_pelist_logical_gen_2d
      module procedure mpp_gather_pelist_logical_3d
