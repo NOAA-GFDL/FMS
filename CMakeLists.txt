@@ -37,12 +37,12 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|Debug
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "DebugUFS" "ReleaseUFS")
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
+if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM|NVHPC)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_C_COMPILER_ID}")
 endif()
 
-if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU|IntelLLVM)$")
+if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU|IntelLLVM|NVHPC)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_Fortran_COMPILER_ID}")
 endif()
@@ -64,6 +64,7 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+option(OPENMP_OFFLOAD        "Enable compiler definition -D__NVCOMPILER_OPENMP_OFFLOAD" OFF)
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
   set(ENABLE_QUAD_PRECISION OFF)
@@ -278,6 +279,13 @@ endif()
 
 if(LARGEFILE)
   list(APPEND fms_defs use_LARGEFILE)
+endif()
+
+if(OPENMP_OFFLOAD)
+  list(APPEND fms_defs __NVCOMPILER_OPENMP_GPU)
+  if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
+    message(WARNING "OPENMP_OFFLOAD currently only supports NVHPC compilers")
+  endif()
 endif()
 
 # Add platform specific compiler definitions
