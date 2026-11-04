@@ -15,14 +15,10 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-
 !> @defgroup fms_diag_reduction_methods_mod fms_diag_reduction_methods_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_reduction_methods_mod contains routines that are meant to be used for
-!! error checking and setting up to do the reduction methods
-
-!> @file
-!> @brief File for @ref fms_diag_reduction_methods_mod
+!! @brief fms_diag_reduction_methods_mod contains routines that are used to perform diagnostic reduction methods,
+!! such as max/min, average, rms, etc. These routines are called by the send_data routines in the diag_manager.
 
 !> @addtogroup fms_diag_reduction_methods_mod
 !> @{
@@ -187,3 +183,4 @@ module fms_diag_reduction_methods_mod
 end module fms_diag_reduction_methods_mod
 !> @}
 ! close documentation grouping
+

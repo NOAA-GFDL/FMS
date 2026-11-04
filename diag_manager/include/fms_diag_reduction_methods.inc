@@ -16,11 +16,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-! for any debug prints
-#ifndef DEBUG_REDUCT
-#define DEBUG_REDUCT .false.
-#endif
-
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
 subroutine DO_TIME_NONE_ (data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
