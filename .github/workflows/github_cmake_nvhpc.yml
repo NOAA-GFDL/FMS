@@ -47,8 +47,12 @@ jobs:
           gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
     - name: Install NVHPC compilers
       run: |
+        spack mirror set --no-autopush gfdl-gh-cache
         spack compiler find
         spack install nvhpc target=x86_64
+        if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          spack mirror set --autopush gfdl-gh-cache
+        fi
     - name: Install dependencies
       run: |
         spack compiler find
