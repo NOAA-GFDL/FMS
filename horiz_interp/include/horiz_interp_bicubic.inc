@@ -40,7 +40,7 @@
     integer :: i, j, ip1, im1, jp1, jm1
     integer :: nlon_in, nlat_in, nlon_out, nlat_out
     integer :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_) :: xz, yz
+    real(FMS_HI_KIND_) :: xz, yz, longitude_span
     integer :: iunit
     integer, parameter :: kindl = FMS_HI_KIND_
       !< real size at compile time
@@ -90,14 +90,13 @@
 
 
 !---------------------------------------------------------------------------
-!     Find the x-derivative. Use central differences and forward or
-!     backward steps at the boundaries
+!     Find the x-derivative with periodic centered differences. The signed
+!     longitude span is unwrapped once at each storage endpoint.
 
     do j=1,nlat_in
       do i=1,nlon_in
-        ip1=min(i+1,nlon_in)
-        im1=max(i-1,1)
-        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl/(Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1))
+        call bicubic_longitude_stencil(lon_in, i, im1, ip1, longitude_span)
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl/longitude_span
       enddo
     enddo
 
@@ -116,17 +115,15 @@
 
 !---------------------------------------------------------------------------
 
-!     Find the xy-derivative. Use central differences and forward or
-!     backward steps at the boundaries
+!     Find the xy-derivative using the same periodic longitude stencil
+!     as the x-derivative and the existing latitude differences.
       do j=1,nlat_in
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          ip1=min(i+1,nlon_in)
-          im1=max(i-1,1)
+          call bicubic_longitude_stencil(lon_in, i, im1, ip1, longitude_span)
           Interp%HI_KIND_TYPE_%wti(i,j,3) = 1.0_kindl / &
-                                              ((Interp%HI_KIND_TYPE_%lon_in(ip1)-Interp%HI_KIND_TYPE_%lon_in(im1)) * &
-                                               (Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1)))
+               (longitude_span*(Interp%HI_KIND_TYPE_%lat_in(jp1)-Interp%HI_KIND_TYPE_%lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -175,7 +172,7 @@
     integer :: i, j, ip1, im1, jp1, jm1
     integer :: nlon_in, nlat_in, nlon_out, nlat_out
     integer :: jcl, jcu, icl, icu, jj
-    real(FMS_HI_KIND_) :: xz, yz, latitude_ratio
+    real(FMS_HI_KIND_) :: xz, yz, latitude_ratio, longitude_span
     integer :: iunit
     integer, parameter :: kindl = FMS_HI_KIND_ ! real size at compile time
 
@@ -214,14 +211,13 @@
 
 
 !---------------------------------------------------------------------------
-!     Find the x-derivative. Use central differences and forward or
-!     backward steps at the boundaries
+!     Find the x-derivative with periodic centered differences. The signed
+!     longitude span is unwrapped once at each storage endpoint.
 
     do j=1,nlat_in
       do i=1,nlon_in
-        ip1=min(i+1,nlon_in)
-        im1=max(i-1,1)
-        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl /(lon_in(ip1)-lon_in(im1))
+        call bicubic_longitude_stencil(lon_in, i, im1, ip1, longitude_span)
+        Interp%HI_KIND_TYPE_%wti(i,j,1) = 1.0_kindl/longitude_span
       enddo
     enddo
 
@@ -240,15 +236,14 @@
 
 !---------------------------------------------------------------------------
 
-!     Find the xy-derivative. Use central differences and forward or
-!     backward steps at the boundaries
+!     Find the xy-derivative using the same periodic longitude stencil
+!     as the x-derivative and the existing latitude differences.
       do j=1,nlat_in
         jp1=min(j+1,nlat_in)
         jm1=max(j-1,1)
         do i=1,nlon_in
-          ip1=min(i+1,nlon_in)
-          im1=max(i-1,1)
-          Interp%HI_KIND_TYPE_%wti(i,j,3) = 1.0_kindl /((lon_in(ip1)-lon_in(im1))*(lat_in(jp1)-lat_in(jm1)))
+          call bicubic_longitude_stencil(lon_in, i, im1, ip1, longitude_span)
+          Interp%HI_KIND_TYPE_%wti(i,j,3) = 1.0_kindl /(longitude_span*(lat_in(jp1)-lat_in(jm1)))
         enddo
       enddo
 !---------------------------------------------------------------------------
@@ -314,15 +309,13 @@
         jcu = Interp%j_lat(i,j,2)
         icl = Interp%i_lon(i,j,1)
         icu = Interp%i_lon(i,j,2)
-        ! Derivatives use storage neighbors and signed coordinate differences.
-        ! A physical west/east pair has decreasing coordinate values only at the seam.
+        ! Cell width uses physical west/east coordinates. Derivative stencils
+        ! depend only on their source point, for both ordinary and seam cells.
         xcl = Interp%HI_KIND_TYPE_%lon_in(icl)
         xcu = Interp%HI_KIND_TYPE_%lon_in(icu)
         if (xcu < xcl) xcu = xcu + real(tpi, FMS_HI_KIND_)
-        iclp1 = min(icl+1,Interp%nlon_src)
-        icum1 = max(icu-1,1)
-        iclm1 = max(icl-1,1)
-        icup1 = min(icu+1,Interp%nlon_src)
+        call bicubic_longitude_stencil(Interp%HI_KIND_TYPE_%lon_in, icl, iclm1, iclp1)
+        call bicubic_longitude_stencil(Interp%HI_KIND_TYPE_%lon_in, icu, icum1, icup1)
         jclp1 = min(jcl+1,Interp%nlat_src)
         jclm1 = max(jcl-1,1)
         jcup1 = min(jcu+1,Interp%nlat_src)
@@ -448,6 +441,32 @@
       return
 !  (c) copr. 1986-92 numerical recipes software -3#(-)f.
    end subroutine BCUCOF_
+
+!-----------------------------------------------------------------------
+
+   !> Return centered longitude neighbors in storage order. For endpoint
+   !! weights, unwrap the neighboring coordinate by one signed turn. Reversing
+   !! storage reverses both the value difference and this coordinate span.
+   subroutine BICUBIC_LONGITUDE_STENCIL_(longitude, node, previous, next, span)
+     real(FMS_HI_KIND_), intent(in) :: longitude(:)
+     integer, intent(in) :: node
+     integer, intent(out) :: previous, next
+     real(FMS_HI_KIND_), intent(out), optional :: span
+     real(FMS_HI_KIND_) :: left_longitude, right_longitude, turn
+     integer :: count
+
+     count = size(longitude)
+     previous = modulo(node-2,count)+1
+     next = modulo(node,count)+1
+     if (present(span)) then
+       left_longitude = longitude(previous)
+       right_longitude = longitude(next)
+       turn = sign(real(tpi,FMS_HI_KIND_),longitude(count)-longitude(1))
+       if (node == 1) left_longitude = left_longitude-turn
+       if (node == count) right_longitude = right_longitude+turn
+       span = right_longitude-left_longitude
+     endif
+   end subroutine BICUBIC_LONGITUDE_STENCIL_
 
 !-----------------------------------------------------------------------
 

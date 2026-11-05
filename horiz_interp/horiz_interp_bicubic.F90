@@ -109,6 +109,12 @@ module horiz_interp_bicubic_mod
       module procedure bcucof_r8
    end interface
 
+   !> Common periodic derivative stencil for both constructors and evaluation.
+   interface bicubic_longitude_stencil
+      module procedure bicubic_longitude_stencil_r4
+      module procedure bicubic_longitude_stencil_r8
+   end interface
+
    !> Physical coordinate bracketing for both constructors and precisions.
    interface bicubic_interval
       module procedure bicubic_interval_r4

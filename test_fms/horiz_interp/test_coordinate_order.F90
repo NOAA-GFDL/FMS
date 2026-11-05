@@ -229,6 +229,7 @@ contains
       write(*,*) 'Unknown destination interface ', trim(interface)
       stop 1
     end select
+    if (method=='bicubic') call check_periodic_endpoint_weights(interpolation, source, interface)
     call horiz_interp(interpolation, source%values, result)
     call horiz_interp_del(interpolation)
   end subroutine
@@ -252,6 +253,8 @@ contains
         reference(i,j)=linear_reference(i,j)
         if (method=='bicubic') reference(i,j)=bicubic_hermite_reference(source, longitude, latitude, periodic)
         analytic(i,j)=0.5_k*longitude+0.75_k*max(source%latitude(1),min(source%latitude(ny),latitude))
+        if (method=='bicubic' .and. .not.periodic) &
+             analytic(i,j)=affine_periodic_reference(source, longitude, latitude)
       enddo
     enddo
     ! Preserve the original reference scale for both algorithms.
@@ -268,7 +271,7 @@ contains
       call check_close('latitude clamping', result(:,6:7), reference(:,6:7), reference_limit, context)
       if (field=='constant') call check_close('constant field', result, 0*reference+2.0_k, reference_limit, context)
       if (field=='affine' .and. .not.periodic) &
-           call check_close('affine field with clamped latitude', result, analytic, reference_limit, context)
+           call check_close('affine samples with method endpoint slopes', result, analytic, reference_limit, context)
       if (periodic) call check_equivalent_longitudes(result, interface, legacy, reference_limit, context)
     enddo
   end subroutine
@@ -361,7 +364,8 @@ contains
   end function
 
   ! Two successive 1D Hermite evaluations test implementation consistency.
-  ! Centered interior and one-sided endpoint slopes are finite differences,
+  ! Longitude slopes are periodic centered differences, including endpoints.
+  ! Latitude slopes retain centered interior and one-sided endpoint differences,
   ! so agreement here does not measure exact analytical accuracy.
   real(k) function bicubic_hermite_reference(source, longitude, latitude, periodic) result(value)
     type(source_grid), intent(in) :: source
@@ -373,12 +377,96 @@ contains
     call reference_cell(source, longitude, latitude, periodic, west,east,south,north,dx,tx,ty)
     do row=1,ny
       interpolated_rows(row)=hermite_value(source%values(west,row),source%values(east,row), &
-           slope(source%longitude,source%values(:,row),west),slope(source%longitude,source%values(:,row),east),dx,tx)
+           periodic_longitude_slope(source%longitude,source%values(:,row),west), &
+           periodic_longitude_slope(source%longitude,source%values(:,row),east),dx,tx)
     enddo
     value=hermite_value(interpolated_rows(south),interpolated_rows(north), &
          slope(source%latitude,interpolated_rows,south),slope(source%latitude,interpolated_rows,north), &
          source%latitude(north)-source%latitude(south),ty)
   end function
+
+  ! The reference grid is stored in increasing physical longitude order.
+  real(k) function periodic_longitude_slope(axis, values, node) result(derivative)
+    real(k), intent(in) :: axis(:), values(:)
+    integer, intent(in) :: node
+    integer :: count
+
+    count=size(axis)
+    if (node==1) then
+      derivative=(values(2)-values(count))/(axis(2)-(axis(count)-period))
+    else if (node==count) then
+      derivative=(values(1)-values(count-1))/((axis(1)+period)-axis(count-1))
+    else
+      derivative=slope(axis,values,node)
+    endif
+  end function
+
+  ! Affine longitude samples are discontinuous under periodic extension. For
+  ! f=0.5*x+0.75*y, endpoint slopes differ from 0.5 by -0.5*period/span.
+  ! Apply those two known Hermite corrections to the exact affine value.
+  ! This checks every in-range sample, including the endpoint-adjacent cells.
+  real(k) function affine_periodic_reference(source, longitude, latitude) result(value)
+    type(source_grid), intent(in) :: source
+    real(k), intent(in) :: longitude, latitude
+    integer :: west, east
+    real(k) :: width, fraction, slope_error
+
+    west=lower_neighbor(source%longitude,longitude)
+    east=west+1
+    width=source%longitude(east)-source%longitude(west)
+    fraction=(longitude-source%longitude(west))/width
+    value=0.5_k*longitude+0.75_k*max(source%latitude(1),min(source%latitude(ny),latitude))
+    if (west==1) then
+      slope_error=-0.5_k*period/(source%longitude(2)-source%longitude(nx)+period)
+      value=value+width*(fraction**3-2*fraction**2+fraction)*slope_error
+    endif
+    if (east==nx) then
+      slope_error=-0.5_k*period/(source%longitude(1)+period-source%longitude(nx-1))
+      value=value+width*(fraction**3-fraction**2)*slope_error
+    endif
+  end function
+
+  ! Inspect both physical endpoints independently of storage direction. The
+  ! interpolation reference separately checks the matching value numerators.
+  subroutine check_periodic_endpoint_weights(interpolation, source, interface)
+    type(horiz_interp_type), intent(in) :: interpolation
+    type(source_grid), intent(in) :: source
+    character(*), intent(in) :: interface
+    integer :: west, east, step, endpoints(2), j
+    real(k) :: span(2), latitude_span, actual(2,ny), expected(2,ny)
+    character(160) :: context
+
+    west=minloc(source%longitude,dim=1)
+    east=maxloc(source%longitude,dim=1)
+    step=1
+    if (west==nx) step=-1
+    endpoints=[west,east]
+    span(1)=step*(source%longitude(west+step)-(source%longitude(east)-period))
+    span(2)=step*((source%longitude(west)+period)-source%longitude(east-step))
+    write(context,'(a,i0,2(1x,a),2(a,l1))') 'kind=',k,'bicubic',interface, &
+         ' decreasing longitude=',step<0,' decreasing latitude=',source%latitude(1)>source%latitude(ny)
+    do j=1,ny
+      expected(:,j)=1/span
+    enddo
+    if (interpolation%horizInterpReals4_type%is_allocated) then
+      actual=interpolation%horizInterpReals4_type%wti(endpoints,:,1)
+    else
+      actual=interpolation%horizInterpReals8_type%wti(endpoints,:,1)
+    endif
+    call check_close('periodic endpoint longitude weights',actual,expected, &
+         tolerance*max(1.0_k,maxval(abs(expected))),context)
+    do j=1,ny
+      latitude_span=source%latitude(min(j+1,ny))-source%latitude(max(j-1,1))
+      expected(:,j)=1/(span*latitude_span)
+    enddo
+    if (interpolation%horizInterpReals4_type%is_allocated) then
+      actual=interpolation%horizInterpReals4_type%wti(endpoints,:,3)
+    else
+      actual=interpolation%horizInterpReals8_type%wti(endpoints,:,3)
+    endif
+    call check_close('periodic endpoint mixed weights',actual,expected, &
+         tolerance*max(1.0_k,maxval(abs(expected))),context)
+  end subroutine
 
   real(k) function slope(axis, values, node) result(derivative)
     real(k), intent(in) :: axis(:), values(:)
