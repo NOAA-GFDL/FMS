@@ -109,16 +109,16 @@ module horiz_interp_bicubic_mod
       module procedure bcucof_r8
    end interface
 
-   !> Generic interface used internally in finding neighbors
-   interface indl
-      module procedure indl_r4
-      module procedure indl_r8
+   !> Common periodic derivative stencil for both constructors and evaluation.
+   interface bicubic_longitude_stencil
+      module procedure bicubic_longitude_stencil_r4
+      module procedure bicubic_longitude_stencil_r8
    end interface
 
-   !> Generic interface used internally in finding neighbors
-   interface indu
-      module procedure indu_r4
-      module procedure indu_r8
+   !> Physical coordinate bracketing for both constructors and precisions.
+   interface bicubic_interval
+      module procedure bicubic_interval_r4
+      module procedure bicubic_interval_r8
    end interface
 
  contains

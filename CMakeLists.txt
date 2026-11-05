@@ -805,6 +805,7 @@ if(UNIT_TESTS)
     test_fms/diag_integral/test_diag_integral.F90
     test_fms/field_manager/test_field_manager.F90
     test_fms/horiz_interp/test_horiz_interp.F90
+    test_fms/horiz_interp/test_coordinate_order.F90
     test_fms/horiz_interp/test_create_xgrid_order2.F90
     test_fms/interpolator/test_interpolator2.F90
     test_fms/monin_obukhov/test_monin_obukhov.F90

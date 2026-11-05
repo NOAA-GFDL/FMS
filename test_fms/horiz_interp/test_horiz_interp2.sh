@@ -249,4 +249,78 @@ test_expect_success "assignment overloads with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
+# Coordinate reversal with cyclic longitude.
+cat <<_EOF > input.nml
+&test_coordinate_order_nml
+  scenario = 'cyclic'
+/
+_EOF
+
+test_expect_success "coordinate reversal and independent references: kind=4 cyclic" '
+  mpirun -n 1 ./test_coordinate_order_r4
+'
+test_expect_success "coordinate reversal and independent references: kind=8 cyclic" '
+  mpirun -n 1 ./test_coordinate_order_r8
+'
+
+# Coordinate reversal with noncyclic longitude.
+cat <<_EOF > input.nml
+&test_coordinate_order_nml
+  scenario = 'noncyclic'
+/
+_EOF
+
+test_expect_success "coordinate reversal and independent references: kind=4 noncyclic" '
+  mpirun -n 1 ./test_coordinate_order_r4
+'
+test_expect_success "coordinate reversal and independent references: kind=8 noncyclic" '
+  mpirun -n 1 ./test_coordinate_order_r8
+'
+
+# Legacy bicubic normalization with explicit src_modulo=.false.
+for interface in 1d 2d; do
+    cat <<_EOF > input.nml
+&test_coordinate_order_nml
+  scenario = 'compatibility'
+  interface = '$interface'
+/
+_EOF
+
+    test_expect_success "bicubic explicit false preserves longitude normalization: kind=4 interface=$interface" '
+        mpirun -n 1 ./test_coordinate_order_r4
+    '
+    test_expect_success "bicubic explicit false preserves longitude normalization: kind=8 interface=$interface" '
+        mpirun -n 1 ./test_coordinate_order_r8
+    '
+done
+
+# Expected bilinear rejection of noncyclic out-of-domain longitudes.
+# Require a nonzero exit and the specific FMS bounds diagnostic.
+for interface in 1d 2d; do
+    for reversal in ascending longitude; do
+        cat <<_EOF > input.nml
+&test_coordinate_order_nml
+  scenario = 'outside'
+  interface = '$interface'
+  longitude_order = '$reversal'
+/
+_EOF
+
+        test_expect_success "bilinear noncyclic longitude rejection: kind=4 interface=$interface reversal=$reversal" '
+            if mpirun -n 1 ./test_coordinate_order_r4 > outside.out 2>&1; then
+                false
+            else
+                grep -F "horiz_interp_bilinear_mod: when input grid is not modulo, output grid should locate inside input grid" outside.out
+            fi
+        '
+        test_expect_success "bilinear noncyclic longitude rejection: kind=8 interface=$interface reversal=$reversal" '
+            if mpirun -n 1 ./test_coordinate_order_r8 > outside.out 2>&1; then
+                false
+            else
+                grep -F "horiz_interp_bilinear_mod: when input grid is not modulo, output grid should locate inside input grid" outside.out
+            fi
+        '
+    done
+done
+
 test_done
