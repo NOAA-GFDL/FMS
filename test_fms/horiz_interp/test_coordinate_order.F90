@@ -19,6 +19,7 @@
 program test_coordinate_order
   use fms_mod, only: fms_init, check_nml_error
   use mpp_mod, only: mpp_exit, input_nml_file, mpp_error, FATAL
+  use platform_mod, only: r4_kind, r8_kind
   use horiz_interp_mod, only: horiz_interp_new, horiz_interp, horiz_interp_del, horiz_interp_type
   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
   implicit none
