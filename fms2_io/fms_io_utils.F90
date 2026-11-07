@@ -626,6 +626,12 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
 
   call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
   do n = 1, nmask
+     !--- the indices come from the file and nothing above checked them
+     if (mask_list(n,1) < 1 .or. mask_list(n,1) > size(maskmap,1) .or. &
+         mask_list(n,2) < 1 .or. mask_list(n,2) > size(maskmap,2)) then
+        call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): mask_list entry is outside "// &
+             "the layout in file "//trim(mask_table))
+     endif
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo
 
@@ -731,6 +737,13 @@ subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
 
   call mpp_broadcast(mask_list, 3*nmask, mpp_root_pe())
   do n = 1, nmask
+     !--- as above, the indices are file-supplied and unchecked
+     if (mask_list(n,1) < 1 .or. mask_list(n,1) > size(maskmap,1) .or. &
+         mask_list(n,2) < 1 .or. mask_list(n,2) > size(maskmap,2) .or. &
+         mask_list(n,3) < 1 .or. mask_list(n,3) > size(maskmap,3)) then
+        call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): mask_list entry is outside "// &
+             "the layout in file "//trim(mask_table))
+     endif
      maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
   enddo
   deallocate(mask_list, mask_table_contents)
