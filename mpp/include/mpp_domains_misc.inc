@@ -718,8 +718,8 @@ end subroutine init_nonblock_type
       integer,        intent(in)    :: tile_nest(:)
       integer, allocatable :: pes(:)
       logical :: native         !< true if I'm on the pelist of this domain
-      integer :: listsize, listpos, nestsize(size(tile_nest(:)))
-      integer :: n, tile, ind, num_nest
+      integer :: listsize, listpos
+      integer :: n, tile
       integer, dimension(15) :: msg, info         !< pe and compute domain of each item in list
       integer                :: errunit
 
@@ -733,24 +733,10 @@ end subroutine init_nonblock_type
 
 !am I part of this domain?
       native = ASSOCIATED(domain%list)
-      num_nest = size(tile_nest(:))
-!set local list size
-      nestsize = 0
-      if( native )then
-          tile = domain%tile_id(1)
-          ind = 0
-          do n = 1, num_nest
-             if(tile_nest(n) == tile) then
-                ind = n
-                exit
-             endif
-          enddo
-          if(ind == 0) call mpp_error( FATAL, &
-             &  'MPP_BROADCAST_DOMAIN_NEST_FINE:native is true, but tile_id is found in tile_nest')
-          nestsize(ind) = size(domain%list(:))
-      end if
-      call mpp_max(nestsize, num_nest)
-      listsize = sum(nestsize)
+
+      ! Determine the number of fine PEs
+      listsize = merge(1, 0, native)
+      call mpp_sum(listsize)
 
       if( .NOT.native )then
 !initialize domain%list and set null values in message

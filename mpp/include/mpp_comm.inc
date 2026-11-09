@@ -386,12 +386,12 @@ end subroutine mpp_init_legacy
 #endif
 
 !#################################################
-#undef MPP_GATHER_1D_
-#undef MPP_GATHER_1DV_
+#undef MPP_GATHER_WRAP_
+#undef MPP_GATHERV_WRAP_
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical
-#define MPP_GATHER_1D_ mpp_gather_logical_1d
-#define MPP_GATHER_1DV_ mpp_gather_logical_1dv
+#define MPP_GATHER_WRAP_ mpp_gather_wrap_logical
+#define MPP_GATHERV_WRAP_ mpp_gatherv_wrap_logical
 #undef  MPP_GATHER_PELIST_2D_
 #undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
@@ -404,12 +404,12 @@ end subroutine mpp_init_legacy
 #define MPI_TYPE_ MPI_LOGICAL
 #include <mpp_gather.fh>
 
-#undef MPP_GATHER_1D_
-#undef MPP_GATHER_1DV_
+#undef MPP_GATHER_WRAP_
+#undef MPP_GATHERV_WRAP_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
-#define MPP_GATHER_1D_ mpp_gather_int4_1d
-#define MPP_GATHER_1DV_ mpp_gather_int4_1dv
+#define MPP_GATHER_WRAP_ mpp_gather_wrap_int4
+#define MPP_GATHERV_WRAP_ mpp_gatherv_wrap_int4
 #undef  MPP_GATHER_PELIST_2D_
 #undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
@@ -423,12 +423,12 @@ end subroutine mpp_init_legacy
 #include <mpp_gather.fh>
 
 
-#undef MPP_GATHER_1D_
-#undef MPP_GATHER_1DV_
+#undef MPP_GATHER_WRAP_
+#undef MPP_GATHERV_WRAP_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
-#define MPP_GATHER_1D_ mpp_gather_int8_1d
-#define MPP_GATHER_1DV_ mpp_gather_int8_1dv
+#define MPP_GATHER_WRAP_ mpp_gather_wrap_int8
+#define MPP_GATHERV_WRAP_ mpp_gatherv_wrap_int8
 #undef  MPP_GATHER_PELIST_2D_
 #undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
@@ -442,12 +442,12 @@ end subroutine mpp_init_legacy
 #include <mpp_gather.fh>
 
 
-#undef MPP_GATHER_1D_
-#undef MPP_GATHER_1DV_
+#undef MPP_GATHER_WRAP_
+#undef MPP_GATHERV_WRAP_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
-#define MPP_GATHER_1D_ mpp_gather_real4_1d
-#define MPP_GATHER_1DV_ mpp_gather_real4_1dv
+#define MPP_GATHER_WRAP_ mpp_gather_wrap_real4
+#define MPP_GATHERV_WRAP_ mpp_gatherv_wrap_real4
 #undef  MPP_GATHER_PELIST_2D_
 #undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
@@ -460,12 +460,12 @@ end subroutine mpp_init_legacy
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_gather.fh>
 
-#undef MPP_GATHER_1D_
-#undef MPP_GATHER_1DV_
+#undef MPP_GATHER_WRAP_
+#undef MPP_GATHERV_WRAP_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
-#define MPP_GATHER_1D_ mpp_gather_real8_1d
-#define MPP_GATHER_1DV_ mpp_gather_real8_1dv
+#define MPP_GATHER_WRAP_ mpp_gather_wrap_real8
+#define MPP_GATHERV_WRAP_ mpp_gatherv_wrap_real8
 #undef  MPP_GATHER_PELIST_2D_
 #undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_

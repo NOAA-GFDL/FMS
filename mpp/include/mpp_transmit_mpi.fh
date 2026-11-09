@@ -249,8 +249,8 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine MPP_GATHER_( send_data, recv_data, count, root_pe, pelist, ierr)
-      MPP_TYPE_, intent(in) :: send_data(:)
-      MPP_TYPE_, intent(inout) :: recv_data(:)
+      MPP_TYPE_, intent(in) :: send_data(..)
+      MPP_TYPE_, intent(inout) :: recv_data(..)
       integer, intent(in) :: count, root_pe
       integer, intent(in) :: pelist(:)
       integer, intent(inout) :: ierr
@@ -270,8 +270,8 @@
     end subroutine MPP_GATHER_
 
     subroutine MPP_GATHERV_( send_data, send_count, recv_data, recv_counts, displs, root_pe, pelist, ierr)
-      MPP_TYPE_, intent(in) :: send_data(:)
-      MPP_TYPE_, intent(inout) :: recv_data(:)
+      MPP_TYPE_, intent(in) :: send_data(..)
+      MPP_TYPE_, intent(inout) :: recv_data(..)
       integer, intent(in) :: send_count, root_pe
       integer, intent(in) :: recv_counts(:), displs(:), pelist(:)
       integer, intent(inout) :: ierr
