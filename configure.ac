@@ -210,6 +210,11 @@ if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
 fi
 
+# check if netcdf/hdf5 was built with mpi
+if test $with_mpi = yes; then
+  AX_LIB_NETCDF4([parallel])
+fi
+
 # Check if ncdump is avaiable
 AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
 if test $USE_NCDUMP = yes; then
@@ -321,6 +326,11 @@ AC_LANG_POP(Fortran)
 # We passed all the tests.  Set the required defines.
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+  AM_CONDITIONAL([SERIAL_BUILD], false)
+  AC_SUBST([SERIAL_BUILD], [false])
+else
+  AM_CONDITIONAL([SERIAL_BUILD], true)
+  AC_SUBST([SERIAL_BUILD], [true])
 fi
 
 # Builds with r8 default unless disable flag is given
@@ -470,9 +480,9 @@ AC_MSG_RESULT([$nc_has_parallel4])
 if test $nc_has_parallel4 = no; then
   AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
   AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
+  AM_CONDITIONAL([TEST_NC_PARALLEL], false)
 else
-  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
+  AM_CONDITIONAL([TEST_NC_PARALLEL], true)
 fi
 
 #####

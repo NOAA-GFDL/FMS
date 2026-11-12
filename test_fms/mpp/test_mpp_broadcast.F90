@@ -28,7 +28,7 @@ program test_mpp_broadcast
 
   use platform_mod
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, mpp_root_pe
-  use mpp_mod, only : mpp_error, mpp_broadcast, FATAL
+  use mpp_mod, only : mpp_error, mpp_broadcast, FATAL, mpp_exit
 
   implicit none
 
@@ -59,7 +59,7 @@ program test_mpp_broadcast
   !> tests mpp_broadcast_char
   call test_broadcast_char()
 
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 contains
 !>

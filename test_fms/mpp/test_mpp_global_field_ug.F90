@@ -21,7 +21,7 @@ program test_mpp_global_field_ug
   use compare_data_checksums
   use compare_data_checksums_int
   use mpp_mod,         only : mpp_init, mpp_error, FATAL, NOTE, mpp_init_test_requests_allocated
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_broadcast
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_exit
   use mpp_domains_mod, only : mpp_domains_init,  mpp_domains_set_stack_size, mpp_domains_exit
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_mosaic, mpp_get_compute_domain, &
                            &  mpp_get_compute_domains, mpp_get_data_domain
@@ -70,7 +70,7 @@ program test_mpp_global_field_ug
   call mpp_global_field_ug_i8()
 
   call mpp_domains_exit()
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 
 contains

@@ -25,7 +25,7 @@ program test_mpp_update_domains
   use test_mpp_update_domains_real, only : test_subset_update_r8, test_subset_update_r4
   use test_mpp_update_domains_int , only : test_halo_update_i8, test_halo_update_i4
   use test_mpp_update_domains_int, only : test_subset_update_i8, test_subset_update_i4
-  use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe
+  use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_exit
   use mpp_mod, only : mpp_set_stack_size
   use mpp_mod, only : mpp_init_test_requests_allocated
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, mpp_domains_set_stack_size
@@ -91,6 +91,8 @@ program test_mpp_update_domains
     call test_subset_update_i4
   endif
   call mpp_domains_exit()
-  !> Finalize mpp
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
   call MPI_FINALIZE(ierr)
+#endif
 end program test_mpp_update_domains

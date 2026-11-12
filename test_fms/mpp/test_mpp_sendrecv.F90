@@ -68,7 +68,7 @@ program test_mpp_sendrecv
   call test_sendrecv_3D(npes,pe,root,out_unit)
   if( pe.EQ.root ) print *, '------------------> Finished test_sendrecv <------------------'
 
-  call MPI_finalize(ierr)
+  call mpp_exit()
 
 contains
 

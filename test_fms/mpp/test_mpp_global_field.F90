@@ -18,7 +18,7 @@
 program test_mpp_global_field
   use platform_mod
   use mpp_mod,         only: mpp_init, mpp_error, FATAL, mpp_init_test_requests_allocated
-  use mpp_mod,         only: mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe
+  use mpp_mod,         only: mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe, mpp_exit
   use mpp_domains_mod, only: domain2D
   use mpp_domains_mod, only: CENTER, EAST, NORTH, CORNER, XUPDATE, YUPDATE
   use mpp_domains_mod, only: mpp_domains_init, mpp_domains_exit
@@ -78,7 +78,7 @@ program test_mpp_global_field
 
   !> exit
   call mpp_domains_exit()
-  call MPI_finalize(ierr)
+  call mpp_exit()
 
 contains
 

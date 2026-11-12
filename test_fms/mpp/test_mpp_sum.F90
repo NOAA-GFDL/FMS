@@ -25,7 +25,7 @@
 program test_mpp_sum
 
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe
-  use mpp_mod, only : mpp_sync
+  use mpp_mod, only : mpp_sync, mpp_exit
   use mpp_mod, only : mpp_set_stack_size, mpp_init_test_requests_allocated
   use mpp_mod, only : mpp_sum
   use mpp_mod, only : mpp_error, FATAL
@@ -57,7 +57,7 @@ program test_mpp_sum
     call test_mpp_sum_5D(pe,npes,root,pelist,fullsum,pesum)
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_sum <------------------'
 
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 contains
 

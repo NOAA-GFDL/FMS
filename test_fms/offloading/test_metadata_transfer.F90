@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 program test_metadata_transfer
+#ifdef use_libMPI
   use fms_mod, only: fms_init, fms_end, string
   use mpp_mod
   use metadata_transfer_mod
@@ -214,5 +215,5 @@ program test_metadata_transfer
         endif
     enddo
   end subroutine
-
+#endif
 end program

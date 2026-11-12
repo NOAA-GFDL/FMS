@@ -24,7 +24,7 @@ program test
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_sum, mpp_min, mpp_max
-  use mpp_mod, only : mpp_error, FATAL
+  use mpp_mod, only : mpp_error, FATAL, mpp_exit
   use platform_mod
 
   implicit none
@@ -141,7 +141,7 @@ program test
   end if
 
   deallocate( a4, a8, b4, b8 )
-  call MPI_FINALIZE(ierr)
+  call mpp_exit()
 
 contains
 
