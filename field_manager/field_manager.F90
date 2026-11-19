@@ -1392,6 +1392,8 @@ integer :: j
 
 module_is_initialized = .false.
 
+if (.NOT. allocated(fields)) return
+
 do j=1,size(fields)
   if(allocated(fields(j)%methods)) deallocate(fields(j)%methods)
 end do
