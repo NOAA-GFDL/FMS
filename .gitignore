@@ -27,7 +27,7 @@ pathnames*
 /*.zip
 /*.tar.gz
 *.swp
-*.PC
+*.pc
 *.so
 core
 
@@ -91,3 +91,5 @@ settings.json
 *.code-workspace
 # Local History for Visual Studio Code
 .history/
+
+test.nc
