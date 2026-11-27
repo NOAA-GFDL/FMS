@@ -130,8 +130,8 @@ subroutine BILINEAR_TEST_ (p)
   call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success, dim_order=dim_order)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
 
-  do i = is, ie
-    do j =  js, je
+  do i = ind%lb(1), ind%ub(1)
+    do j =  ind%lb(2), ind%ub(2)
       if (abs(runoff_decreasing(i,j) - runoff_increasing(i,j)) .gt. 1) then
         call mpp_error(FATAL, "The data is not the same: "// &
         string(i)//","//string(j)//":"// &
@@ -177,8 +177,8 @@ subroutine WEIGHT_FILE_TEST_ (p)
     threshold = 1e-03
   endif
 
-  do i = is, ie
-    do j =  js, je
+  do i = ind%lb(1), ind%ub(1)
+    do j =  ind%lb(2), ind%ub(2)
       if (abs(runoff(i,j) - runoff_weight(i,j)) .gt. threshold) then
         call mpp_error(FATAL, "The data is not the same: "// &
         string(i)//","//string(j)//":"// &

@@ -1114,20 +1114,6 @@ subroutine DATA_OVERRIDE_3D_(gridname, fieldname_code, return_data, time, overri
   if(.not.module_is_initialized) &
        call mpp_error(FATAL,'Error: need to call data_override_init first')
 
-  if (present(dim_order)) then
-    call inverse_permutation(dim_order, dim_map)
-  else
-    dim_map = dim_map_default
-  endif
-
-  use_buf = any(dim_map.ne.dim_map_default)
-
-  if (use_buf) then
-    allocate(return_buf(size(return_data, dim_map(1)), size(return_data, dim_map(2)), size(return_data, dim_map(3))))
-  else
-    return_buf => return_data
-  endif
-
 !1  Look  for the data file in data_table
   if(PRESENT(override)) override = .false.
   if (present(data_index)) then
@@ -1152,7 +1138,7 @@ subroutine DATA_OVERRIDE_3D_(gridname, fieldname_code, return_data, time, overri
   multifile = data_table(index1)%multifile
 
   if(fieldname == "") then
-     return_buf = factor
+     return_data = factor
      if(PRESENT(override)) override = .true.
      return
   else
@@ -1160,6 +1146,21 @@ subroutine DATA_OVERRIDE_3D_(gridname, fieldname_code, return_data, time, overri
      if (filename == "") call mpp_error(FATAL,'data_override: filename not given in data_table')
      if (multifile) prevfilename = data_table(index1)%prev_file_name
      if (multifile) nextfilename = data_table(index1)%next_file_name
+  endif
+
+  if (present(dim_order)) then
+    call inverse_permutation(dim_order, dim_map)
+  else
+    dim_map = dim_map_default
+  endif
+
+  use_buf = any(dim_map.ne.dim_map_default)
+
+  if (use_buf) then
+    allocate(return_buf(size(return_data, dim_map(1)), size(return_data, dim_map(2)), size(return_data, dim_map(3))))
+    return_buf = reshape(return_data, shape(return_buf), order=dim_order)
+  else
+    return_buf => return_data
   endif
 
   ongrid = (data_table(index1)%interpol_method == 'none')
