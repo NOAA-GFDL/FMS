@@ -68,17 +68,21 @@ subroutine ONGRID_TEST_ (p)
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
   type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
+  integer :: dim_order(2)
 
   ind%lb = [is, js]
   ind%ub = [ie, je]
   call ind%permute(p)
+
+  dim_order = [1, 2]
+  call permute_arr(dim_order, p)
 
   allocate(runoff(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
 
   runoff = 999._lkind
   !< Run it when time=3
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
+  call data_override('OCN','runoff',runoff, Time, dim_order=dim_order)
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3.
   expected_result = 3._lkind
@@ -87,7 +91,7 @@ subroutine ONGRID_TEST_ (p)
   !< Run it when time=4
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
+  call data_override('OCN','runoff',runoff, Time, dim_order=dim_order)
   !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
   !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
   expected_result = (3._lkind + 4._lkind) / 2._lkind
@@ -103,6 +107,7 @@ subroutine BILINEAR_TEST_ (p)
   real(lkind), allocatable, dimension(:,:) :: runoff_decreasing      !< Data to be written
   real(lkind), allocatable, dimension(:,:) :: runoff_increasing      !< Data to be written
   type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
+  integer :: dim_order(2)
 
   integer :: i, j, k
   logical :: success
@@ -111,19 +116,22 @@ subroutine BILINEAR_TEST_ (p)
   ind%ub = [ie, je]
   call ind%permute(p)
 
+  dim_order = [1, 2]
+  call permute_arr(dim_order, p)
+
   allocate(runoff_decreasing(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
   allocate(runoff_increasing(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
 
   runoff_decreasing = 999_lkind
   runoff_increasing = 999_lkind
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff_increasing',runoff_increasing, Time, override=success)
+  call data_override('OCN','runoff_increasing',runoff_increasing, Time, override=success, dim_order=dim_order)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
-  call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success)
+  call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success, dim_order=dim_order)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
 
-  do i = is, ie
-    do j =  js, je
+  do i = ind%lb(1), ind%ub(1)
+    do j =  ind%lb(2), ind%ub(2)
       if (abs(runoff_decreasing(i,j) - runoff_increasing(i,j)) .gt. 1) then
         call mpp_error(FATAL, "The data is not the same: "// &
         string(i)//","//string(j)//":"// &
@@ -141,6 +149,7 @@ subroutine WEIGHT_FILE_TEST_ (p)
   real(lkind), allocatable, dimension(:,:) :: runoff_weight          !< Data from weight file override
   real(lkind)                              :: threshold              !< Threshold for the difference in answers
   type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
+  integer :: dim_order(2)
 
   integer :: i, j, k
   logical :: success
@@ -149,15 +158,18 @@ subroutine WEIGHT_FILE_TEST_ (p)
   ind%ub = [ie, je]
   call ind%permute(p)
 
+  dim_order = [1, 2]
+  call permute_arr(dim_order, p)
+
   allocate(runoff(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
   allocate(runoff_weight(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
 
   runoff = 999_lkind
   runoff_weight = 999_lkind
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff_obs',runoff, Time, override=success)
+  call data_override('OCN','runoff_obs',runoff, Time, override=success, dim_order=dim_order)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
-  call data_override('OCN','runoff_obs_weights',runoff_weight, Time, override=success)
+  call data_override('OCN','runoff_obs_weights',runoff_weight, Time, override=success, dim_order=dim_order)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
 
   threshold = 1e-09
@@ -165,8 +177,8 @@ subroutine WEIGHT_FILE_TEST_ (p)
     threshold = 1e-03
   endif
 
-  do i = is, ie
-    do j =  js, je
+  do i = ind%lb(1), ind%ub(1)
+    do j =  ind%lb(2), ind%ub(2)
       if (abs(runoff(i,j) - runoff_weight(i,j)) .gt. threshold) then
         call mpp_error(FATAL, "The data is not the same: "// &
         string(i)//","//string(j)//":"// &
@@ -208,6 +220,7 @@ subroutine ENSEMBLE_TEST_ (p)
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
   type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
+  integer :: dim_order(2)
   integer                                  :: scale_fac              !< Scale factor to use when determining
                                                                      !! the expected answer
   logical :: sucessful !< .True. if the data_override was sucessful
@@ -215,6 +228,9 @@ subroutine ENSEMBLE_TEST_ (p)
   ind%lb = [is, js]
   ind%ub = [ie, je]
   call ind%permute(p)
+
+  dim_order = [1, 2]
+  call permute_arr(dim_order, p)
 
   allocate(runoff(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
 
@@ -224,7 +240,7 @@ subroutine ENSEMBLE_TEST_ (p)
   runoff = 999._lkind
   !< Run it when time=3
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful, dim_order=dim_order)
   if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3+scale_fac.
@@ -234,7 +250,7 @@ subroutine ENSEMBLE_TEST_ (p)
   !< Run it when time=4
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful, dim_order=dim_order)
   if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< You are getting the data when time=4, the data at time=3 is 3+scale_fac. and at time=5 is 4+scale_fac.,
   !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
@@ -250,18 +266,22 @@ subroutine MULTI_FILE_TESTS_ (p)
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
   type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
+  integer :: dim_order(2)
   logical :: sucessful !< .True. if the data_override was sucessful
 
   ind%lb = [is, js]
   ind%ub = [ie, je]
   call ind%permute(p)
 
+  dim_order = [1, 2]
+  call permute_arr(dim_order, p)
+
   allocate(runoff(ind%lb(1):ind%ub(1), ind%lb(2):ind%ub(2)))
 
   !< Run it when time=3, this is going to use the previous file and the current file
   Time = set_date(1,1,4,0,0,0)
   runoff = 999._lkind
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful, dim_order=dim_order)
   if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   expected_result = 3._lkind
   call COMPARE_DATA_ (Domain, runoff, expected_result, p)
@@ -269,7 +289,7 @@ subroutine MULTI_FILE_TESTS_ (p)
   !< Run it when time=4, this is going to use the current file
   Time = set_date(1,1,5,0,0,0)
   runoff = 999._lkind
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful, dim_order=dim_order)
   if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   expected_result = 4._lkind
   call COMPARE_DATA_ (Domain, runoff, expected_result, p)
@@ -277,7 +297,7 @@ subroutine MULTI_FILE_TESTS_ (p)
   !< Run it when time=5, this is going to use the current file and the next file
   Time = set_date(1,1,6,0,0,0)
   runoff = 999._lkind
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful, dim_order=dim_order)
   if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   expected_result = 5._lkind
   call COMPARE_DATA_ (Domain, runoff, expected_result, p)
